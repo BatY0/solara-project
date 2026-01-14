@@ -1,0 +1,63 @@
+{
+  "navbar": {
+    "features": "Features",
+    "method": "Method",
+    "scope": "Project Scope",
+    "login": "System Login"
+  },
+  "hero": {
+    "title_start": "Solve the Language of Your Soil",
+    "title_highlight": "with AI.",
+    "title_end": "",
+    "subtitle": "This project is an academic study aiming to increase agricultural efficiency by combining IoT sensor data and advanced machine learning algorithms.",
+    "cta": "Review Project Details",
+    "github": "Github",
+    "badge": "TÜBİTAK 2209-A Research Project"
+  },
+  "features": {
+    "label": "PROJECT ARCHITECTURE",
+    "title": "Holistic Field Management",
+    "subtitle": "We offer technologies that allow you to make strategic decisions for the future, not just instant data.",
+    "iot": {
+      "title": "IoT Integration",
+      "desc": "Monitor soil moisture, temperature and pH values instantly 24/7 with our ESP32 based sensors."
+    },
+    "recommendation": {
+      "title": "Smart Crop Recommendation",
+      "desc": "Our multi-label ML models offer the most suitable product portfolio such as Tomato, Pepper or Corn according to your field's characteristics."
+    },
+    "xai": {
+      "title": "Explainable Analysis (XAI)",
+      "desc": "AI is no longer a 'black box'. We explain why the model recommends that product with transparent graphics."
+    }
+  },
+  "steps": {
+    "title": "Planning Agricultural Future in 3 Steps",
+    "subtitle": "We provide access to scientific data by simplifying complex analysis processes.",
+    "step1": {
+      "title": "Field Data Entry",
+      "desc": "The location of the field is selected on the map and IoT sensors are paired."
+    },
+    "step2": {
+      "title": "Data Collection & Processing",
+      "desc": "The system automatically combines sensor data and satellite-derived soil data (SoilGrids)."
+    },
+    "step3": {
+      "title": "Recommendation Report",
+      "desc": "A detailed report explaining which crop should be planted and why is presented."
+    },
+    "card": {
+      "status": "Analysis Completed",
+      "result": "92% Suitable for Tomato"
+    }
+  },
+  "research": {
+    "title": "Academic Research Project",
+    "desc": "Solara is a student project aiming to provide technological infrastructure for sustainable agriculture practices.",
+    "cta": "Go to Demo Panel"
+  },
+  "footer": {
+    "copyright": "© 2026 Solara Project. Akdeniz University Computer Engineering.",
+    "tubitak": "Developed within the scope of TÜBİTAK 2209-A."
+  }
+}

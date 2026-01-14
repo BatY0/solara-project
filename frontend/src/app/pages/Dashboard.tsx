@@ -1,5 +1,5 @@
 import { Box, Container, Heading, Text, Button, HStack } from "@chakra-ui/react"
-import { useAuth } from "../../features/auth/authContext"
+import { useAuth } from "../../features/auth/useAuth"
 import { Logo } from "../../components/ui/Logo"
 import { useNavigate } from "react-router-dom"
 

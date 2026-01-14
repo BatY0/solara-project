@@ -1,0 +1,63 @@
+{
+  "navbar": {
+    "features": "Özellikler",
+    "method": "Yöntem",
+    "scope": "Proje Kapsamı",
+    "login": "Sisteme Giriş"
+  },
+  "hero": {
+    "title_start": "Toprağınızın Dilini",
+    "title_highlight": "Yapay Zeka",
+    "title_end": "ile Çözün.",
+    "subtitle": "Bu proje, IoT sensör verilerini ve gelişmiş makine öğrenmesi algoritmalarını birleştirerek tarımsal verimliliği artırmayı amaçlayan akademik bir çalışmadır.",
+    "cta": "Proje Detaylarını İncele",
+    "github": "Github",
+    "badge": "TÜBİTAK 2209-A Araştırma Projesi"
+  },
+  "features": {
+    "label": "PROJE MİMARİSİ",
+    "title": "Bütüncül Tarla Yönetimi",
+    "subtitle": "Sadece anlık veri değil, geleceğe dönük stratejik kararlar almanızı sağlayan teknolojiler sunuyoruz.",
+    "iot": {
+      "title": "IoT Entegrasyonu",
+      "desc": "ESP32 tabanlı sensörlerimizle toprak nemi, sıcaklık ve pH değerlerini 7/24 anlık olarak takip edin."
+    },
+    "recommendation": {
+      "title": "Akıllı Ürün Önerisi",
+      "desc": "Multi-label ML modellerimiz, tarlanızın özelliklerine göre Domates, Biber veya Mısır gibi en uygun ürün portföyünü sunar."
+    },
+    "xai": {
+      "title": "Açıklanabilir Analiz (XAI)",
+      "desc": "Yapay zeka \"kara kutu\" olmaktan çıkıyor. Modelin neden o ürünü önerdiğini şeffaf grafiklerle açıklıyoruz."
+    }
+  },
+  "steps": {
+    "title": "3 Adımda Tarımsal Geleceği Planlama",
+    "subtitle": "Karmaşık analiz süreçlerini basitleştirerek bilimsel verilere erişim sağlıyoruz.",
+    "step1": {
+      "title": "Tarla Verisi Girişi",
+      "desc": "Harita üzerinden tarlanın konumu seçilir ve IoT sensörleri eşleştirilir."
+    },
+    "step2": {
+      "title": "Veri Toplama & İşleme",
+      "desc": "Sistem, sensör verilerini ve uydu kaynaklı toprak verilerini (SoilGrids) otomatik olarak birleştirir."
+    },
+    "step3": {
+      "title": "Öneri Raporu",
+      "desc": "Hangi ürünün ekilmesi gerektiğini ve nedenini açıklayan detaylı rapor sunulur."
+    },
+    "card": {
+      "status": "Analiz Tamamlandı",
+      "result": "Domates için %92 Uygun"
+    }
+  },
+  "research": {
+    "title": "Akademik Araştırma Projesi",
+    "desc": "Solara, sürdürülebilir tarım uygulamaları için teknolojik altyapı sunmayı hedefleyen bir öğrenci projesidir.",
+    "cta": "Demo Paneline Git"
+  },
+  "footer": {
+    "copyright": "© 2026 Solara Project. Akdeniz Üniversitesi Bilgisayar Mühendisliği.",
+    "tubitak": "TÜBİTAK 2209-A kapsamında geliştirilmiştir."
+  }
+}

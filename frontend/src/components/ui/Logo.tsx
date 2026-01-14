@@ -1,27 +1,23 @@
-import { HStack, Text, Icon } from "@chakra-ui/react"
-import { ComponentProps } from "react"
+import { HStack, Text, Icon, Box } from "@chakra-ui/react"
+import type { ComponentProps } from "react"
+import { Sprout } from "lucide-react"
 
-// Simple sun icon placeholder
-const SunIcon = (props: ComponentProps<"svg">) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    width="1em"
-    height="1em"
-    {...props}
-  >
-    <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
-  </svg>
-)
+interface LogoProps extends ComponentProps<typeof HStack> {
+  iconColor?: string
+  iconBg?: string
+  textColor?: string
+}
 
-export const Logo = (props: ComponentProps<typeof HStack>) => {
+export const Logo = ({ iconColor = "brand.500", iconBg = "brand.50", textColor = "neutral.dark", ...props }: LogoProps) => {
   return (
-    <HStack gap={2} align="center" {...props}>
-      <Icon asChild color="currentColor" fontSize="2xl">
-        <SunIcon />
-      </Icon>
-      <Text fontSize="xl" fontWeight="bold" letterSpacing="wide">
-        SOLARA
+    <HStack gap={3} align="center" {...props}>
+      <Box bg={iconBg} p={2} borderRadius="xl">
+        <Icon asChild color={iconColor} fontSize="24px">
+          <Sprout size={24} />
+        </Icon>
+      </Box>
+      <Text fontSize="2xl" fontWeight="bold" letterSpacing="tight" color={textColor}>
+        Solara
       </Text>
     </HStack>
   )

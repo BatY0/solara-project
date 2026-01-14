@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { Box, Button, Container, Heading, Input, VStack, Text, Link, HStack, IconButton, SimpleGrid } from "@chakra-ui/react"
 import { Link as RouterLink, useNavigate } from "react-router-dom"
-import { useAuth } from "../../features/auth/authContext"
+import { useAuth } from "../../features/auth/useAuth"
 import { Logo } from "../../components/ui/Logo"
 
 // Simple Eye Icons

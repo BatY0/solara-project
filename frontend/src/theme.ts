@@ -1,93 +1,75 @@
 import { createSystem, defaultConfig, defineConfig } from "@chakra-ui/react"
 
-const itten64 = {
-  black: { value: "#000000" },
-  darkPurple: { value: "#2b2437" },
-  darkSlate: { value: "#42505e" },
-  slate: { value: "#748d98" },
-  blueGray: { value: "#92adb3" },
-  lightBlueGray: { value: "#afcbcc" },
-  paleBlue: { value: "#c9e1e5" },
-  white: { value: "#ffffff" },
-  beige: { value: "#e1d9ae" },
-  tan: { value: "#bfa487" },
-  brown: { value: "#9b6256" },
-  darkBrown: { value: "#481b1c" },
-  rust: { value: "#974724" },
-  orangeBrown: { value: "#a45927" },
-  orange: { value: "#c1763d" },
-  peach: { value: "#de9062" },
-  sand: { value: "#d8ad7c" },
-  paleYellow: { value: "#f5e9ac" },
-  yellow: { value: "#e9ca7c" },
-  gold: { value: "#ce9646" },
-  darkOlive: { value: "#4e391e" },
-  olive: { value: "#866a31" },
-  mustard: { value: "#be9339" },
-  goldenrod: { value: "#e29a27" },
-  yellowGreen: { value: "#ddb926" },
-  limeYellow: { value: "#dde19c" },
-  lime: { value: "#c7d477" },
-  green: { value: "#bad053" },
-  grassGreen: { value: "#84a44f" },
-  forestGreen: { value: "#647746" },
-  darkGreen: { value: "#365d3c" },
-  emerald: { value: "#127a46" },
-  teal: { value: "#2caf7f" },
-  lightTeal: { value: "#8dd2ce" },
-  aqua: { value: "#afdbd6" },
-  mint: { value: "#9ed6c7" },
-  turquoise: { value: "#46b9a5" },
-  darkTeal: { value: "#22947e" },
-  deepTeal: { value: "#247471" },
-  midnightBlue: { value: "#102c38" },
-  navy: { value: "#253b5b" },
-  blue: { value: "#274b77" },
-  skyBlue: { value: "#347c97" },
-  steelBlue: { value: "#5b92ae" },
-  lightBlue: { value: "#96c5cf" },
-  paleSky: { value: "#a9d5e5" },
-  periwinkle: { value: "#6e98cd" },
-  indigo: { value: "#454ea1" },
-  violet: { value: "#43265f" },
-  purple: { value: "#845790" },
-  lavender: { value: "#cc9bbb" },
-  pink: { value: "#e29bc2" },
-  lightPink: { value: "#df7da8" },
-  rose: { value: "#ba4873" },
-  magenta: { value: "#943691" },
-  maroon: { value: "#6c2834" },
-  crimson: { value: "#902944" },
-  red: { value: "#cc3f5e" },
-  salmon: { value: "#d78592" },
-  coral: { value: "#db5957" },
-  brightRed: { value: "#d9252f" },
-  darkRed: { value: "#531614" },
-  brickRed: { value: "#9b3b2d" },
-  orangeRed: { value: "#da5135" },
+// 1. SOLARA HAM RENK PALETİ
+const solaraColors = {
+  // Brand Greens (Güven, Tarım, Doğa)
+  jungleGreen: { value: "#059669" },   // Ana Marka Rengi
+  emerald: { value: "#10B981" },       // Başarı / Yüksek Skor
+  deepGreen: { value: "#064E3B" },     // Hover / Koyu Ton
+  softGreen: { value: "#D1FAE5" },     // Hafif Arkaplanlar
+
+  // Solar & Accent (Enerji, Aksiyon, Uyarı)
+  solarGold: { value: "#FBBF24" },     // Güneş İkonları
+  tangerine: { value: "#F59E0B" },     // CTA (Analiz Et) Butonu
+  deepOrange: { value: "#B45309" },    // Turuncu Hover
+
+  // Neutrals (Modern Arayüz Yapısı)
+  midnightSlate: { value: "#1E293B" }, // Sidebar / Koyu Metin
+  slateText: { value: "#334155" },     // Gövde Metni
+  slate400: { value: "#94a3b8" },      // Alt Metinler (Tailwind slate-400)
+  borderGray: { value: "#E2E8F0" },    // Çizgiler
+  iceWhite: { value: "#F8FAFC" },      // Sayfa Arka Planı (Canvas)
+  pureWhite: { value: "#FFFFFF" },     // Kart İçi (Surface)
+
+  // Data Visualization (Grafik Renkleri)
+  waterBlue: { value: "#0EA5E9" },     // Su/Nem
+  soilBrown: { value: "#8D6E63" },     // Toprak
+  dangerRed: { value: "#EF4444" },     // Hata/Domates
 }
 
+// 2. TEMA KONFİGÜRASYONU (Chakra UI v3)
 const config = defineConfig({
   theme: {
     tokens: {
       colors: {
-        itten: itten64,
+        // Ham palete erişmek istersen diye 'solara' adıyla ekliyoruz
+        solara: solaraColors,
+        
+        // Semantic Token Eşleştirmesi (Kullanım Amacına Göre)
         brand: {
-          50: { value: itten64.paleYellow.value },
-          100: { value: itten64.beige.value },
-          200: { value: itten64.yellow.value },
-          300: { value: itten64.gold.value },
-          400: { value: itten64.orange.value },
-          500: { value: itten64.rust.value }, // Primary brand color
-          600: { value: itten64.darkBrown.value },
-          700: { value: itten64.violet.value },
-          800: { value: itten64.darkPurple.value },
-          900: { value: itten64.midnightBlue.value },
+          50: { value: solaraColors.softGreen.value },
+          100: { value: "#ECFDF5" },
+          500: { value: solaraColors.jungleGreen.value }, // Primary Color
+          600: { value: solaraColors.deepGreen.value },   // Hover Color
         },
+        
+        accent: {
+          400: { value: solaraColors.solarGold.value },
+          500: { value: solaraColors.tangerine.value },   // Secondary / CTA
+          600: { value: solaraColors.deepOrange.value },
+        },
+
+        neutral: {
+          dark: { value: solaraColors.midnightSlate.value }, // Sidebar Background
+          text: { value: solaraColors.slateText.value },     // Body Text
+          subtext: { value: solaraColors.slate400.value },   // Secondary Text
+          canvas: { value: solaraColors.iceWhite.value },    // Page Background
+          surface: { value: solaraColors.pureWhite.value },  // Card Background
+          border: { value: solaraColors.borderGray.value },
+        },
+
+        chart: {
+            water: { value: solaraColors.waterBlue.value },
+            soil: { value: solaraColors.soilBrown.value },
+            danger: { value: solaraColors.dangerRed.value },
+        }
+      },
+      fonts: {
+        heading: { value: "'Inter', sans-serif" },
+        body: { value: "'Inter', sans-serif" },
       },
     },
   },
 })
 
 export const system = createSystem(defaultConfig, config)
-
