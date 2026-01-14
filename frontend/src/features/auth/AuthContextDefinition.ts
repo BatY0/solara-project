@@ -7,6 +7,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (data: LoginRequest) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
+  mockLogin: () => Promise<void>;
   logout: () => void;
 }
 

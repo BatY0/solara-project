@@ -18,12 +18,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const initAuth = async () => {
       const storedToken = localStorage.getItem('token');
       if (storedToken) {
-        try {
-          const response = await api.get<User>('/auth/me');
-          setUser(response.data);
-        } catch (error) {
-          console.error('Failed to fetch user', error);
-          logout();
+        if (storedToken === "mock-jwt-token-dev-mode") {
+          setUser({
+            id: "dev-id",
+            email: "dev@solara.app",
+            firstName: "Dev",
+            lastName: "User"
+          });
+        } else {
+            try {
+              const response = await api.get<User>('/auth/me');
+              setUser(response.data);
+            } catch (error) {
+              console.error('Failed to fetch user', error);
+              logout();
+            }
         }
       }
       setIsLoading(false);
@@ -64,8 +73,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // await login({ email: data.email, password: data.password });
   };
 
+  const mockLogin = async () => {
+    const fakeToken = "mock-jwt-token-dev-mode";
+    const fakeUser: User = {
+      id: "dev-id",
+      email: "dev@solara.app",
+      firstName: "Dev",
+      lastName: "User"
+    };
+
+    localStorage.setItem('token', fakeToken);
+    setToken(fakeToken);
+    setUser(fakeUser);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout, mockLogin }}>
       {children}
     </AuthContext.Provider>
   );

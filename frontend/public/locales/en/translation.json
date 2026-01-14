@@ -59,5 +59,58 @@
   "footer": {
     "copyright": "© 2026 Solara Project. Akdeniz University Computer Engineering.",
     "tubitak": "Developed within the scope of TÜBİTAK 2209-A."
+  },
+  "login": {
+    "title": "Welcome Back",
+    "subtitle": "Please sign in to continue.",
+    "brand_title_start": "Smart Agriculture",
+    "brand_title_highlight": "Data Analysis",
+    "brand_title_end": "Platform",
+    "brand_subtitle": "A new generation management panel that processes your IoT sensor data with artificial intelligence to ensure you get maximum efficiency from your field.",
+    "stat_iot": "Real Time",
+    "stat_ai": "Data Analytics",
+    "email_label": "Email",
+    "email_placeholder": "example@company.com",
+    "password_label": "Password",
+    "password_placeholder": "••••••••",
+    "forgot_password": "Forgot Password?",
+    "submit": "Sign In",
+    "loading": "Signing In...",
+    "no_account": "Don't have an account?",
+    "register_link": "Register",
+    "error_failed": "Login failed. Please check your credentials."
+  },
+  "register": {
+    "brand_title": "Welcome to Solara",
+    "brand_subtitle": "Increase your productivity with modern agricultural technologies. Create your account in seconds.",
+    "feature_1_title": "Detailed Soil Analysis",
+    "feature_1_desc": "Learn your field's needs with artificial intelligence.",
+    "feature_2_title": "Smart Crop Recommendations",
+    "feature_2_desc": "Discover the most suitable crops for your climate and soil structure.",
+    "title": "Create Account",
+    "subtitle": "Enter your details to start using Solara immediately.",
+    "first_name_label": "First Name",
+    "first_name_placeholder": "Name",
+    "last_name_label": "Last Name",
+    "last_name_placeholder": "Surname",
+    "email_label": "Email",
+    "email_placeholder": "example@mail.com",
+    "password_label": "Password",
+    "password_placeholder": "••••••••",
+    "password_confirm_label": "Confirm Password",
+    "password_confirm_placeholder": "••••••••",
+    "submit": "Register",
+    "has_account": "Already have an account?",
+    "login_link": "Login",
+    "error_password_match": "Passwords do not match",
+    "error_failed": "Registration failed. Please try again.",
+    "password_req_title": "Password Requirements",
+    "password_req_length": "At least 8 characters",
+    "password_req_uppercase": "At least one uppercase letter",
+    "password_req_number": "At least one number",
+    "password_req_special": "At least one special character"
+  },
+  "dev_mode": {
+    "login_button": "Dev Mode Login (Bypass)"
   }
 }
