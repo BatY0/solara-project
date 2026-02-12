@@ -1,7 +1,5 @@
 # Solara Platform API Specifications
 
-- **Version:** 2.7
-- **Status:** Syntax Highlighting Fixed
 - **Authentication:** All endpoints (except `Auth`) require `Authorization: Bearer <JWT_TOKEN>` header.
 - **Base URL:** `https://api.solara-app.com` (Example)
 
