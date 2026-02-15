@@ -1,0 +1,116 @@
+{
+  "navbar": {
+    "features": "Features",
+    "method": "Method",
+    "scope": "Project Scope",
+    "login": "System Login"
+  },
+  "hero": {
+    "title_start": "Solve the Language of Your Soil",
+    "title_highlight": "with AI.",
+    "title_end": "",
+    "subtitle": "This project is an academic study aiming to increase agricultural efficiency by combining IoT sensor data and advanced machine learning algorithms.",
+    "cta": "Review Project Details",
+    "github": "Github",
+    "badge": "TÜBİTAK 2209-A Research Project"
+  },
+  "features": {
+    "label": "PROJECT ARCHITECTURE",
+    "title": "Holistic Field Management",
+    "subtitle": "We offer technologies that allow you to make strategic decisions for the future, not just instant data.",
+    "iot": {
+      "title": "IoT Integration",
+      "desc": "Monitor soil moisture, temperature and pH values instantly 24/7 with our ESP32 based sensors."
+    },
+    "recommendation": {
+      "title": "Smart Crop Recommendation",
+      "desc": "Our multi-label ML models offer the most suitable product portfolio such as Tomato, Pepper or Corn according to your field's characteristics."
+    },
+    "xai": {
+      "title": "Explainable Analysis (XAI)",
+      "desc": "AI is no longer a 'black box'. We explain why the model recommends that product with transparent graphics."
+    }
+  },
+  "steps": {
+    "title": "Planning Agricultural Future in 3 Steps",
+    "subtitle": "We provide access to scientific data by simplifying complex analysis processes.",
+    "step1": {
+      "title": "Field Data Entry",
+      "desc": "The location of the field is selected on the map and IoT sensors are paired."
+    },
+    "step2": {
+      "title": "Data Collection & Processing",
+      "desc": "The system automatically combines sensor data and satellite-derived soil data (SoilGrids)."
+    },
+    "step3": {
+      "title": "Recommendation Report",
+      "desc": "A detailed report explaining which crop should be planted and why is presented."
+    },
+    "card": {
+      "status": "Analysis Completed",
+      "result": "92% Suitable for Tomato"
+    }
+  },
+  "research": {
+    "title": "Academic Research Project",
+    "desc": "Solara is a student project aiming to provide technological infrastructure for sustainable agriculture practices.",
+    "cta": "Go to Demo Panel"
+  },
+  "footer": {
+    "copyright": "© 2026 Solara Project. Akdeniz University Computer Engineering.",
+    "tubitak": "Developed within the scope of TÜBİTAK 2209-A."
+  },
+  "login": {
+    "title": "Welcome Back",
+    "subtitle": "Please sign in to continue.",
+    "brand_title_start": "Smart Agriculture",
+    "brand_title_highlight": "Data Analysis",
+    "brand_title_end": "Platform",
+    "brand_subtitle": "A new generation management panel that processes your IoT sensor data with artificial intelligence to ensure you get maximum efficiency from your field.",
+    "stat_iot": "Real Time",
+    "stat_ai": "Data Analytics",
+    "email_label": "Email",
+    "email_placeholder": "example@company.com",
+    "password_label": "Password",
+    "password_placeholder": "••••••••",
+    "forgot_password": "Forgot Password?",
+    "submit": "Sign In",
+    "loading": "Signing In...",
+    "no_account": "Don't have an account?",
+    "register_link": "Register",
+    "error_failed": "Login failed. Please check your credentials."
+  },
+  "register": {
+    "brand_title": "Welcome to Solara",
+    "brand_subtitle": "Increase your productivity with modern agricultural technologies. Create your account in seconds.",
+    "feature_1_title": "Detailed Soil Analysis",
+    "feature_1_desc": "Learn your field's needs with artificial intelligence.",
+    "feature_2_title": "Smart Crop Recommendations",
+    "feature_2_desc": "Discover the most suitable crops for your climate and soil structure.",
+    "title": "Create Account",
+    "subtitle": "Enter your details to start using Solara immediately.",
+    "first_name_label": "First Name",
+    "first_name_placeholder": "Name",
+    "last_name_label": "Last Name",
+    "last_name_placeholder": "Surname",
+    "email_label": "Email",
+    "email_placeholder": "example@mail.com",
+    "password_label": "Password",
+    "password_placeholder": "••••••••",
+    "password_confirm_label": "Confirm Password",
+    "password_confirm_placeholder": "••••••••",
+    "submit": "Register",
+    "has_account": "Already have an account?",
+    "login_link": "Login",
+    "error_password_match": "Passwords do not match",
+    "error_failed": "Registration failed. Please try again.",
+    "password_req_title": "Password Requirements",
+    "password_req_length": "At least 8 characters",
+    "password_req_uppercase": "At least one uppercase letter",
+    "password_req_number": "At least one number",
+    "password_req_special": "At least one special character"
+  },
+  "dev_mode": {
+    "login_button": "Dev Mode Login (Bypass)"
+  }
+}
