@@ -37,9 +37,6 @@ public class User implements UserDetails{
     @Column(updatable = false, nullable = false, unique=true)
     private UUID id;
 
-    @Column(nullable = false, unique = true)
-    private String username;
-
     @Column(nullable = false)
     private String name;
 
@@ -71,7 +68,11 @@ public class User implements UserDetails{
 
     @Override
     public String getUsername() {
-        return username;
+        return email;
+    }
+    
+    public String getID() {
+        return id.toString();
     }
 
     public String getEmail() {
