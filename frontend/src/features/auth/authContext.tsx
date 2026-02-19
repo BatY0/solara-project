@@ -3,6 +3,23 @@ import api from '../../lib/axios';
 import type { LoginRequest, RegisterRequest, User, AuthResponse } from '../../types/auth';
 import { AuthContext } from './AuthContextDefinition';
 
+// Helper to decode JWT payload without a library
+const decodeJwtPayload = (token: string): Record<string, unknown> | null => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
@@ -26,13 +43,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             lastName: "User"
           });
         } else {
-            try {
-              const response = await api.get<User>('/auth/me');
-              setUser(response.data);
-            } catch (error) {
-              console.error('Failed to fetch user', error);
-              logout();
-            }
+          // Decode JWT to extract user email from the 'sub' claim
+          const payload = decodeJwtPayload(storedToken);
+          if (payload && payload.sub) {
+            setUser({ email: payload.sub as string });
+          } else {
+            // Token is invalid or malformed
+            console.error('Failed to decode token');
+            logout();
+          }
         }
       }
       setIsLoading(false);
@@ -44,33 +63,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (data: LoginRequest) => {
     const response = await api.post<AuthResponse>('/auth/login', data);
     const newToken = response.data.token;
-    
+
     localStorage.setItem('token', newToken);
     setToken(newToken);
-    
-    // Fetch user profile immediately after login
-    try {
-      // Temporarily set token in headers manually for this request since the interceptor 
-      // might pick up the old state or localStorage update might be async-ish in some contexts 
-      // (though synchronous in browser). 
-      // But standard interceptor reads from localStorage so it should be fine.
-      const userResponse = await api.get<User>('/auth/me');
-      setUser(userResponse.data);
-    } catch (error) {
-      console.error('Failed to fetch user details after login', error);
-    }
+
+    // Use the email from the login response directly
+    setUser({ email: response.data.email || data.email });
   };
 
   const register = async (data: RegisterRequest) => {
-    // Assuming register also returns a token (auto-login) or success. 
-    // If it requires login after, we'd handle that. 
-    // The prompt says "Register a new farmer", doesn't specify return.
-    // I'll assume it creates the user. If it returns token, I'll log them in.
-    // If not, I'll just return and let the UI redirect to login.
-    // For now, let's assume it works like login or just succeeds.
     await api.post('/auth/register', data);
-    // If auto-login is desired:
-    // await login({ email: data.email, password: data.password });
+    // After registration, redirect to login (handled by Register.tsx)
   };
 
   const mockLogin = async () => {
