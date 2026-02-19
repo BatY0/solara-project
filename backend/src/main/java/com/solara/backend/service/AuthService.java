@@ -3,6 +3,7 @@ package com.solara.backend.service;
 import java.time.LocalDateTime;
 
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,16 +27,11 @@ public class AuthService {
 
     public AuthResponse registerUser(RegisterDTO registerRequest){
 
-        if(userRepo.existsByUsername(registerRequest.getUsername())) {
-            return AuthResponse.builder().message("Username is already taken").build();
-        }
-
-        if(userRepo.existsByEmail(registerRequest.getEmail())) {
+        if(userRepo.findByEmail(registerRequest.getEmail()).isPresent()) {
             return AuthResponse.builder().message("Email is already registered").build();
         }
 
         User newUser = User.builder()
-            .username(registerRequest.getUsername())
             .email(registerRequest.getEmail())
             .name(registerRequest.getName())
             .surname(registerRequest.getSurname())
@@ -51,18 +47,22 @@ public class AuthService {
 
         return AuthResponse.builder()
             .message("User registered successfully")
-            .username(newUser.getUsername())
+            .email(newUser.getEmail())
             .token(jwtToken)
             .build();
     }
 
     public AuthResponse login(LoginDTO loginRequest) {
-        authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(
-                loginRequest.getEmail(),
-                loginRequest.getPassword()
-            )
-        );
+        try {
+            authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                    loginRequest.getEmail(),
+                    loginRequest.getPassword()
+                )
+            );
+        } catch (org.springframework.security.core.AuthenticationException e) {
+            throw new BadCredentialsException("Invalid email or password");
+        }
 
         var user = userRepo.findByEmail(loginRequest.getEmail())
             .orElseThrow();
@@ -71,7 +71,7 @@ public class AuthService {
         
         return AuthResponse.builder()
             .message("Login successful")
-            .username(user.getUsername())
+            .email(user.getEmail())
             .token(jwtToken)
             .build();
     }
