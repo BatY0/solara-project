@@ -12,13 +12,14 @@ export interface LoginRequest {
 }
 
 export interface RegisterRequest {
-  firstName: string;
-  lastName: string;
+  name: string;
+  surname: string;
   email: string;
   password: string;
 }
 
 export interface AuthResponse {
+  message: string;
+  email: string;
   token: string;
-  // user?: User; // Depending on if login returns user object or just token
 }
