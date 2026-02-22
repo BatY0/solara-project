@@ -42,4 +42,5 @@ export interface VerifyResponse {
 export interface ResetPasswordPayload {
   email: string;
   newPassword: string;
+  code: string;
 }

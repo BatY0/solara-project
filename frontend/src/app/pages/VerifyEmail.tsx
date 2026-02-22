@@ -183,12 +183,18 @@ export const VerifyEmail = () => {
 
         setIsLoading(true)
         try {
-            const payload: ResetPasswordPayload = { email, newPassword }
+            const payload: ResetPasswordPayload = {
+                email,
+                newPassword,
+                code: codeDigits.join("")
+            }
             await api.post<VerifyResponse>("/auth/verify/reset-password", payload)
             setPasswordResetSuccess(true)
             setSuccess(t("verify.reset_success_message"))
-        } catch {
-            setError(t("verify.reset_error_failed"))
+        } catch (err) {
+            const axiosError = err as { response?: { data?: { message?: string } } };
+            const backendMessage = axiosError?.response?.data?.message;
+            setError(backendMessage || t("verify.reset_error_failed"))
         } finally {
             setIsLoading(false)
         }
