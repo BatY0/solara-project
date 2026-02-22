@@ -24,17 +24,16 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
 @Entity
 @Table(name = "users")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User implements UserDetails{
+public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(updatable = false, nullable = false, unique=true)
+    @Column(updatable = false, nullable = false, unique = true)
     private UUID id;
 
     @Column(nullable = false)
@@ -53,6 +52,10 @@ public class User implements UserDetails{
     @Column(nullable = false)
     private Role role;
 
+    @Builder.Default
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified = false;
+
     @CreationTimestamp
     @Column(updatable = false, name = "created_at")
     private LocalDateTime createdAt;
@@ -70,7 +73,7 @@ public class User implements UserDetails{
     public String getUsername() {
         return email;
     }
-    
+
     public String getID() {
         return id.toString();
     }

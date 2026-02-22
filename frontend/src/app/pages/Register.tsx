@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { Box, Button, Container, Heading, Input, VStack, Text, Link, IconButton, HStack, Flex, Icon, SimpleGrid, List } from "@chakra-ui/react"
+import { Box, Button, Heading, Input, VStack, Text, Link, IconButton, HStack, Flex, Icon, SimpleGrid } from "@chakra-ui/react"
 import { Link as RouterLink, useNavigate } from "react-router-dom"
 import { useAuth } from "../../features/auth/useAuth"
 import { LanguageSwitcher } from "../../components/ui/LanguageSwitcher"
@@ -63,9 +63,11 @@ export const Register = () => {
         email,
         password
       })
-      navigate("/login")
+      navigate(`/verify-email?email=${encodeURIComponent(email)}`)
     } catch (err) {
-      setError(t('register.error_failed'))
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      const backendMessage = axiosError?.response?.data?.message;
+      setError(backendMessage || t('register.error_failed'))
       console.error(err)
     } finally {
       setIsLoading(false)
@@ -74,7 +76,7 @@ export const Register = () => {
 
   const RequirementItem = ({ valid, text }: { valid: boolean, text: string }) => (
     <HStack gap={2} color={valid ? "brand.500" : "neutral.subtext"}>
-      <Icon asChild size="14px">
+      <Icon asChild size="sm">
         {valid ? <CheckCircle size={14} /> : <XCircle size={14} />}
       </Icon>
       <Text fontSize="xs" fontWeight={valid ? "medium" : "normal"}>{text}</Text>
@@ -102,8 +104,8 @@ export const Register = () => {
           position="absolute"
           inset="0"
           bgImage="url('https://images.unsplash.com/photo-1599687267812-35905d212aa7?q=80&w=1000&auto=format&fit=crop')"
-          bgSize="cover"
-          bgPosition="center"
+          backgroundSize="cover"
+          backgroundPosition="center"
           opacity="0.2"
         />
 
@@ -116,7 +118,7 @@ export const Register = () => {
           <VStack gap={4} align="start">
             <Flex gap={4} align="start">
               <Box p={2} bg="brand.500/20" borderRadius="lg" color="brand.400" mt={1}>
-                <Icon asChild size="20px"><CheckCircle size={20} /></Icon>
+                <Icon asChild size="lg"><CheckCircle size={20} /></Icon>
               </Box>
               <Box>
                 <Heading size="md" fontWeight="bold" color="white">{t('register.feature_1_title')}</Heading>
@@ -125,7 +127,7 @@ export const Register = () => {
             </Flex>
             <Flex gap={4} align="start">
               <Box p={2} bg="brand.500/20" borderRadius="lg" color="brand.400" mt={1}>
-                <Icon asChild size="20px"><CheckCircle size={20} /></Icon>
+                <Icon asChild size="lg"><CheckCircle size={20} /></Icon>
               </Box>
               <Box>
                 <Heading size="md" fontWeight="bold" color="white">{t('register.feature_2_title')}</Heading>
@@ -139,8 +141,7 @@ export const Register = () => {
       {/* RIGHT SIDE (FORM) */}
       <Box flex="1" bg="white" display="flex" alignItems="center" justifyContent="center" p={8} position="relative" order={{ base: 1, md: 2 }}>
         <Link
-          as={RouterLink}
-          to="/"
+          asChild
           position="absolute"
           top={8}
           left={8}
@@ -152,8 +153,10 @@ export const Register = () => {
           fontSize="sm"
           fontWeight="medium"
         >
-          <Icon asChild size="18px"><ArrowLeft size={18} /></Icon>
-          Home
+          <RouterLink to="/">
+            <Icon asChild size="md"><ArrowLeft size={18} /></Icon>
+            Home
+          </RouterLink>
         </Link>
         <Box position="absolute" top={8} right={8}>
           <LanguageSwitcher />
@@ -162,7 +165,7 @@ export const Register = () => {
         <Box w="full" maxW="md" mt={{ base: 10, md: 0 }}>
           <Box mb={8}>
             <Box w={12} h={12} bg="brand.50" borderRadius="xl" display="flex" alignItems="center" justifyContent="center" mb={4} color="brand.600">
-              <Icon asChild size="24px"><Sprout size={24} /></Icon>
+              <Icon asChild size="xl"><Sprout size={24} /></Icon>
             </Box>
             <Heading size="2xl" fontWeight="bold" color="neutral.dark">{t('register.title')}</Heading>
             <Text color="neutral.subtext" mt={2}>{t('register.subtitle')}</Text>
@@ -170,7 +173,7 @@ export const Register = () => {
 
           {error && (
             <Box mb={6} p={4} bg="red.50" borderWidth="1px" borderColor="red.200" borderRadius="xl" display="flex" alignItems="center" gap={3} color="red.700" fontSize="sm">
-              <Icon asChild size="18px"><AlertCircle size={18} /></Icon>
+              <Icon asChild size="md"><AlertCircle size={18} /></Icon>
               {error}
             </Box>
           )}
@@ -361,8 +364,10 @@ export const Register = () => {
 
           <Box mt={8} pt={6} borderTopWidth="1px" borderColor="neutral.canvas" textAlign="center" fontSize="sm" color="neutral.subtext">
             {t('register.has_account')}{" "}
-            <Link as={RouterLink} to="/login" color="brand.400" fontWeight="bold" _hover={{ color: "brand.300" }}>
-              {t('register.login_link')}
+            <Link asChild color="brand.400" fontWeight="bold" _hover={{ color: "brand.300" }}>
+              <RouterLink to="/login">
+                {t('register.login_link')}
+              </RouterLink>
             </Link>
           </Box>
         </Box>

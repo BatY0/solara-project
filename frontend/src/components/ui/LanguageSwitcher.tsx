@@ -17,7 +17,7 @@ export const LanguageSwitcher = () => {
   }
 
   return (
-    <Menu.Root openOnHover closeOnSelect positioning={{ placement: "bottom-start" }}>
+    <Menu.Root positioning={{ placement: "bottom-start" }}>
       <Menu.Trigger asChild>
         <Button variant="ghost" size="sm" display="flex" alignItems="center" gap={2}>
           <Icon asChild>
