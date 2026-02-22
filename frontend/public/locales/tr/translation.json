@@ -144,6 +144,21 @@
     "go_to_login": "Giriş Sayfasına Devam Et",
     "back_to_login": "Giriş Sayfasına Dön",
     "remember_password": "Şifrenizi hatırlıyor musunuz?",
-    "login_link": "Giriş Yap"
+    "login_link": "Giriş Yap",
+    "reset_title": "Yeni Şifre Oluşturun",
+    "reset_subtitle": "Aşağıya yeni şifrenizi girin. Gereksinimleri karşıladığından emin olun.",
+    "reset_new_password": "Yeni Şifre",
+    "reset_confirm_password": "Yeni Şifre Tekrar",
+    "reset_password_placeholder": "••••••••",
+    "reset_submit": "Şifreyi Sıfırla",
+    "reset_error_match": "Şifreler eşleşmiyor",
+    "reset_error_failed": "Şifre sıfırlanamadı. Lütfen tekrar deneyin.",
+    "reset_success_title": "Şifre Sıfırlandı!",
+    "reset_success_message": "Şifreniz başarıyla sıfırlandı. Artık yeni şifrenizle giriş yapabilirsiniz.",
+    "password_req_title": "Şifre Gereksinimleri",
+    "password_req_length": "En az 8 karakter",
+    "password_req_uppercase": "En az bir büyük harf",
+    "password_req_number": "En az bir rakam",
+    "password_req_special": "En az bir özel karakter"
   }
 }

@@ -38,3 +38,8 @@ export interface VerifyResponse {
   message: string;
   isVerified?: boolean;
 }
+
+export interface ResetPasswordPayload {
+  email: string;
+  newPassword: string;
+}

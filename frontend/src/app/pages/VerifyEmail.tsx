@@ -1,14 +1,14 @@
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import {
-    Box, Button, Heading, Input, VStack, Text, Link, HStack, Flex, Icon
+    Box, Button, Heading, Input, VStack, Text, Link, HStack, Flex, Icon, SimpleGrid
 } from "@chakra-ui/react"
 import { Link as RouterLink, useSearchParams } from "react-router-dom"
 import { useTranslation } from "react-i18next"
-import { Mail, ArrowLeft, Loader2, AlertCircle, CheckCircle, ShieldCheck, KeyRound } from "lucide-react"
+import { Mail, ArrowLeft, Loader2, AlertCircle, CheckCircle, ShieldCheck, KeyRound, Lock, Eye, EyeOff, XCircle } from "lucide-react"
 import { Sprout } from "lucide-react"
 import { LanguageSwitcher } from "../../components/ui/LanguageSwitcher"
 import api from "../../lib/axios"
-import type { VerifyRequestPayload, VerifyConfirmPayload, VerifyResponse } from "../../types/auth"
+import type { VerifyRequestPayload, VerifyConfirmPayload, VerifyResponse, ResetPasswordPayload } from "../../types/auth"
 import { keyframes } from "@emotion/react"
 
 const fadeIn = keyframes`
@@ -26,8 +26,8 @@ export const VerifyEmail = () => {
     const mode = (searchParams.get("mode") === "forgot" ? "forgot" : "verify") as "verify" | "forgot"
     const prefilledEmail = searchParams.get("email") || ""
 
-    // Step state
-    const [step, setStep] = useState<1 | 2>(prefilledEmail ? 1 : 1)
+    // Step state: 1=email, 2=code, 3=reset password (forgot mode only)
+    const [step, setStep] = useState<1 | 2 | 3>(prefilledEmail ? 1 : 1)
     const [email, setEmail] = useState(prefilledEmail)
 
     // Code input state
@@ -40,6 +40,23 @@ export const VerifyEmail = () => {
     const [success, setSuccess] = useState("")
     const [isVerified, setIsVerified] = useState(false)
     const [cooldown, setCooldown] = useState(0)
+
+    // Password reset state (forgot mode)
+    const [newPassword, setNewPassword] = useState("")
+    const [confirmNewPassword, setConfirmNewPassword] = useState("")
+    const [showPassword, setShowPassword] = useState(false)
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+    const [passwordResetSuccess, setPasswordResetSuccess] = useState(false)
+
+    // Password validation
+    const passwordValidations = useMemo(() => ({
+        length: newPassword.length >= 8,
+        uppercase: /[A-Z]/.test(newPassword),
+        number: /[0-9]/.test(newPassword),
+        special: /[!@#$%^&*(),.?":{}|<>]/.test(newPassword)
+    }), [newPassword])
+
+    const isPasswordValid = Object.values(passwordValidations).every(Boolean)
 
     // Cooldown timer
     useEffect(() => {
@@ -64,8 +81,10 @@ export const VerifyEmail = () => {
             setCooldown(COOLDOWN_SECONDS)
             // Focus first code input after transition
             setTimeout(() => inputRefs.current[0]?.focus(), 100)
-        } catch {
-            setError(t("verify.error_request"))
+        } catch (err) {
+            const axiosError = err as { response?: { data?: { message?: string } } };
+            const backendMessage = axiosError?.response?.data?.message;
+            setError(backendMessage || t("verify.error_request"))
         } finally {
             setIsLoading(false)
         }
@@ -80,7 +99,14 @@ export const VerifyEmail = () => {
             const payload: VerifyConfirmPayload = { email, code }
             const response = await api.post<VerifyResponse>("/auth/verify/confirm", payload)
             setSuccess(response.data.message || t("verify.verified"))
-            setIsVerified(true)
+            if (mode === "forgot") {
+                // Move to step 3: reset password form
+                setStep(3)
+                setError("")
+                setSuccess("")
+            } else {
+                setIsVerified(true)
+            }
         } catch {
             setError(t("verify.error_confirm"))
             // Clear code on failure
@@ -141,6 +167,41 @@ export const VerifyEmail = () => {
     }
 
     // isVerified is now a state variable set only by handleConfirmCode on success
+
+    // --- Step 3: Reset Password (forgot mode) ---
+    const handleResetPassword = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setError("")
+        setSuccess("")
+
+        if (newPassword !== confirmNewPassword) {
+            setError(t("verify.reset_error_match"))
+            return
+        }
+
+        if (!isPasswordValid) return
+
+        setIsLoading(true)
+        try {
+            const payload: ResetPasswordPayload = { email, newPassword }
+            await api.post<VerifyResponse>("/auth/verify/reset-password", payload)
+            setPasswordResetSuccess(true)
+            setSuccess(t("verify.reset_success_message"))
+        } catch {
+            setError(t("verify.reset_error_failed"))
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const RequirementItem = ({ valid, text }: { valid: boolean; text: string }) => (
+        <HStack gap={2} color={valid ? "brand.500" : "neutral.subtext"}>
+            <Icon asChild size="sm">
+                {valid ? <CheckCircle size={14} /> : <XCircle size={14} />}
+            </Icon>
+            <Text fontSize="xs" fontWeight="medium">{text}</Text>
+        </HStack>
+    )
 
     return (
         <Box minH="100vh" display="flex" flexDirection={{ base: "column", md: "row" }} fontFamily="heading">
@@ -429,8 +490,126 @@ export const VerifyEmail = () => {
                         </Box>
                     )}
 
-                    {/* --- SUCCESS STATE --- */}
-                    {isVerified && (
+                    {/* --- STEP 3: Reset Password (forgot mode) --- */}
+                    {step === 3 && mode === "forgot" && !passwordResetSuccess && (
+                        <Box animation={`${fadeIn} 0.4s ease-out`}>
+                            <Box mb={8}>
+                                <Box w={12} h={12} bg="brand.50" borderRadius="xl" display="flex" alignItems="center" justifyContent="center" mb={4} color="brand.600">
+                                    <Icon asChild size="xl"><KeyRound size={24} /></Icon>
+                                </Box>
+                                <Heading size="2xl" fontWeight="bold" color="neutral.dark">
+                                    {t("verify.reset_title")}
+                                </Heading>
+                                <Text color="neutral.subtext" mt={2}>
+                                    {t("verify.reset_subtitle")}
+                                </Text>
+                            </Box>
+
+                            {error && (
+                                <Box mb={6} p={4} bg="red.50" borderWidth="1px" borderColor="red.200" borderRadius="xl" display="flex" alignItems="center" gap={3} color="red.700" fontSize="sm">
+                                    <Icon asChild size="md"><AlertCircle size={18} /></Icon>
+                                    {error}
+                                </Box>
+                            )}
+
+                            {/* Password Requirements */}
+                            <Box mb={6} p={4} bg="neutral.canvas" borderRadius="xl" borderWidth="1px" borderColor="neutral.border">
+                                <Text fontSize="xs" fontWeight="bold" color="neutral.text" mb={2}>{t("verify.password_req_title")}</Text>
+                                <SimpleGrid columns={2} gap={2}>
+                                    <RequirementItem valid={passwordValidations.length} text={t("verify.password_req_length")} />
+                                    <RequirementItem valid={passwordValidations.uppercase} text={t("verify.password_req_uppercase")} />
+                                    <RequirementItem valid={passwordValidations.number} text={t("verify.password_req_number")} />
+                                    <RequirementItem valid={passwordValidations.special} text={t("verify.password_req_special")} />
+                                </SimpleGrid>
+                            </Box>
+
+                            <form onSubmit={handleResetPassword}>
+                                <VStack gap={5}>
+                                    <Box w="full">
+                                        <Text mb={2} fontSize="sm" fontWeight="semibold" color="neutral.text">{t("verify.reset_new_password")}</Text>
+                                        <Box position="relative">
+                                            <Box position="absolute" left="3" top="50%" transform="translateY(-50%)" color="neutral.subtext" zIndex="2">
+                                                <Lock size={18} />
+                                            </Box>
+                                            <Input
+                                                value={newPassword}
+                                                onChange={(e) => setNewPassword(e.target.value)}
+                                                type={showPassword ? "text" : "password"}
+                                                required
+                                                pl="9"
+                                                pr="10"
+                                                py="3"
+                                                h="auto"
+                                                bg="neutral.canvas"
+                                                borderColor="neutral.border"
+                                                borderRadius="xl"
+                                                _focus={{ borderColor: "brand.500", outline: "none", boxShadow: "0 0 0 2px var(--chakra-colors-brand-500-20)" }}
+                                                fontSize="sm"
+                                                placeholder={t("verify.reset_password_placeholder")}
+                                            />
+                                            <Box position="absolute" right="3" top="50%" transform="translateY(-50%)" cursor="pointer" color="neutral.subtext" onClick={() => setShowPassword(!showPassword)}>
+                                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                            </Box>
+                                        </Box>
+                                    </Box>
+
+                                    <Box w="full">
+                                        <Text mb={2} fontSize="sm" fontWeight="semibold" color="neutral.text">{t("verify.reset_confirm_password")}</Text>
+                                        <Box position="relative">
+                                            <Box position="absolute" left="3" top="50%" transform="translateY(-50%)" color="neutral.subtext" zIndex="2">
+                                                <Lock size={18} />
+                                            </Box>
+                                            <Input
+                                                value={confirmNewPassword}
+                                                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                                                type={showConfirmPassword ? "text" : "password"}
+                                                required
+                                                pl="9"
+                                                pr="10"
+                                                py="3"
+                                                h="auto"
+                                                bg="neutral.canvas"
+                                                borderColor="neutral.border"
+                                                borderRadius="xl"
+                                                _focus={{ borderColor: "brand.500", outline: "none", boxShadow: "0 0 0 2px var(--chakra-colors-brand-500-20)" }}
+                                                fontSize="sm"
+                                                placeholder={t("verify.reset_password_placeholder")}
+                                            />
+                                            <Box position="absolute" right="3" top="50%" transform="translateY(-50%)" cursor="pointer" color="neutral.subtext" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                                                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                            </Box>
+                                        </Box>
+                                    </Box>
+
+                                    <Button
+                                        type="submit"
+                                        disabled={isLoading || !isPasswordValid || !confirmNewPassword}
+                                        bg="brand.600"
+                                        color="white"
+                                        _hover={{ bg: "brand.700" }}
+                                        w="full"
+                                        py="3"
+                                        h="auto"
+                                        borderRadius="xl"
+                                        shadow="lg"
+                                        shadowColor="brand.200"
+                                        fontWeight="bold"
+                                        mt={2}
+                                        display="flex"
+                                        alignItems="center"
+                                        justifyContent="center"
+                                        gap={2}
+                                        _disabled={{ opacity: 0.7, cursor: "not-allowed", bg: "neutral.subtext" }}
+                                    >
+                                        {isLoading ? <Loader2 className="animate-spin" size={20} /> : t("verify.reset_submit")}
+                                    </Button>
+                                </VStack>
+                            </form>
+                        </Box>
+                    )}
+
+                    {/* --- SUCCESS STATE (verify mode or password reset success) --- */}
+                    {(isVerified || passwordResetSuccess) && (
                         <Box animation={`${fadeIn} 0.4s ease-out`} textAlign="center">
                             <Box w={16} h={16} bg="green.50" borderRadius="full" display="flex" alignItems="center" justifyContent="center" mx="auto" mb={6}>
                                 <Icon asChild size="xl" color="green.500">
@@ -438,7 +617,7 @@ export const VerifyEmail = () => {
                                 </Icon>
                             </Box>
                             <Heading size="2xl" fontWeight="bold" color="neutral.dark" mb={3}>
-                                {mode === "forgot" ? t("verify.success_title_forgot") : t("verify.success_title_verify")}
+                                {passwordResetSuccess ? t("verify.reset_success_title") : t("verify.success_title_verify")}
                             </Heading>
                             <Text color="neutral.subtext" mb={8}>
                                 {success}

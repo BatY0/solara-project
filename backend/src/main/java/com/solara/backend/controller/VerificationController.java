@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.solara.backend.dto.request.ResetPasswordDTO;
 import com.solara.backend.dto.request.VerifyConfirmDTO;
 import com.solara.backend.dto.request.VerifyRequestDTO;
 import com.solara.backend.dto.response.VerifyResponse;
@@ -23,13 +24,34 @@ public class VerificationController {
 
     @PostMapping("/request")
     public ResponseEntity<VerifyResponse> requestVerification(@Valid @RequestBody VerifyRequestDTO request) {
-        return ResponseEntity.ok(verificationService.requestVerification(request));
+        try {
+            return ResponseEntity.ok(verificationService.requestVerification(request));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(
+                    VerifyResponse.builder()
+                            .message(e.getMessage())
+                            .isVerified(false)
+                            .build());
+        }
     }
 
     @PostMapping("/confirm")
     public ResponseEntity<VerifyResponse> confirmVerification(@Valid @RequestBody VerifyConfirmDTO request) {
         try {
             return ResponseEntity.ok(verificationService.confirmVerification(request));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(
+                    VerifyResponse.builder()
+                            .message(e.getMessage())
+                            .isVerified(false)
+                            .build());
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<VerifyResponse> resetPassword(@Valid @RequestBody ResetPasswordDTO request) {
+        try {
+            return ResponseEntity.ok(verificationService.resetPassword(request));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(
                     VerifyResponse.builder()

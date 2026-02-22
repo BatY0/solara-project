@@ -144,6 +144,21 @@
     "go_to_login": "Continue to Login",
     "back_to_login": "Back to Login",
     "remember_password": "Remember your password?",
-    "login_link": "Sign In"
+    "login_link": "Sign In",
+    "reset_title": "Create New Password",
+    "reset_subtitle": "Enter your new password below. Make sure it meets the requirements.",
+    "reset_new_password": "New Password",
+    "reset_confirm_password": "Confirm New Password",
+    "reset_password_placeholder": "••••••••",
+    "reset_submit": "Reset Password",
+    "reset_error_match": "Passwords do not match",
+    "reset_error_failed": "Failed to reset password. Please try again.",
+    "reset_success_title": "Password Reset!",
+    "reset_success_message": "Your password has been reset successfully. You can now log in with your new password.",
+    "password_req_title": "Password Requirements",
+    "password_req_length": "At least 8 characters",
+    "password_req_uppercase": "At least one uppercase letter",
+    "password_req_number": "At least one number",
+    "password_req_special": "At least one special character"
   }
 }
