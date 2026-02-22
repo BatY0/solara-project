@@ -14,7 +14,6 @@ import com.solara.backend.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
@@ -23,11 +22,16 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterDTO registerDTO) {
-        return ResponseEntity.ok(authService.registerUser(registerDTO));
+        try {
+            return ResponseEntity.ok(authService.registerUser(registerDTO));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(
+                    AuthResponse.builder().message(e.getMessage()).build());
+        }
     }
-    
+
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginDTO loginDTO) {
         return ResponseEntity.ok(authService.login(loginDTO));
-    } 
+    }
 }

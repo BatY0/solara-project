@@ -9,9 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class AuthResponse {
+public class VerifyResponse {
     private String message;
-    private String email;
-    private String token;
-    private Boolean emailVerified;
+    private Boolean isVerified;
 }

@@ -22,4 +22,25 @@ export interface AuthResponse {
   message: string;
   email: string;
   token: string;
+  emailVerified?: boolean;
+}
+
+export interface VerifyRequestPayload {
+  email: string;
+}
+
+export interface VerifyConfirmPayload {
+  email: string;
+  code: string;
+}
+
+export interface VerifyResponse {
+  message: string;
+  isVerified?: boolean;
+}
+
+export interface ResetPasswordPayload {
+  email: string;
+  newPassword: string;
+  code: string;
 }
