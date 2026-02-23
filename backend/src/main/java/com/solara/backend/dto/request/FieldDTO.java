@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.math.BigDecimal;
 import jakarta.validation.constraints.DecimalMin;
 
 import com.solara.backend.entity.Field;
@@ -17,10 +16,10 @@ import com.solara.backend.entity.Field;
 public class FieldDTO {
     @NotBlank(message = "Name is required")
     private String name;
-    private Float latitude;
-    private Float longitude;
+    private Double latitude;
+    private Double longitude;
     @DecimalMin(value = "0.0", inclusive = false, message = "Area must be greater than 0")
-    private BigDecimal areaHa;
+    private Double areaHa;
     @NotBlank(message = "Soil type is required")
     private String soilType;
 

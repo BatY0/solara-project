@@ -1,5 +1,4 @@
 package com.solara.backend.entity;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -40,11 +39,14 @@ public class Field {
     @Column(length = 100)
     private String name;
 
-    private Float latitude;
-    private Float longitude;
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
 
     @Column(name = "area_ha")
-    private BigDecimal areaHa;
+    private Double areaHa;
     
     @Column(name = "soil_type", length = 50)
     private String soilType;

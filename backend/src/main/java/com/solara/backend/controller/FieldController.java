@@ -25,30 +25,30 @@ public class FieldController {
     // Create (POST)
     @PostMapping
     public ResponseEntity<Field> createField(@RequestBody FieldDTO field) {
-        Field savedField = field.toEntity();
+        Field savedField = fieldService.createField(field.toEntity());
         return new ResponseEntity<>(savedField, HttpStatus.CREATED);
     }
 
     // Read All (GET)
     @GetMapping
     public ResponseEntity<List<Field>> getAllFields() {
-        return ResponseEntity.ok(fieldService.getAllFields());
+        List<Field> fields = fieldService.getAllFields();
+        return ResponseEntity.ok(fields);
     }
 
     // Read One (GET)
     @GetMapping("/{id}")
-    public ResponseEntity<FieldDTO> getFieldById(@PathVariable UUID id) {
+    public ResponseEntity<Field> getFieldById(@PathVariable UUID id) {
         return fieldService.getFieldById(id)
-        .map(field -> new FieldDTO(field))
-        .map(ResponseEntity::ok)
-        .orElse(ResponseEntity.notFound().build());
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     // Update (PUT)
     @PutMapping("/{id}")
     public ResponseEntity<Field> updateField(@PathVariable UUID id, @RequestBody FieldDTO fieldDetails) {
-        Field field = fieldDetails.toEntity();
-        return ResponseEntity.ok(fieldService.updateField(id, field));
+        Field field = fieldService.updateField(id, fieldDetails.toEntity());
+        return ResponseEntity.ok(field);
     }
 
     // Delete (DELETE)
