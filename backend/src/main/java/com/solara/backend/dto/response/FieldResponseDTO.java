@@ -38,6 +38,8 @@ public class FieldResponseDTO {
         // this.createdAt = field.getCreatedAt(); 
 
         this.location = convertPolygonToCoordinates(field.getLocation());
+        this.soilType = field.getSoilType();
+        this.createdAt = field.getCreatedAt();
     }
 
     private List<double[]> convertPolygonToCoordinates(Polygon polygon) {
@@ -67,7 +69,8 @@ public class FieldResponseDTO {
     public void setSoilType(String soilType) { this.soilType = soilType; }
 
     public UUID getUserId() { return userId; }
-    
+    public void setUserId(UUID userId) { this.userId = userId; }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }
