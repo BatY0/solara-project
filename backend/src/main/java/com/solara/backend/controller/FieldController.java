@@ -28,7 +28,7 @@ import com.solara.backend.service.FieldPropertyService;
 import com.solara.backend.service.FieldService;
 
 @RestController
-@RequestMapping("/api/fields")
+@RequestMapping("/api/v1/fields")
 public class FieldController {
 
     private final FieldService fieldService;
