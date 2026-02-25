@@ -26,10 +26,10 @@ public class FieldPropertyService {
         return fieldPropertiesRepository.findByFieldId(fieldId).orElse(null);
     }
 
-    public FieldProperties updateFieldProperties(UUID propertyId, FieldProperties properties) {
-        FieldProperties existingProperties = fieldPropertiesRepository.findById(propertyId).orElse(null);
+    public FieldProperties updateFieldProperties(UUID fieldID, FieldProperties properties) {
+        FieldProperties existingProperties = fieldPropertiesRepository.findByFieldId(fieldID).orElse(null);
         if (existingProperties == null) {
-            throw new RuntimeException("Field properties not found for property id: " + propertyId);
+            throw new RuntimeException("Field properties not found for field id: " + fieldID);
         }
 
         existingProperties.setNitrogen(properties.getNitrogen());
