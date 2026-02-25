@@ -9,8 +9,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -32,8 +30,6 @@ public class Field {
     // Assuming a simple UUID for the foreign key. 
     // You can later change this to @ManyToOne if you create a User entity.
     @Column(name = "user_id", nullable = false)
-    @ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)
-    @JoinColumn(name = "user_id", referencedColumnName = "id", updatable = false)
     private UUID userId;
 
     @Column(length = 100)

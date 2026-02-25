@@ -4,9 +4,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.solara.backend.entity.Field;
 import com.solara.backend.repository.FieldRepository;
 
+@Service
 public class FieldService {
 
     private final FieldRepository fieldRepository;
@@ -15,14 +21,21 @@ public class FieldService {
         this.fieldRepository = fieldRepo;
     }
 
+    @Transactional
     public Field createField(Field field) {
-        return fieldRepository.save(field);
+        Field savedField = fieldRepository.save(field);
+        return savedField;
     }
 
     public List<Field> getAllFields() {
         return fieldRepository.findAll();
     }
 
+    public Page<Field> getAllFieldsPaginated(int page, int size) {
+        Pageable pageable = Pageable.ofSize(size).withPage(page);
+        return fieldRepository.findAll(pageable);
+    }
+ 
     public Optional<Field> getFieldById(UUID id) {
         return fieldRepository.findById(id);
     }

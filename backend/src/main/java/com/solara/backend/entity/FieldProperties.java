@@ -1,7 +1,6 @@
 package com.solara.backend.entity;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.OneToOne;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -10,7 +9,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,9 +26,7 @@ public class FieldProperties {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "field_id", nullable = false)
-    @OneToOne(fetch = jakarta.persistence.FetchType.LAZY)
-    @JoinColumn(name = "field_id", referencedColumnName = "id", updatable = false)
+    @Column(name = "field_id", unique = true)
     private UUID fieldId;
 
     @Column(name = "nitrogen")

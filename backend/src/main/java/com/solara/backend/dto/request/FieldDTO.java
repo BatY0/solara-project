@@ -1,13 +1,13 @@
 package com.solara.backend.dto.request;
 
+import com.solara.backend.entity.Field;
+
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import jakarta.validation.constraints.DecimalMin;
-
-import com.solara.backend.entity.Field;
 
 @Data
 @Builder
