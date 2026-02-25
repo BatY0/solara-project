@@ -74,8 +74,8 @@ public class User implements UserDetails {
         return email;
     }
 
-    public String getID() {
-        return id.toString();
+    public UUID getID() {
+        return id;
     }
 
     public String getEmail() {
