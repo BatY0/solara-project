@@ -3,6 +3,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.locationtech.jts.geom.Polygon;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -35,11 +36,9 @@ public class Field {
     @Column(length = 100)
     private String name;
 
-    @Column(name = "latitude")
-    private Double latitude;
-
-    @Column(name = "longitude")
-    private Double longitude;
+    
+    @Column(name = "location", columnDefinition="geometry(Polygon, 4326)")
+    private Polygon location;
 
     @Column(name = "area_ha")
     private Double areaHa;
@@ -50,4 +49,8 @@ public class Field {
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    public Polygon getLocation() {
+        return location;
+    }
 }

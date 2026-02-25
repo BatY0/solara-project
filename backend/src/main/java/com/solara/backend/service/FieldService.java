@@ -1,4 +1,4 @@
-package com.solara.backend.service;
+ package com.solara.backend.service;
 
 import java.util.List;
 import java.util.Optional;
@@ -40,13 +40,16 @@ public class FieldService {
         return fieldRepository.findById(id);
     }
 
+    public List<Field> getFieldsByUserId(UUID userId) {
+        return fieldRepository.findByUserId(userId);
+    }
+
     public Field updateField(UUID id, Field fieldDetails) {
         Field existingField = fieldRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Field not found with id: " + id));
 
         existingField.setName(fieldDetails.getName());
-        existingField.setLatitude(fieldDetails.getLatitude());
-        existingField.setLongitude(fieldDetails.getLongitude());
+        existingField.setLocation(fieldDetails.getLocation());
         existingField.setAreaHa(fieldDetails.getAreaHa());
         existingField.setSoilType(fieldDetails.getSoilType());
 

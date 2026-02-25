@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.solara.backend.dto.request.FieldDTO;
 import com.solara.backend.dto.request.FieldPropertiesDTO;
+import com.solara.backend.dto.response.BasicResponse;
+import com.solara.backend.dto.response.FieldResponseDTO;
 import com.solara.backend.entity.Field;
 import com.solara.backend.entity.FieldProperties;
 import com.solara.backend.entity.User;
@@ -39,38 +41,43 @@ public class FieldController {
 
     // Create (POST)
     @PostMapping("/create-field")
-    public ResponseEntity<Field> createField(
+    public ResponseEntity<BasicResponse> createField(
             @RequestBody FieldDTO field,
-            @RequestBody FieldPropertiesDTO fieldProperties,
             @AuthenticationPrincipal User currentUser) {
                 
         Field fieldEntity = field.toEntity();
         fieldEntity.setUserId(currentUser.getID());
         Field savedField = fieldService.createField(fieldEntity);
+        
+        BasicResponse fieldResponse = BasicResponse.builder()
+                .id(savedField.getId().toString())
+                .name(savedField.getName())
+                .messageString("Field created successfully")
+                .build();
 
-        if (fieldProperties != null) {
-            fieldPropertyService.createFieldPropertiesWithFieldID(savedField.getId(), fieldProperties);
-        }else {
-            // If no properties provided, create default properties
-            FieldProperties defaultProperties = new FieldProperties();
-            defaultProperties.setFieldId(savedField.getId());
-            fieldPropertyService.createFieldPropertiesWithFieldID(savedField.getId(), new FieldPropertiesDTO(defaultProperties));
-        }
+        FieldProperties defaultProperties = new FieldProperties();
+        defaultProperties.setFieldId(savedField.getId());
+        fieldPropertyService.createFieldPropertiesWithFieldID(savedField.getId(), new FieldPropertiesDTO(defaultProperties));
 
-        return new ResponseEntity<>(savedField, HttpStatus.CREATED);
+
+        return new ResponseEntity<>(fieldResponse, HttpStatus.CREATED);
     }
 
     // Read All (GET)
     @GetMapping("/all")
-    public ResponseEntity<List<Field>> getAllFields() {
+    public ResponseEntity<List<FieldResponseDTO>> getAllFields() {
         List<Field> fields = fieldService.getAllFields();
-        return ResponseEntity.ok(fields);
+        List<FieldResponseDTO> fieldResponseDTOs = fields.stream()
+                .map(FieldResponseDTO::new)
+                .toList();
+        return ResponseEntity.ok(fieldResponseDTOs);
     }
 
     // Read One (GET)
     @GetMapping("/{id}")
-    public ResponseEntity<Field> getFieldById(@PathVariable UUID id) {
+    public ResponseEntity<FieldResponseDTO> getFieldById(@PathVariable UUID id) {
         return fieldService.getFieldById(id)
+                .map(FieldResponseDTO::new)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -78,12 +85,23 @@ public class FieldController {
     // Read All Paginated (GET)
     // Example usage: GET /api/fields/paginated?page=0&size=10
     @GetMapping("/paginated")
-    public ResponseEntity<Page<Field>> getFieldsPaginated(
+    public ResponseEntity<Page<FieldResponseDTO>> getFieldsPaginated(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         
         Page<Field> fieldsPage = fieldService.getAllFieldsPaginated(page, size);
-        return ResponseEntity.ok(fieldsPage);
+        Page<FieldResponseDTO> fieldResponseDTOPage = fieldsPage.map(FieldResponseDTO::new);
+        return ResponseEntity.ok(fieldResponseDTOPage);
+    }
+
+    // Get Fields by User ID (GET)
+    @GetMapping("/user-fields")
+    public ResponseEntity<List<FieldResponseDTO>> getFieldsByUserId(@AuthenticationPrincipal User currentUser) {
+        List<Field> fields = fieldService.getFieldsByUserId(currentUser.getID());
+        List<FieldResponseDTO> fieldResponseDTOs = fields.stream()
+                .map(FieldResponseDTO::new)
+                .toList();
+        return ResponseEntity.ok(fieldResponseDTOs);
     }
 
     // Get Field Properties (GET)
@@ -98,9 +116,14 @@ public class FieldController {
 
     // Update (PUT)
     @PutMapping("/{id}")
-    public ResponseEntity<Field> updateFieldWithFieldId(@PathVariable UUID id, @RequestBody FieldDTO fieldDetails) {
+    public ResponseEntity<BasicResponse> updateFieldWithFieldId(@PathVariable UUID id, @RequestBody FieldDTO fieldDetails) {
         Field field = fieldService.updateField(id, fieldDetails.toEntity());
-        return ResponseEntity.ok(field);
+        BasicResponse fieldResponse = BasicResponse.builder()
+                .id(field.getId().toString())
+                .name(field.getName())
+                .messageString("Field updated successfully")
+                .build();
+        return ResponseEntity.ok(fieldResponse);
     }
 
     // Update Field Properties (PUT)
