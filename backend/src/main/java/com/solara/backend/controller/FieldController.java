@@ -56,6 +56,11 @@ public class FieldController {
                 .build();
 
         FieldProperties defaultProperties = new FieldProperties();
+        defaultProperties.setNitrogen(52.6);
+        defaultProperties.setPhosphorus(58.1);
+        defaultProperties.setPotassium(52.0);
+        defaultProperties.setPh(6.44);
+
         defaultProperties.setFieldId(savedField.getId());
         fieldPropertyService.createFieldPropertiesWithFieldID(savedField.getId(), new FieldPropertiesDTO(defaultProperties));
 

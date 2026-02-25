@@ -1,5 +1,6 @@
 package com.solara.backend.service;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -32,10 +33,13 @@ public class FieldPropertyService {
             throw new RuntimeException("Field properties not found for field id: " + fieldID);
         }
 
+        LocalDateTime now = LocalDateTime.now();
+
         existingProperties.setNitrogen(properties.getNitrogen());
         existingProperties.setPhosphorus(properties.getPhosphorus());
         existingProperties.setPotassium(properties.getPotassium());
         existingProperties.setPh(properties.getPh());
+        existingProperties.setUpdatedAt(now);
 
         return fieldPropertiesRepository.save(existingProperties);
     }
