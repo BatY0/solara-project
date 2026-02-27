@@ -46,8 +46,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         try {
             userEmail = jwtService.extractUsername(jwt);
         } catch (Exception e) {
-            // Token is expired or malformed — continue without authenticating
-            filterChain.doFilter(request, response);
+            // Token is expired or malformed — respond with 401 immediately
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\":\"Token expired or invalid. Please log in again.\"}");
             return;
         }
 

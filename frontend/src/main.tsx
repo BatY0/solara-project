@@ -4,6 +4,7 @@ import { ChakraProvider } from "@chakra-ui/react"
 import { system } from "./theme"
 import './i18n'
 import './styles/index.css'
+import 'leaflet/dist/leaflet.css'
 import App from './app/App.tsx'
 
 createRoot(document.getElementById('root')!).render(
