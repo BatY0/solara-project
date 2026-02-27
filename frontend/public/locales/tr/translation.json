@@ -175,6 +175,7 @@
     "temperature": "Sıcaklık",
     "battery": "Pil",
     "view_details": "Detaylı Analizi Gör",
+    "view_all_fields": "Tümünü Gör ({{count}})",
     "add_field_desc": "Sisteme yeni bir IoT cihazı ve tarla tanımlayın.",
     "loading": "Verileriniz yükleniyor..."
   },
@@ -217,7 +218,8 @@
     "subtitle": "Hesabınızı ve tercihlerinizi yönetin.",
     "language": "Dil",
     "language_desc": "Tercih ettiğiniz dili seçin",
-    "save": "Değişiklikleri Kaydet"
+    "save": "Değişiklikleri Kaydet",
+    "saved_success": "Dil tercihi kaydedildi!"
   },
   "sidebar": {
     "dashboard": "Panelim",
@@ -232,6 +234,16 @@
     "area_positive": "Alan 0'dan büyük olmalıdır",
     "area_too_large": "Alan gerçekçi olmayan bir şekilde büyük",
     "max_length_100": "Maksimum uzunluk 100 karakterdir",
-    "positive_only": "0 veya pozitif olmalıdır"
+    "positive_only": "0 veya pozitif olmalıdır",
+    "location_required": "Lütfen harita üzerinde tarla sınırını çizin (minimum 3 nokta)"
+  },
+  "map": {
+    "click_hint_few": "Tarla köşelerini işaretlemek için uydu haritasına tıklayın. Minimum 3 nokta.",
+    "click_hint_enough": "Poligonu kilitlemek için \"Bitir\" düğmesine tıklayın veya daha fazla nokta ekleyin.",
+    "status_add_points": "Nokta eklemek için haritaya tıklayın ({{count}}/3 min)",
+    "status_ready": "{{count}} nokta — ~{{area}} ha",
+    "status_locked": "Poligon kilitlendi — {{area}} ha",
+    "boundary_saved": "Tarla sınırı kaydedildi — {{count}} köşe",
+    "locate_me": "Konumuma git"
   }
 }

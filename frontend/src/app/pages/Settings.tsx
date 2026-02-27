@@ -1,13 +1,22 @@
+import { useState } from 'react';
 import { Box, Flex, Text, Button, chakra } from '@chakra-ui/react';
-import { Globe, Save } from 'lucide-react';
+import { Globe, Save, CheckCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 
 export const Settings = () => {
     const { t, i18n } = useTranslation();
+    const [saved, setSaved] = useState(false);
 
     const handleLanguageChange = (lng: string) => {
         i18n.changeLanguage(lng);
+    };
+
+    const handleSave = () => {
+        // Persist to localStorage so the language survives page refresh
+        localStorage.setItem('i18nextLng', i18n.language);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2500);
     };
 
     return (
@@ -47,8 +56,18 @@ export const Settings = () => {
                         </Flex>
                     </Flex>
 
-                    <Flex p={4} bg="gray.50" borderTop="1px solid" borderColor="gray.100" justify="flex-end">
+                    <Flex p={4} bg="gray.50" borderTop="1px solid" borderColor="gray.100" justify="space-between" align="center">
+                        {/* Success banner */}
+                        {saved && (
+                            <Flex align="center" gap={2} color="green.600">
+                                <CheckCircle size={16} />
+                                <Text fontSize="sm" fontWeight="medium">{t('settings.saved_success')}</Text>
+                            </Flex>
+                        )}
+                        {!saved && <Box />}
+
                         <Button
+                            onClick={handleSave}
                             display="flex" alignItems="center" gap={2} px={6} py={4}
                             bg="brand.500" color="white" fontWeight="bold" borderRadius="xl"
                             _hover={{ bg: "brand.600" }} shadow="md"

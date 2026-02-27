@@ -20,13 +20,15 @@ export const Sidebar = () => {
         <Flex
             as="aside"
             w="256px"
+            h="100vh"
             bg="solara.midnightSlate"
             flexDirection="column"
             display={{ base: "none", md: "flex" }}
             flexShrink={0}
             transition="all 0.3s"
             zIndex={30}
-            position="relative"
+            position="sticky"
+            top={0}
         >
             <Flex h="80px" align="center" px={6} borderBottom="1px solid" borderColor="whiteAlpha.200">
                 <Flex align="center" gap={2}>

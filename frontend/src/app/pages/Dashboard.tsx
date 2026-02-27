@@ -121,10 +121,15 @@ export const Dashboard = () => {
               <Text fontSize="lg" fontWeight="bold" color="neutral.dark">
                 {t('dashboard.registered_fields')}
               </Text>
+              {fields.length > 6 && (
+                <Text fontSize="sm" color="brand.500" fontWeight="medium" cursor="pointer" onClick={() => navigate('/fields')}>
+                  {t('dashboard.view_all_fields', { count: fields.length })}
+                </Text>
+              )}
             </Flex>
 
             <Box display="grid" gridTemplateColumns={{ base: "1fr", xl: "repeat(2, 1fr)" }} gap={6}>
-              {fields.map(field => (
+              {fields.slice(0, 6).map(field => (
                 <FieldCard
                   key={field.id}
                   field={field}

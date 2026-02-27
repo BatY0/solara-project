@@ -175,6 +175,7 @@
     "temperature": "Temperature",
     "battery": "Battery",
     "view_details": "View Detailed Analysis",
+    "view_all_fields": "View All ({{count}})",
     "add_field_desc": "Define a new IoT device and field to the system.",
     "loading": "Loading your data..."
   },
@@ -217,7 +218,8 @@
     "subtitle": "Manage your account and preferences.",
     "language": "Language",
     "language_desc": "Select your preferred language",
-    "save": "Save Changes"
+    "save": "Save Changes",
+    "saved_success": "Language preference saved!"
   },
   "sidebar": {
     "dashboard": "Dashboard",
@@ -232,6 +234,16 @@
     "area_positive": "Area must be greater than 0",
     "area_too_large": "Area is unrealistically large",
     "max_length_100": "Maximum length is 100 characters",
-    "positive_only": "Must be 0 or positive"
+    "positive_only": "Must be 0 or positive",
+    "location_required": "Please draw your field boundary on the map (minimum 3 points)"
+  },
+  "map": {
+    "click_hint_few": "Click on the satellite map to mark your field corners. Minimum 3 points.",
+    "click_hint_enough": "Click \"Finish\" to lock the polygon, or keep adding points.",
+    "status_add_points": "Click map to add points ({{count}}/3 min)",
+    "status_ready": "{{count}} pts — ~{{area}} ha",
+    "status_locked": "Polygon locked — {{area}} ha",
+    "boundary_saved": "Field boundary saved — {{count}} vertices",
+    "locate_me": "Fly to my location"
   }
 }

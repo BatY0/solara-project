@@ -3,6 +3,7 @@ import { Box, Flex, Text, Input, Button, chakra, Slider } from '@chakra-ui/react
 import { MapPin, CheckCircle, ArrowRight, ArrowLeft, Map as MapIcon, Leaf, Ruler, Mountain, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fieldsService } from '../../features/fields/fields.service';
+import MapSelector from '../../components/map/MapSelector';
 
 interface AddFieldWizardProps {
     isOpen: boolean;
@@ -98,6 +99,8 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
             else if (area > 1000000) newErrors.areaHa = t('validation.area_too_large');
 
             if (!formData.soilType) newErrors.soilType = t('validation.required');
+
+            if (!formData.location || formData.location.length < 4) newErrors.location = t('validation.location_required');
         }
         if (s === 2) {
             if (formData.nitrogen !== '' && parseFloat(formData.nitrogen) < 0) newErrors.nitrogen = t('validation.positive_only');
@@ -232,23 +235,26 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
                                     </Box>
                                 </Box>
 
-                                {/* Map Placeholder */}
+                                {/* Map Selector */}
                                 <Box>
-                                    <Text fontSize="sm" fontWeight="semibold" color="gray.700" mb={1}>{t('add_field.draw_boundaries')}</Text>
-                                    <Flex
-                                        position="relative" w="full" h="48" bg="gray.100" borderRadius="xl"
-                                        border="2px dashed" borderColor="gray.300" direction="column" align="center" justify="center"
-                                        overflow="hidden" cursor="crosshair" _hover={{ borderColor: 'brand.400' }} transition="border-color 0.2s"
-                                    >
-                                        <MapIcon size={40} color="#059669" style={{ marginBottom: '8px' }} />
-                                        <Text bg="whiteAlpha.800" px={3} py={1} borderRadius="lg" fontSize="sm" fontWeight="medium" color="gray.500" backdropFilter="blur(4px)">
-                                            {t('add_field.map_hint')}
-                                        </Text>
+                                    <Flex align="center" gap={1.5} mb={2}>
+                                        <MapIcon size={16} color="#059669" />
+                                        <Text fontSize="sm" fontWeight="semibold" color="gray.700">{t('add_field.draw_boundaries')}</Text>
+                                        <Text fontSize="xs" color="red.400" fontWeight="medium">*</Text>
                                     </Flex>
-                                    <Flex align="center" gap={1} mt={2} color="brand.600" fontSize="xs">
-                                        <CheckCircle size={12} />
-                                        <Text>{t('add_field.map_info')}</Text>
-                                    </Flex>
+                                    <MapSelector
+                                        value={formData.location}
+                                        onChange={(coords) => {
+                                            setField('location', coords);
+                                            if (errors.location && coords && coords.length >= 4) setErrors(prev => ({ ...prev, location: '' }));
+                                        }}
+                                        onAreaCalculated={(ha) => {
+                                            const rounded = parseFloat(ha.toFixed(2));
+                                            setField('areaHa', String(rounded));
+                                            if (errors.areaHa && rounded > 0) setErrors(prev => ({ ...prev, areaHa: '' }));
+                                        }}
+                                    />
+                                    {errors.location && <Text fontSize="xs" color="red.500" mt={1} fontWeight="medium">⚠ {errors.location}</Text>}
                                 </Box>
                             </Flex>
                         )}
