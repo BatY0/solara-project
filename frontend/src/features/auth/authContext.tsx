@@ -23,19 +23,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser({
             id: "dev-id",
             email: "dev@solara.app",
-            firstName: "Dev",
-            lastName: "User"
+            name: "Dev",
+            surname: "User"
           });
         } else {
-          // Decode JWT to extract user email from the 'sub' claim
+          // Decode JWT for fallback, but fetch real profile from backend
           try {
             const payload = jwtDecode<{ sub?: string }>(storedToken);
-            if (payload.sub) {
-              setUser({ email: payload.sub });
-            } else {
-              console.error('Token missing sub claim');
+            if (!payload.sub) {
               logout();
+              return;
             }
+
+            try {
+              const response = await api.get<User>('/users/me');
+              setUser(response.data);
+            } catch (err) {
+              console.error('Failed to fetch user profile, falling back to token sub', err);
+              setUser({ email: payload.sub });
+            }
+
           } catch {
             console.error('Failed to decode token');
             logout();
@@ -64,8 +71,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('token', newToken);
     setToken(newToken);
 
-    // Use the email from the login response directly
-    setUser({ email: response.data.email || data.email });
+    // Await User profile fetch immediately after login
+    try {
+      const profile = await api.get<User>('/users/me');
+      setUser(profile.data);
+    } catch {
+      setUser({ email: response.data.email || data.email });
+    }
   };
 
   const register = async (data: RegisterRequest) => {
@@ -78,8 +90,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const fakeUser: User = {
       id: "dev-id",
       email: "dev@solara.app",
-      firstName: "Dev",
-      lastName: "User"
+      name: "Dev",
+      surname: "User"
     };
 
     localStorage.setItem('token', fakeToken);
@@ -87,8 +99,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(fakeUser);
   };
 
+  const updateLocalUser = useCallback((updatedUser: User) => {
+    setUser(updatedUser);
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout, mockLogin }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout, mockLogin, updateLocalUser }}>
       {children}
     </AuthContext.Provider>
   );

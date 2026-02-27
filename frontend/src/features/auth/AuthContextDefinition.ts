@@ -9,6 +9,7 @@ interface AuthContextType {
   register: (data: RegisterRequest) => Promise<void>;
   mockLogin: () => Promise<void>;
   logout: () => void;
+  updateLocalUser: (user: User) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);

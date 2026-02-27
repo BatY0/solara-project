@@ -88,11 +88,11 @@ export const Sidebar = () => {
                         bg="brand.500" align="center" justify="center"
                         fontSize="sm" fontWeight="bold" color="white"
                     >
-                        {user?.firstName?.[0] || ""}{user?.lastName?.[0] || ""}
+                        {user?.name?.[0] || ""}{user?.surname?.[0] || ""}
                     </Flex>
                     <Box>
                         <Text fontSize="sm" fontWeight="medium" color="white">
-                            {user?.firstName} {user?.lastName}
+                            {user?.name} {user?.surname}
                         </Text>
                         <Text fontSize="xs" color="neutral.subtext">
                             {t("sidebar.farmer")}

@@ -1,9 +1,8 @@
 export interface User {
   id?: string;
   email: string;
-  // Add other user fields as needed based on backend response
-  firstName?: string;
-  lastName?: string;
+  name?: string;
+  surname?: string;
 }
 
 export interface LoginRequest {
