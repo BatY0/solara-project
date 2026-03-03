@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.solara.backend.dto.request.FieldDTO;
 import com.solara.backend.dto.request.FieldPropertiesDTO;
 import com.solara.backend.dto.response.BasicResponse;
+import com.solara.backend.dto.response.ErrorResponse;
 import com.solara.backend.dto.response.FieldResponseDTO;
 import com.solara.backend.entity.Field;
 import com.solara.backend.entity.FieldProperties;
@@ -41,18 +42,30 @@ public class FieldController {
 
     // Create (POST)
     @PostMapping("/create-field")
-    public ResponseEntity<BasicResponse> createField(
+    public ResponseEntity<?> createField(
             @RequestBody FieldDTO field,
             @AuthenticationPrincipal User currentUser) {
-                
-        Field fieldEntity = field.toEntity();
+        
+        Field fieldEntity;
+
+        try {
+            fieldEntity = field.toEntity();
+        } catch (Exception e) {
+            ErrorResponse errorResponse = ErrorResponse.builder()
+                    .status(HttpStatus.BAD_REQUEST.value())
+                    .error("Bad Request")
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }
+
         fieldEntity.setUserId(currentUser.getID());
-        Field savedField = fieldService.createField(fieldEntity);
+        fieldEntity = fieldService.createField(fieldEntity);
         
         BasicResponse fieldResponse = BasicResponse.builder()
-                .id(savedField.getId().toString())
-                .name(savedField.getName())
-                .messageString("Field created successfully")
+                .id(fieldEntity.getId().toString())
+                .name(fieldEntity.getName())
+                .messageString("Field created successfully with provided values.")
                 .build();
 
         FieldProperties defaultProperties = new FieldProperties();
@@ -61,8 +74,8 @@ public class FieldController {
         defaultProperties.setPotassium(52.0);
         defaultProperties.setPh(6.44);
 
-        defaultProperties.setFieldId(savedField.getId());
-        fieldPropertyService.createFieldPropertiesWithFieldID(savedField.getId(), new FieldPropertiesDTO(defaultProperties));
+        defaultProperties.setFieldId(fieldEntity.getId());
+        fieldPropertyService.createFieldPropertiesWithFieldID(fieldEntity.getId(), new FieldPropertiesDTO(defaultProperties));
 
 
         return new ResponseEntity<>(fieldResponse, HttpStatus.CREATED);
@@ -121,11 +134,23 @@ public class FieldController {
 
     // Update (PUT)
     @PutMapping("/{id}")
-    public ResponseEntity<BasicResponse> updateFieldWithFieldId(@PathVariable UUID id, @RequestBody FieldDTO fieldDetails) {
-        Field field = fieldService.updateField(id, fieldDetails.toEntity());
+    public ResponseEntity<?> updateFieldWithFieldId(@PathVariable UUID id, @RequestBody FieldDTO fieldDetails) {
+        Field updatedField;
+
+        try {
+            updatedField = fieldService.updateField(id, fieldDetails.toEntity());
+        } catch (Exception e) {
+            ErrorResponse errorResponse = ErrorResponse.builder()
+                    .status(HttpStatus.BAD_REQUEST.value())
+                    .error("Bad Request")
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }
+
         BasicResponse fieldResponse = BasicResponse.builder()
-                .id(field.getId().toString())
-                .name(field.getName())
+                .id(updatedField.getId().toString())
+                .name(updatedField.getName())
                 .messageString("Field updated successfully")
                 .build();
         return ResponseEntity.ok(fieldResponse);

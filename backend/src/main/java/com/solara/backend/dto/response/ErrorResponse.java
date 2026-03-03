@@ -11,11 +11,12 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class BasicResponse {
-    @Builder.Default
-    private LocalDateTime timestamp = java.time.LocalDateTime.now();
+public class ErrorResponse {
 
-    private String id;
-    private String name;
-    private String messageString;
+    @Builder.Default
+    private LocalDateTime timestamp = LocalDateTime.now();
+
+    private int status; // e.g., 400
+    private String error; // e.g., "Bad Request"
+    private String message;
 }
