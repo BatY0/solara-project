@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import {
     MapContainer,
     TileLayer,
@@ -98,6 +98,9 @@ function DrawHandler({
     useMapEvents({
         click(e) {
             if (finished) return;
+            // Ignore clicks that originated from a Leaflet control (e.g. zoom +/- buttons)
+            const target = e.originalEvent.target as HTMLElement;
+            if (target.closest('.leaflet-control')) return;
             setPoints([...points, [e.latlng.lat, e.latlng.lng]]);
         },
     });
@@ -108,6 +111,14 @@ function DrawHandler({
 function LocateButton({ title }: { title: string }) {
     const map = useMap();
     const [locating, setLocating] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    // Use Leaflet's own API to prevent clicks from reaching the map click handler
+    useEffect(() => {
+        if (containerRef.current) {
+            L.DomEvent.disableClickPropagation(containerRef.current);
+        }
+    }, []);
 
     const handleLocate = () => {
         if (!navigator.geolocation) return;
@@ -124,6 +135,7 @@ function LocateButton({ title }: { title: string }) {
 
     return (
         <div
+            ref={containerRef}
             style={{
                 position: 'absolute',
                 bottom: '80px',
@@ -132,7 +144,7 @@ function LocateButton({ title }: { title: string }) {
             }}
         >
             <button
-                onClick={(e) => { e.stopPropagation(); handleLocate(); }}
+                onClick={handleLocate}
                 disabled={locating}
                 title={title}
                 style={{
