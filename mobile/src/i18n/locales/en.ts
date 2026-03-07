@@ -171,7 +171,7 @@ export default {
             request_error_empty_email: 'Please enter your email',
             request_success_sent: 'Verification code sent',
             request_failed: 'Failed to send code',
-
+       
             code_title: 'Verify your email',
             code_subtitle: 'Enter the 6-digit code sent to {{email}}',
             code_label: 'Verification Code',
@@ -179,7 +179,7 @@ export default {
             code_invalid: 'Invalid verification code',
             code_resend_text: "Didn't receive a code? ",
             code_resend_link: 'Resend',
-
+       
             reset_title: 'New Password',
             reset_subtitle: 'Please choose a strong password for your account.',
             reset_label_new: 'New Password',
@@ -188,12 +188,14 @@ export default {
             reset_success: 'Password reset successfully!',
             reset_failed: 'Failed to reset password',
             reset_passwords_no_match: 'Passwords do not match',
-
+       
             completed_title_forgot: 'Password Reset',
             completed_title_verify: 'Account Verified',
             completed_button: 'Go to Login',
             completed_success_verify: 'Account verified successfully!',
         },
+        logout_confirm_title: 'Log Out',
+        logout_confirm_message: 'Are you sure you want to log out?',
     },
     common: {
         cancel: 'Cancel',

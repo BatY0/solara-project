@@ -7,6 +7,7 @@ import {
     ScrollView,
     ActivityIndicator,
     RefreshControl,
+    Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -46,9 +47,26 @@ export default function DashboardScreen() {
         fetchFields();
     }, [fetchFields]);
 
-    const handleLogout = async () => {
-        await logout();
-        router.replace('/(auth)/login');
+    const handleLogout = () => {
+        Alert.alert(
+            t('auth.logout_confirm_title'),
+            t('auth.logout_confirm_message'),
+            [
+                {
+                    text: t('common.cancel'),
+                    style: 'cancel',
+                },
+                {
+                    text: t('common.confirm'),
+                    style: 'destructive',
+                    onPress: async () => {
+                        await logout();
+                        router.replace('/(auth)/login');
+                    },
+                },
+            ],
+            { cancelable: true },
+        );
     };
 
     const onRefresh = () => {
@@ -140,6 +158,9 @@ export default function DashboardScreen() {
 
 function FieldCard({ field, t }: { field: Field; t: (key: string) => string }) {
     const isOnline = field.status === 'online';
+    const soilKey = `add_field.${field.soilType}`;
+    const translatedSoil = t(soilKey);
+    const soilLabel = translatedSoil === soilKey ? field.soilType : translatedSoil;
     return (
         <View style={styles.fieldCard}>
             <View style={styles.fieldCardLeft}>
@@ -149,7 +170,7 @@ function FieldCard({ field, t }: { field: Field; t: (key: string) => string }) {
                 <View style={{ flex: 1 }}>
                     <Text style={styles.fieldName} numberOfLines={1}>{field.name}</Text>
                     <Text style={styles.fieldMeta}>
-                        {field.areaHa} ha  ·  {field.soilType}
+                        {field.areaHa} ha  ·  {soilLabel}
                     </Text>
                 </View>
             </View>

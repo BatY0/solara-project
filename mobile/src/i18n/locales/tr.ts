@@ -7,7 +7,7 @@ export default {
         active_sensors: 'Aktif Sensörler',
         registered_fields: 'Kayıtlı Tarlalar',
         online: 'Online',
-        offline: 'Offline',
+        offline: 'Çevrimdışı',
         moisture: 'Nem',
         temperature: 'Sıcaklık',
         view_details: 'Detayları Gör',
@@ -171,7 +171,7 @@ export default {
             request_error_empty_email: 'Lütfen e-posta adresinizi girin',
             request_success_sent: 'Doğrulama kodu gönderildi',
             request_failed: 'Kod gönderilemedi',
-
+       
             code_title: 'E-postanızı doğrulayın',
             code_subtitle: '{{email}} adresine gönderilen 6 haneli kodu girin',
             code_label: 'Doğrulama Kodu',
@@ -179,7 +179,7 @@ export default {
             code_invalid: 'Geçersiz doğrulama kodu',
             code_resend_text: 'Kodu almadınız mı? ',
             code_resend_link: 'Tekrar Gönder',
-
+       
             reset_title: 'Yeni Şifre',
             reset_subtitle: 'Hesabınız için güçlü bir şifre belirleyin.',
             reset_label_new: 'Yeni Şifre',
@@ -188,12 +188,14 @@ export default {
             reset_success: 'Şifre başarıyla sıfırlandı!',
             reset_failed: 'Şifre sıfırlanamadı',
             reset_passwords_no_match: 'Şifreler eşleşmiyor',
-
+       
             completed_title_forgot: 'Şifre Sıfırlandı',
             completed_title_verify: 'Hesap Doğrulandı',
             completed_button: 'Girişe Dön',
             completed_success_verify: 'Hesabınız başarıyla doğrulandı!',
         },
+        logout_confirm_title: 'Oturumu Kapat',
+        logout_confirm_message: 'Oturumu kapatmak istediğinizden emin misiniz?',
     },
     common: {
         cancel: 'İptal',
