@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { CheckCircle, ArrowLeft, ArrowRight, AlertCircle, Leaf, Ruler, Mountain, MapPin, X } from 'lucide-react-native';
 import { theme } from '../theme/theme';
 import { fieldsService } from '../services/fieldsService';
+import MapSelector from './MapSelector';
 
 interface Props {
     visible: boolean;
@@ -26,8 +27,7 @@ interface FormData {
     name: string;
     areaHa: string;
     soilType: string;
-    lat: string;
-    lng: string;
+    location: number[][] | null;
     nitrogen: string;
     phosphorus: string;
     potassium: string;
@@ -43,8 +43,7 @@ const initialFormData: FormData = {
     name: '',
     areaHa: '',
     soilType: '',
-    lat: '',
-    lng: '',
+    location: null,
     nitrogen: '',
     phosphorus: '',
     potassium: '',
@@ -80,17 +79,9 @@ export default function AddFieldModal({ visible, onClose, onSuccess }: Props) {
         onClose();
     };
 
-    const buildPolygon = (): number[][] => {
-        const lat = parseFloat(formData.lat);
-        const lng = parseFloat(formData.lng);
-        if (!isNaN(lat) && !isNaN(lng)) {
-            const d = 0.001;
-            return [
-                [lng, lat], [lng + d, lat], [lng + d, lat + d],
-                [lng, lat + d], [lng, lat],
-            ];
-        }
-        // Default: Turkey region
+    const getLocationForApi = (): number[][] => {
+        if (formData.location && formData.location.length >= 4) return formData.location;
+        // Default: Turkey region (closed polygon [[lng, lat], ...])
         return [
             [30.7133, 36.8969], [30.7143, 36.8969], [30.7143, 36.8979],
             [30.7133, 36.8979], [30.7133, 36.8969],
@@ -106,6 +97,7 @@ export default function AddFieldModal({ visible, onClose, onSuccess }: Props) {
             if (!formData.areaHa || isNaN(area) || area <= 0) newErrors.areaHa = t('validation.area_positive');
             else if (area > 1000000) newErrors.areaHa = t('validation.area_too_large');
             if (!formData.soilType) newErrors.soilType = t('validation.required');
+            if (!formData.location || formData.location.length < 4) newErrors.location = t('validation.location_required');
         }
         if (s === 2) {
             if (formData.nitrogen !== '' && parseFloat(formData.nitrogen) < 0) newErrors.nitrogen = t('validation.positive_only');
@@ -121,7 +113,7 @@ export default function AddFieldModal({ visible, onClose, onSuccess }: Props) {
         try {
             const created = await fieldsService.createField({
                 name: formData.name,
-                location: buildPolygon(),
+                location: getLocationForApi(),
                 areaHa: parseFloat(formData.areaHa) || 0,
                 soilType: formData.soilType || 'clay',
             });
@@ -249,31 +241,27 @@ export default function AddFieldModal({ visible, onClose, onSuccess }: Props) {
                                 </View>
                             </View>
 
-                            {/* Location */}
+                            {/* Location — polygon on map */}
                             <View style={styles.fieldGroup}>
                                 <View style={styles.labelRow}>
                                     <MapPin color="#059669" size={15} />
-                                    <Text style={styles.label}>{t('add_field.location_section')}</Text>
+                                    <Text style={styles.label}>{t('map.draw_boundaries')}</Text>
+                                    <Text style={styles.required}>*</Text>
                                 </View>
-                                <Text style={styles.hintText}>{t('add_field.location_desc')}</Text>
-                                <View style={styles.twoCol}>
-                                    <TextInput
-                                        style={[styles.input, { flex: 1 }]}
-                                        placeholder={t('add_field.lat_ph')}
-                                        placeholderTextColor={theme.colors.neutral.subtext}
-                                        keyboardType="decimal-pad"
-                                        value={formData.lat}
-                                        onChangeText={v => setField('lat', v)}
-                                    />
-                                    <TextInput
-                                        style={[styles.input, { flex: 1 }]}
-                                        placeholder={t('add_field.lng_ph')}
-                                        placeholderTextColor={theme.colors.neutral.subtext}
-                                        keyboardType="decimal-pad"
-                                        value={formData.lng}
-                                        onChangeText={v => setField('lng', v)}
-                                    />
-                                </View>
+                                <Text style={styles.hintText}>{t('map.map_hint')}</Text>
+                                <MapSelector
+                                    value={formData.location}
+                                    onChange={(coords) => {
+                                        setField('location', coords);
+                                        if (errors.location && coords && coords.length >= 4) setErrors(p => ({ ...p, location: '' }));
+                                    }}
+                                    onAreaCalculated={(ha) => {
+                                        const rounded = Math.round(ha * 100) / 100;
+                                        setField('areaHa', String(rounded));
+                                        if (errors.areaHa && rounded > 0) setErrors(p => ({ ...p, areaHa: '' }));
+                                    }}
+                                />
+                                {errors.location ? <Text style={styles.errorText}>⚠ {errors.location}</Text> : null}
                             </View>
                         </View>
                     )}
