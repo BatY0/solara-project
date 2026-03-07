@@ -15,6 +15,7 @@ import { theme } from '../../src/theme/theme';
 import { Mail, ShieldCheck, KeyRound, ArrowLeft, AlertCircle, CheckCircle, Lock, Eye, EyeOff } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../../src/api/api';
+import { useTranslation } from 'react-i18next';
 
 const CODE_LENGTH = 6;
 
@@ -38,6 +39,7 @@ export default function VerifyScreen() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [isCompleted, setIsCompleted] = useState(false);
+    const { t } = useTranslation();
 
     // Auto-send verification code when arriving with a prefilled email (e.g. from registration)
     useEffect(() => {
@@ -46,9 +48,9 @@ export default function VerifyScreen() {
                 setIsLoading(true);
                 try {
                     await api.post('/auth/verify/request', { email: prefilledEmail });
-                    setSuccess('Verification code sent');
+                    setSuccess(t('auth.verify.request_success_sent'));
                 } catch (err: any) {
-                    setError(err.response?.data?.message || 'Failed to send code');
+                    setError(err.response?.data?.message || t('auth.verify.request_failed'));
                 } finally {
                     setIsLoading(false);
                 }
@@ -59,7 +61,7 @@ export default function VerifyScreen() {
     // --- Step 1: Request Code ---
     const handleRequestCode = async () => {
         if (!email) {
-            setError('Please enter your email');
+            setError(t('auth.verify.request_error_empty_email'));
             return;
         }
 
@@ -68,9 +70,9 @@ export default function VerifyScreen() {
         try {
             await api.post('/auth/verify/request', { email });
             setStep(2);
-            setSuccess('Verification code sent');
+            setSuccess(t('auth.verify.request_success_sent'));
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to send code');
+            setError(err.response?.data?.message || t('auth.verify.request_failed'));
         } finally {
             setIsLoading(false);
         }
@@ -86,10 +88,10 @@ export default function VerifyScreen() {
                 setStep(3);
             } else {
                 setIsCompleted(true);
-                setSuccess('Account verified successfully!');
+                setSuccess(t('auth.verify.completed_success_verify'));
             }
         } catch (err: any) {
-            setError('Invalid verification code');
+            setError(t('auth.verify.code_invalid'));
         } finally {
             setIsLoading(false);
         }
@@ -98,7 +100,7 @@ export default function VerifyScreen() {
     // --- Step 3: Reset Password ---
     const handleResetPassword = async () => {
         if (newPassword !== confirmPassword) {
-            setError('Passwords do not match');
+            setError(t('auth.verify.reset_passwords_no_match'));
             return;
         }
 
@@ -111,9 +113,9 @@ export default function VerifyScreen() {
                 code
             });
             setIsCompleted(true);
-            setSuccess('Password reset successfully!');
+            setSuccess(t('auth.verify.reset_success'));
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to reset password');
+            setError(err.response?.data?.message || t('auth.verify.reset_failed'));
         } finally {
             setIsLoading(false);
         }
@@ -127,14 +129,14 @@ export default function VerifyScreen() {
                         <CheckCircle color={theme.colors.brand[500]} size={48} />
                     </View>
                     <Text style={styles.successTitle}>
-                        {mode === 'forgot' ? 'Password Reset' : 'Account Verified'}
+                        {mode === 'forgot' ? t('auth.verify.completed_title_forgot') : t('auth.verify.completed_title_verify')}
                     </Text>
                     <Text style={styles.successSubtitle}>{success}</Text>
                     <TouchableOpacity
                         style={styles.button}
                         onPress={() => router.replace('/login')}
                     >
-                        <Text style={styles.buttonText}>Go to Login</Text>
+                        <Text style={styles.buttonText}>{t('auth.verify.completed_button')}</Text>
                     </TouchableOpacity>
                 </View>
             </SafeAreaView>
@@ -148,7 +150,9 @@ export default function VerifyScreen() {
                     <ArrowLeft color={theme.colors.neutral.dark} size={24} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitleText}>
-                    {mode === 'forgot' ? 'Forgot Password' : 'Verify Email'}
+                    {mode === 'forgot'
+                        ? t('auth.verify.screen_title_forgot')
+                        : t('auth.verify.screen_title_verify')}
                 </Text>
             </View>
 
@@ -164,8 +168,8 @@ export default function VerifyScreen() {
                             <View style={styles.iconContainer}>
                                 <Mail color={theme.colors.brand[500]} size={32} />
                             </View>
-                            <Text style={styles.title}>Enter your email</Text>
-                            <Text style={styles.subtitle}>We'll send you a 6-digit verification code.</Text>
+                            <Text style={styles.title}>{t('auth.verify.request_title')}</Text>
+                            <Text style={styles.subtitle}>{t('auth.verify.request_subtitle')}</Text>
 
                             {error ? (
                                 <View style={styles.errorBanner}>
@@ -175,12 +179,12 @@ export default function VerifyScreen() {
                             ) : null}
 
                             <View style={styles.inputGroup}>
-                                <Text style={styles.label}>Email Address</Text>
+                            <Text style={styles.label}>{t('auth.common.email')}</Text>
                                 <View style={styles.inputWrapper}>
                                     <Mail color={theme.colors.neutral.subtext} size={18} style={styles.inputIcon} />
                                     <TextInput
                                         style={styles.input}
-                                        placeholder="example@company.com"
+                                        placeholder={t('auth.common.email_placeholder')}
                                         value={email}
                                         onChangeText={setEmail}
                                         keyboardType="email-address"
@@ -190,7 +194,7 @@ export default function VerifyScreen() {
                             </View>
 
                             <TouchableOpacity style={styles.button} onPress={handleRequestCode} disabled={isLoading}>
-                                {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Send Code</Text>}
+                                {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t('auth.verify.request_button')}</Text>}
                             </TouchableOpacity>
                         </View>
                     )}
@@ -201,8 +205,8 @@ export default function VerifyScreen() {
                             <View style={styles.iconContainer}>
                                 <ShieldCheck color={theme.colors.brand[500]} size={32} />
                             </View>
-                            <Text style={styles.title}>Verify your email</Text>
-                            <Text style={styles.subtitle}>Enter the 6-digit code sent to {email}</Text>
+                            <Text style={styles.title}>{t('auth.verify.code_title')}</Text>
+                            <Text style={styles.subtitle}>{t('auth.verify.code_subtitle', { email })}</Text>
 
                             {error ? (
                                 <View style={styles.errorBanner}>
@@ -212,7 +216,7 @@ export default function VerifyScreen() {
                             ) : null}
 
                             <View style={styles.inputGroup}>
-                                <Text style={styles.label}>Verification Code</Text>
+                                <Text style={styles.label}>{t('auth.verify.code_label')}</Text>
                                 <TextInput
                                     style={[styles.codeInput, { letterSpacing: 8 }]}
                                     placeholder="000000"
@@ -234,11 +238,14 @@ export default function VerifyScreen() {
                                 onPress={() => handleConfirmCode(code)}
                                 disabled={isLoading || code.length < CODE_LENGTH}
                             >
-                                {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Confirm Code</Text>}
+                                {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t('auth.verify.code_button')}</Text>}
                             </TouchableOpacity>
 
                             <TouchableOpacity style={styles.resendButton} onPress={handleRequestCode}>
-                                <Text style={styles.resendText}>Didn't receive a code? <Text style={styles.resendLink}>Resend</Text></Text>
+                                <Text style={styles.resendText}>
+                                    {t('auth.verify.code_resend_text')}
+                                    <Text style={styles.resendLink}>{t('auth.verify.code_resend_link')}</Text>
+                                </Text>
                             </TouchableOpacity>
                         </View>
                     )}
@@ -249,8 +256,8 @@ export default function VerifyScreen() {
                             <View style={styles.iconContainer}>
                                 <KeyRound color={theme.colors.brand[500]} size={32} />
                             </View>
-                            <Text style={styles.title}>New Password</Text>
-                            <Text style={styles.subtitle}>Please choose a strong password for your account.</Text>
+                            <Text style={styles.title}>{t('auth.verify.reset_title')}</Text>
+                            <Text style={styles.subtitle}>{t('auth.verify.reset_subtitle')}</Text>
 
                             {error ? (
                                 <View style={styles.errorBanner}>
@@ -260,7 +267,7 @@ export default function VerifyScreen() {
                             ) : null}
 
                             <View style={styles.inputGroup}>
-                                <Text style={styles.label}>New Password</Text>
+                                <Text style={styles.label}>{t('auth.verify.reset_label_new')}</Text>
                                 <View style={styles.inputWrapper}>
                                     <Lock color={theme.colors.neutral.subtext} size={18} style={styles.inputIcon} />
                                     <TextInput
@@ -277,7 +284,7 @@ export default function VerifyScreen() {
                             </View>
 
                             <View style={styles.inputGroup}>
-                                <Text style={styles.label}>Confirm New Password</Text>
+                                <Text style={styles.label}>{t('auth.verify.reset_label_confirm')}</Text>
                                 <View style={styles.inputWrapper}>
                                     <Lock color={theme.colors.neutral.subtext} size={18} style={styles.inputIcon} />
                                     <TextInput
@@ -291,7 +298,7 @@ export default function VerifyScreen() {
                             </View>
 
                             <TouchableOpacity style={styles.button} onPress={handleResetPassword} disabled={isLoading}>
-                                {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Reset Password</Text>}
+                                {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t('auth.verify.reset_button')}</Text>}
                             </TouchableOpacity>
                         </View>
                     )}

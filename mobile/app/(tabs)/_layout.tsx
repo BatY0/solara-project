@@ -1,8 +1,11 @@
 import { Tabs } from 'expo-router';
 import { theme } from '../../src/theme/theme';
-import { Home, User, Settings } from 'lucide-react-native';
+import { Home, Settings } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 export default function TabsLayout() {
+    const { t } = useTranslation();
+
     return (
         <Tabs screenOptions={{
             tabBarActiveTintColor: theme.colors.brand[500],
@@ -10,24 +13,26 @@ export default function TabsLayout() {
             headerShown: false,
             tabBarStyle: {
                 borderTopColor: theme.colors.neutral.border,
-                height: 60,
+                height: 64,
                 paddingBottom: 10,
+                paddingTop: 6,
             }
         }}>
             <Tabs.Screen
                 name="index"
                 options={{
-                    title: 'Home',
-                    tabBarIcon: ({ color }) => <Home color={color} size={24} />
+                    title: t('sidebar.dashboard'),
+                    tabBarIcon: ({ color }) => <Home color={color} size={24} />,
                 }}
             />
             <Tabs.Screen
                 name="profile"
                 options={{
-                    title: 'Profile',
-                    tabBarIcon: ({ color }) => <User color={color} size={24} />
+                    title: t('sidebar.settings'),
+                    tabBarIcon: ({ color }) => <Settings color={color} size={24} />,
                 }}
             />
         </Tabs>
     );
 }
+
