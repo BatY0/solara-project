@@ -1,9 +1,10 @@
 package com.solara.backend.service;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,7 @@ import com.solara.backend.dto.request.RegisterDTO;
 import com.solara.backend.dto.response.AuthResponse;
 import com.solara.backend.entity.Role;
 import com.solara.backend.entity.User;
+import com.solara.backend.exception.AppException;
 import com.solara.backend.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -28,7 +30,7 @@ public class AuthService {
     public AuthResponse registerUser(RegisterDTO registerRequest) {
 
         if (userRepo.findByEmail(registerRequest.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("Email is already registered");
+            throw new AppException(HttpStatus.BAD_REQUEST, "Email is already registered");
         }
 
         User newUser = User.builder()
@@ -59,7 +61,7 @@ public class AuthService {
                             loginRequest.getEmail(),
                             loginRequest.getPassword()));
         } catch (org.springframework.security.core.AuthenticationException e) {
-            throw new BadCredentialsException("Invalid email or password");
+            throw new AppException(HttpStatus.UNAUTHORIZED, "Invalid email or password");
         }
 
         var user = userRepo.findByEmail(loginRequest.getEmail())
@@ -82,5 +84,11 @@ public class AuthService {
                 .emailVerified(true)
                 .token(jwtToken)
                 .build();
+    }
+
+    public void deleteUser(UUID id) {
+        User user = userRepo.findById(id)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "User not found with id: " + id));
+        userRepo.delete(user);
     }
 }

@@ -84,7 +84,7 @@ public class FieldController {
         List<FieldResponseDTO> fieldResponseDTOs = fields.stream()
                 .map(FieldResponseDTO::new)
                 .toList();
-        return ApiResponse.success(fieldResponseDTOs, "Fields retrieved successfully.");
+        return ApiResponse.success(fieldResponseDTOs, HttpStatus.OK.value(), "Fields retrieved successfully.");
     }
 
     // Read One (GET)
@@ -93,7 +93,7 @@ public class FieldController {
         FieldResponseDTO fieldResponse = fieldService.getFieldById(id)
                 .map(FieldResponseDTO::new)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Field with id " + id + " not found"));
-        return ApiResponse.success(fieldResponse, "Field retrieved successfully."); 
+        return ApiResponse.success(fieldResponse, HttpStatus.OK.value(), "Field retrieved successfully."); 
     }
 
     // Read All Paginated (GET)
@@ -107,7 +107,7 @@ public class FieldController {
         Page<FieldResponseDTO> fieldResponseDTOPage = fieldsPage.map(FieldResponseDTO::new);
         
         ApiResponse<Page<FieldResponseDTO>> response = ApiResponse.success(
-            fieldResponseDTOPage, "Fields retrieved successfully with pagination."
+            fieldResponseDTOPage, HttpStatus.OK.value(), "Fields retrieved successfully with pagination."
         );
         return response;
     }
@@ -124,7 +124,7 @@ public class FieldController {
                 .map(FieldResponseDTO::new)
                 .toList();
 
-        return ApiResponse.success(fieldResponseDTOs, "Fields retrieved successfully for user.");
+        return ApiResponse.success(fieldResponseDTOs, HttpStatus.OK.value(), "Fields retrieved successfully for user.");
     }
     
 
@@ -135,7 +135,7 @@ public class FieldController {
         if (properties == null) {
             throw new AppException(HttpStatus.NOT_FOUND, "No field properties found for field with id: " + id);
         }
-        return ApiResponse.success(properties, "Field properties retrieved successfully.");
+        return ApiResponse.success(properties, HttpStatus.OK.value(), "Field properties retrieved successfully.");
     }
 
     // Update (PUT)
@@ -150,7 +150,7 @@ public class FieldController {
         }
         
         ApiResponse<Field> response = ApiResponse.success(
-            updatedField, "Field with id " + id + " updated successfully"
+            updatedField, HttpStatus.OK.value(), "Field with id " + id + " updated successfully"
         );
 
         return response;
@@ -162,7 +162,7 @@ public class FieldController {
         FieldProperties updatedProperties = fieldPropertyService.updateFieldProperties(id, properties.toEntity());
 
         ApiResponse<FieldProperties> response = ApiResponse.success(
-            updatedProperties, "Field Properties for field " + id + " updated successfully"
+            updatedProperties, HttpStatus.OK.value(), "Field Properties for field " + id + " updated successfully"
         );
         return response;
     }
@@ -173,7 +173,7 @@ public class FieldController {
         fieldService.deleteField(id);
 
         ApiResponse<Void> response = ApiResponse.success(
-            null, "Field with id " + id + " deleted successfully"
+            null, HttpStatus.OK.value(), "Field with id " + id + " deleted successfully"
         );
 
         return response;

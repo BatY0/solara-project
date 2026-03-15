@@ -16,34 +16,31 @@ public class ApiResponse<T> {
     private String message;
     private T data;
 
+    // Detailed error fields (will only show when set)
+    private Integer status;
+    private String error;
+
     @Builder.Default
     private LocalDateTime timestamp = LocalDateTime.now();
     
-    public static <T> ApiResponse<T> success(T data, String message) {
+    public static <T> ApiResponse<T> success(T data, int status, String message) {
         return ApiResponse.<T>builder()
                 .success(true)
+                .status(status)
                 .message(message)
                 .data(data)
                 .build();
     }
 
-    public static <T> ApiResponse<T> error(int status, String message) {
+    // Extended Error builder
+    public static <T> ApiResponse<T> error(int status, String error, String message) {
         return ApiResponse.<T>builder()
                 .success(false)
-                .message(message)
+                .status(status)
+                .error(error)       // e.g., "Not Found" or "Bad Request"
+                .message(message)   // e.g., "No sensor logs found"
                 .data(null)
                 .build();
     }
 
-    public boolean isSuccess() { return success; }
-    public void setSuccess(boolean success) { this.success = success; }
-
-    public String getMessage() { return message; }
-    public void setMessage(String message) { this.message = message; }
-
-    public T getData() { return data; }
-    public void setData(T data) { this.data = data; }
-
-    public LocalDateTime getTimestamp() { return timestamp; }
-    public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
 }

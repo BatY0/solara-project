@@ -4,24 +4,24 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import com.solara.backend.dto.response.ErrorResponse;
+import com.solara.backend.dto.response.ApiResponse;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(AppException.class)
-    public ResponseEntity<ErrorResponse> handleAppException(AppException ex) {
+    public ResponseEntity<ApiResponse<Void>> handleAppException(AppException ex) {
         
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .status(ex.getStatus().value())
-                .error(ex.getStatus().getReasonPhrase()) // Automatically gets "Not Found", "Bad Request", etc.
-                .message(ex.getMessage())
-                .build();
+        ApiResponse<Void> response = ApiResponse.error(
+                ex.getStatus().value(),              // e.g., 404
+                ex.getStatus().getReasonPhrase(),    // e.g., "Not Found"
+                ex.getMessage()                      // Custom user message
+        );
 
-        return new ResponseEntity<>(errorResponse, ex.getStatus());
+        return new ResponseEntity<>(response, ex.getStatus());
     }
     
     // You can add more exception handlers here later, like:
     // @ExceptionHandler(IllegalArgumentException.class)
-    // public ErrorResponse handleBadRequest(IllegalArgumentException ex) { ... }
+    // public ApiResponse<Void> handleBadRequest(IllegalArgumentException ex) { ... }
 }

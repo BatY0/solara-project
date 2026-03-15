@@ -7,9 +7,11 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.solara.backend.entity.SensorLogs;
+import com.solara.backend.exception.AppException;
 import com.solara.backend.repository.SensorLogsRepository;
 
 import lombok.Builder;
@@ -52,7 +54,7 @@ public class SensorLogsService {
 
     public SensorLogs getMostRecent(UUID fieldId) {
         if (!sensorRepo.existsByFieldId(fieldId)) {
-            throw new IllegalArgumentException("No sensor logs found for field with ID: " + fieldId);
+            throw new AppException(HttpStatus.NOT_FOUND, "No sensor logs found for field with ID: " + fieldId);
         }
 
         SensorLogs mostRecent = sensorRepo.findByFieldId(fieldId).stream()
@@ -63,11 +65,11 @@ public class SensorLogsService {
 
     public List<AggregateLog> getLogsByInterval(Intervals interval, LocalDateTime start, LocalDateTime end, UUID fieldId) {
         if (start == null || end == null) {
-            throw new IllegalArgumentException("Start and end timestamps must be provided");
+            throw new AppException(HttpStatus.BAD_REQUEST, "Start and end timestamps must be provided");
         }
 
         if (start.isAfter(end)) {
-            throw new IllegalArgumentException("Start timestamp must be before end timestamp");
+            throw new AppException(HttpStatus.BAD_REQUEST, "Start timestamp must be before end timestamp");
         }
 
         List<SensorLogs> logs = sensorRepo.findByTimestampBetweenWithFieldId(start, end, fieldId);

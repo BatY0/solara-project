@@ -6,10 +6,12 @@ import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.solara.backend.entity.Field;
+import com.solara.backend.exception.AppException;
 import com.solara.backend.repository.FieldRepository;
 
 @Service
@@ -46,7 +48,7 @@ public class FieldService {
 
     public Field updateField(UUID id, Field fieldDetails) {
         Field existingField = fieldRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Field not found with id: " + id));
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Field not found with id: " + id));
 
         existingField.setName(fieldDetails.getName());
         existingField.setLocation(fieldDetails.getLocation());
@@ -58,7 +60,7 @@ public class FieldService {
 
     public void deleteField(UUID id) {
         Field existingField = fieldRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Field not found with id: " + id));
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Field not found with id: " + id));
         fieldRepository.delete(existingField);
     }
 }
