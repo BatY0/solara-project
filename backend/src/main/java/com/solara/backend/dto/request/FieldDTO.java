@@ -46,17 +46,34 @@ public class FieldDTO {
         this.soilType = field.getSoilType();
     }
 
-    public Field toEntity() {
+    public Field toEntity() throws Exception {
         Field field = new Field();
-        field.setName(this.name);
+
+        if (this.name != null && !this.name.isEmpty()) {
+            field.setName(this.name);
+        } else {
+            throw new Exception("Field name is required");
+        }
+
         if (this.location != null && !this.location.isEmpty()) {
             Polygon polygon = GeometryUtil.createPolygon(this.location);
             polygon.setSRID(4326);
             field.setLocation(polygon);
+        } else {
+            throw new Exception("Field location is required");
         }
 
-        field.setAreaHa(this.areaHa);
-        field.setSoilType(this.soilType);
+        if (this.areaHa != null && this.areaHa > 0) {
+            field.setAreaHa(this.areaHa);
+        } else {
+            throw new Exception("Field area must be greater than 0");
+        }
+
+        if (this.soilType != null && !this.soilType.isEmpty()) {
+            field.setSoilType(this.soilType);
+        } else {
+            throw new Exception("Field soil type is required");
+        }
         return field;
     }
 }
