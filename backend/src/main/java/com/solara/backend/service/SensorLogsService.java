@@ -50,10 +50,15 @@ public class SensorLogsService {
         public Double getAvgAmbientHumidity() { return avgAmbientHumidity; }
     }
 
-    public SensorLogs getMostRecent() {
-        return sensorRepo.findAll().stream()
+    public SensorLogs getMostRecent(UUID fieldId) {
+        if (!sensorRepo.existsByFieldId(fieldId)) {
+            throw new IllegalArgumentException("No sensor logs found for field with ID: " + fieldId);
+        }
+
+        SensorLogs mostRecent = sensorRepo.findByFieldId(fieldId).stream()
                 .max((s1, s2) -> s1.getTimestamp().compareTo(s2.getTimestamp()))
                 .orElse(null);
+        return mostRecent;
     }
 
     public List<AggregateLog> getLogsByInterval(Intervals interval, LocalDateTime start, LocalDateTime end, UUID fieldId) {

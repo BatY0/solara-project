@@ -11,4 +11,5 @@ import com.solara.backend.entity.SensorLogs;
 public interface SensorLogsRepository extends JpaRepository<SensorLogs, UUID> {
     List<SensorLogs> findByTimestampBetweenWithFieldId(LocalDateTime start, LocalDateTime end, UUID fieldId);
     boolean existsByFieldId(UUID fieldId);
+    List<SensorLogs> findByFieldId(UUID fieldId);
 }
