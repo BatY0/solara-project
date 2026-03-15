@@ -16,6 +16,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import { theme } from '../../src/theme/theme';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Sprout, AlertCircle } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 export default function LoginScreen() {
     const [email, setEmail] = useState('');
@@ -25,10 +26,11 @@ export default function LoginScreen() {
     const [isLoading, setIsLoading] = useState(false);
     const { login } = useAuth();
     const router = useRouter();
+    const { t } = useTranslation();
 
     const handleLogin = async () => {
         if (!email || !password) {
-            setError('Please fill in all fields');
+            setError(t('validation.required'));
             return;
         }
 
@@ -44,9 +46,8 @@ export default function LoginScreen() {
                     params: { email: err.email || email, mode: 'verify' }
                 });
             } else {
-                setError('Invalid email or password');
+                setError(t('auth.login.invalid_credentials'));
             }
-            console.error(err);
         } finally {
             setIsLoading(false);
         }
@@ -64,8 +65,8 @@ export default function LoginScreen() {
                         <Sprout color={theme.colors.brand[50]} size={40} />
                         <Text style={styles.brandName}>Solara</Text>
                     </View>
-                    <Text style={styles.headerTitle}>Welcome Back</Text>
-                    <Text style={styles.headerSubtitle}>Monitor your farm, optimize your yield.</Text>
+                    <Text style={styles.headerTitle}>{t('auth.login.hero_title')}</Text>
+                    <Text style={styles.headerSubtitle}>{t('auth.login.hero_subtitle')}</Text>
                 </SafeAreaView>
             </ImageBackground>
 
@@ -74,8 +75,8 @@ export default function LoginScreen() {
                 style={styles.formContainer}
             >
                 <ScrollView contentContainerStyle={styles.scrollContent}>
-                    <Text style={styles.title}>Sign In</Text>
-                    <Text style={styles.subtitle}>Enter your credentials to access your account</Text>
+                    <Text style={styles.title}>{t('auth.login.title')}</Text>
+                    <Text style={styles.subtitle}>{t('auth.login.subtitle')}</Text>
 
                     {error ? (
                         <View style={styles.errorContainer}>
@@ -85,12 +86,12 @@ export default function LoginScreen() {
                     ) : null}
 
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Email Address</Text>
+                        <Text style={styles.label}>{t('auth.common.email')}</Text>
                         <View style={styles.inputWrapper}>
                             <Mail color={theme.colors.neutral.subtext} size={20} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
-                                placeholder="example@company.com"
+                                placeholder={t('auth.common.email_placeholder')}
                                 value={email}
                                 onChangeText={setEmail}
                                 keyboardType="email-address"
@@ -101,9 +102,9 @@ export default function LoginScreen() {
 
                     <View style={styles.inputGroup}>
                         <View style={styles.labelRow}>
-                            <Text style={styles.label}>Password</Text>
+                            <Text style={styles.label}>{t('auth.common.password')}</Text>
                             <TouchableOpacity onPress={() => router.push({ pathname: '/(auth)/verify', params: { mode: 'forgot' } })}>
-                                <Text style={styles.forgotPassword}>Forgot Password?</Text>
+                                <Text style={styles.forgotPassword}>{t('auth.login.forgot_password')}</Text>
                             </TouchableOpacity>
                         </View>
                         <View style={styles.inputWrapper}>
@@ -134,16 +135,16 @@ export default function LoginScreen() {
                             <ActivityIndicator color="#fff" />
                         ) : (
                             <>
-                                <Text style={styles.buttonText}>Sign In</Text>
+                                <Text style={styles.buttonText}>{t('auth.login.button')}</Text>
                                 <ArrowRight color="#fff" size={20} />
                             </>
                         )}
                     </TouchableOpacity>
 
                     <View style={styles.footer}>
-                        <Text style={styles.footerText}>Don't have an account? </Text>
+                        <Text style={styles.footerText}>{t('auth.login.no_account')}</Text>
                         <TouchableOpacity onPress={() => router.push('/register')}>
-                            <Text style={styles.footerLink}>Register</Text>
+                            <Text style={styles.footerLink}>{t('auth.login.register')}</Text>
                         </TouchableOpacity>
                     </View>
                 </ScrollView>

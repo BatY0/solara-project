@@ -11,6 +11,7 @@ interface AuthContextType {
     login: (data: LoginRequest) => Promise<void>;
     register: (data: RegisterRequest) => Promise<void>;
     logout: () => Promise<void>;
+    updateLocalUser: (updates: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,14 +27,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
     }, []);
 
-    const decodeAndSetUser = useCallback((token: string) => {
+    const updateLocalUser = useCallback((updates: Partial<User>) => {
+        setUser(prev => prev ? { ...prev, ...updates } : prev);
+    }, []);
+
+    const fetchAndSetUser = useCallback(async (token: string) => {
         try {
             const payload = jwtDecode<{ sub?: string }>(token);
-            if (payload.sub) {
-                setUser({ email: payload.sub });
-            } else {
+            if (!payload.sub) {
                 console.error('Token missing sub claim');
                 logout();
+                return;
+            }
+            try {
+                const response = await api.get<User>('/users/me');
+                setUser(response.data);
+            } catch (err) {
+                console.error('Failed to fetch user profile, falling back to token sub', err);
+                setUser({ email: payload.sub });
             }
         } catch (error) {
             console.error('Failed to decode token', error);
@@ -47,7 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 const storedToken = await SecureStore.getItemAsync('token');
                 if (storedToken) {
                     setToken(storedToken);
-                    decodeAndSetUser(storedToken);
+                    await fetchAndSetUser(storedToken);
                 }
             } catch (error) {
                 console.error('Error initializing auth', error);
@@ -57,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
 
         initAuth();
-    }, [decodeAndSetUser]);
+    }, [fetchAndSetUser]);
 
     const login = async (data: LoginRequest) => {
         const response = await api.post<AuthResponse>('/auth/login', data);
@@ -72,7 +83,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const newToken = response.data.token;
         await SecureStore.setItemAsync('token', newToken);
         setToken(newToken);
-        setUser({ email: response.data.email || data.email });
+
+        try {
+            const profile = await api.get<User>('/users/me');
+            setUser(profile.data);
+        } catch {
+            setUser({ email: response.data.email || data.email });
+        }
     };
 
     const register = async (data: RegisterRequest) => {
@@ -80,7 +97,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, isLoading, login, register, logout }}>
+        <AuthContext.Provider value={{ user, token, isLoading, login, register, logout, updateLocalUser }}>
             {children}
         </AuthContext.Provider>
     );

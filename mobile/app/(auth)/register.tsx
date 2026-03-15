@@ -15,6 +15,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import { theme } from '../../src/theme/theme';
 import { User, Mail, Lock, Eye, EyeOff, CheckCircle, AlertCircle, ArrowLeft, Sprout } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 export default function RegisterScreen() {
     const [name, setName] = useState('');
@@ -28,6 +29,7 @@ export default function RegisterScreen() {
     const [isLoading, setIsLoading] = useState(false);
     const { register } = useAuth();
     const router = useRouter();
+    const { t } = useTranslation();
 
     // Password Validation
     const [validations, setValidations] = useState({
@@ -50,17 +52,17 @@ export default function RegisterScreen() {
 
     const handleRegister = async () => {
         if (!name || !surname || !email || !password) {
-            setError('Please fill in all fields');
+            setError(t('validation.required'));
             return;
         }
 
         if (password !== confirmPassword) {
-            setError('Passwords do not match');
+            setError(t('auth.register.passwords_no_match'));
             return;
         }
 
         if (!isPasswordValid) {
-            setError('Password does not meet requirements');
+            setError(t('auth.register.password_not_valid'));
             return;
         }
 
@@ -73,8 +75,7 @@ export default function RegisterScreen() {
                 params: { email, mode: 'verify' }
             });
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Registration failed');
-            console.error(err);
+            setError(err.response?.data?.message || t('auth.register.failed'));
         } finally {
             setIsLoading(false);
         }
@@ -104,8 +105,8 @@ export default function RegisterScreen() {
                 style={{ flex: 1 }}
             >
                 <ScrollView contentContainerStyle={styles.scrollContent}>
-                    <Text style={styles.title}>Create Account</Text>
-                    <Text style={styles.subtitle}>Join Solara and start optimizing your farm today.</Text>
+                    <Text style={styles.title}>{t('auth.register.title')}</Text>
+                    <Text style={styles.subtitle}>{t('auth.register.subtitle')}</Text>
 
                     {error ? (
                         <View style={styles.errorContainer}>
@@ -116,23 +117,23 @@ export default function RegisterScreen() {
 
                     <View style={styles.row}>
                         <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                            <Text style={styles.label}>First Name</Text>
+                            <Text style={styles.label}>{t('auth.common.first_name')}</Text>
                             <View style={styles.inputWrapper}>
                                 <User color={theme.colors.neutral.subtext} size={18} style={styles.inputIcon} />
                                 <TextInput
                                     style={styles.input}
-                                    placeholder="Enter name"
+                                    placeholder={t('auth.common.first_name_placeholder')}
                                     value={name}
                                     onChangeText={setName}
                                 />
                             </View>
                         </View>
                         <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-                            <Text style={styles.label}>Last Name</Text>
+                            <Text style={styles.label}>{t('auth.common.last_name')}</Text>
                             <View style={styles.inputWrapper}>
                                 <TextInput
                                     style={styles.input}
-                                    placeholder="Enter surname"
+                                    placeholder={t('auth.common.last_name_placeholder')}
                                     value={surname}
                                     onChangeText={setSurname}
                                 />
@@ -141,12 +142,12 @@ export default function RegisterScreen() {
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Email Address</Text>
+                        <Text style={styles.label}>{t('auth.common.email')}</Text>
                         <View style={styles.inputWrapper}>
                             <Mail color={theme.colors.neutral.subtext} size={18} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
-                                placeholder="example@company.com"
+                                placeholder={t('auth.common.email_placeholder')}
                                 value={email}
                                 onChangeText={setEmail}
                                 keyboardType="email-address"
@@ -156,7 +157,7 @@ export default function RegisterScreen() {
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Password</Text>
+                        <Text style={styles.label}>{t('auth.common.password')}</Text>
                         <View style={styles.inputWrapper}>
                             <Lock color={theme.colors.neutral.subtext} size={18} style={styles.inputIcon} />
                             <TextInput
@@ -177,17 +178,17 @@ export default function RegisterScreen() {
                     </View>
 
                     <View style={styles.requirementsContainer}>
-                        <Text style={styles.requirementsTitle}>Password Requirements:</Text>
+                        <Text style={styles.requirementsTitle}>{t('register.password_req_title')}</Text>
                         <View style={styles.requirementsGrid}>
-                            <RequirementItem valid={validations.length} text="8+ characters" />
-                            <RequirementItem valid={validations.uppercase} text="Uppercase" />
-                            <RequirementItem valid={validations.number} text="Number" />
-                            <RequirementItem valid={validations.special} text="Special char" />
+                            <RequirementItem valid={validations.length} text={t('register.password_req_length')} />
+                            <RequirementItem valid={validations.uppercase} text={t('register.password_req_uppercase')} />
+                            <RequirementItem valid={validations.number} text={t('register.password_req_number')} />
+                            <RequirementItem valid={validations.special} text={t('register.password_req_special')} />
                         </View>
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Confirm Password</Text>
+                        <Text style={styles.label}>{t('auth.common.confirm_password')}</Text>
                         <View style={styles.inputWrapper}>
                             <Lock color={theme.colors.neutral.subtext} size={18} style={styles.inputIcon} />
                             <TextInput
@@ -208,14 +209,14 @@ export default function RegisterScreen() {
                         {isLoading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text style={styles.buttonText}>Register</Text>
+                            <Text style={styles.buttonText}>{t('auth.register.button')}</Text>
                         )}
                     </TouchableOpacity>
 
                     <View style={styles.footer}>
-                        <Text style={styles.footerText}>Already have an account? </Text>
+                        <Text style={styles.footerText}>{t('auth.register.already_have_account')}</Text>
                         <TouchableOpacity onPress={() => router.push('/login')}>
-                            <Text style={styles.footerLink}>Sign In</Text>
+                            <Text style={styles.footerLink}>{t('auth.register.sign_in')}</Text>
                         </TouchableOpacity>
                     </View>
                 </ScrollView>

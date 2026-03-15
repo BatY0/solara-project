@@ -9,6 +9,7 @@ import {
     Inter_600SemiBold,
     Inter_700Bold,
 } from '@expo-google-fonts/inter';
+import '../src/i18n/i18n'; // Initialize i18n (TR/EN) on app start
 
 SplashScreen.preventAutoHideAsync();
 
