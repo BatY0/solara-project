@@ -19,12 +19,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.solara.backend.dto.request.FieldDTO;
 import com.solara.backend.dto.request.FieldPropertiesDTO;
+import com.solara.backend.dto.response.ApiResponse;
 import com.solara.backend.dto.response.BasicResponse;
-import com.solara.backend.dto.response.ErrorResponse;
 import com.solara.backend.dto.response.FieldResponseDTO;
 import com.solara.backend.entity.Field;
 import com.solara.backend.entity.FieldProperties;
 import com.solara.backend.entity.User;
+import com.solara.backend.exception.AppException;
 import com.solara.backend.service.FieldPropertyService;
 import com.solara.backend.service.FieldService;
 
@@ -51,12 +52,7 @@ public class FieldController {
         try {
             fieldEntity = field.toEntity();
         } catch (Exception e) {
-            ErrorResponse errorResponse = ErrorResponse.builder()
-                    .status(HttpStatus.BAD_REQUEST.value())
-                    .error("Bad Request")
-                    .message(e.getMessage())
-                    .build();
-            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+            throw new AppException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
 
         fieldEntity.setUserId(currentUser.getID());
@@ -83,90 +79,103 @@ public class FieldController {
 
     // Read All (GET)
     @GetMapping("/all")
-    public ResponseEntity<List<FieldResponseDTO>> getAllFields() {
+    public ApiResponse<List<FieldResponseDTO>> getAllFields() {
         List<Field> fields = fieldService.getAllFields();
         List<FieldResponseDTO> fieldResponseDTOs = fields.stream()
                 .map(FieldResponseDTO::new)
                 .toList();
-        return ResponseEntity.ok(fieldResponseDTOs);
+        return ApiResponse.success(fieldResponseDTOs, "Fields retrieved successfully.");
     }
 
     // Read One (GET)
     @GetMapping("/{id}")
-    public ResponseEntity<FieldResponseDTO> getFieldById(@PathVariable UUID id) {
-        return fieldService.getFieldById(id)
+    public ApiResponse<FieldResponseDTO> getFieldById(@PathVariable UUID id) {
+        FieldResponseDTO fieldResponse = fieldService.getFieldById(id)
                 .map(FieldResponseDTO::new)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Field with id " + id + " not found"));
+        return ApiResponse.success(fieldResponse, "Field retrieved successfully."); 
     }
 
     // Read All Paginated (GET)
     // Example usage: GET /api/fields/paginated?page=0&size=10
     @GetMapping("/paginated")
-    public ResponseEntity<Page<FieldResponseDTO>> getFieldsPaginated(
+    public ApiResponse<Page<FieldResponseDTO>> getFieldsPaginated(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         
         Page<Field> fieldsPage = fieldService.getAllFieldsPaginated(page, size);
         Page<FieldResponseDTO> fieldResponseDTOPage = fieldsPage.map(FieldResponseDTO::new);
-        return ResponseEntity.ok(fieldResponseDTOPage);
+        
+        ApiResponse<Page<FieldResponseDTO>> response = ApiResponse.success(
+            fieldResponseDTOPage, "Fields retrieved successfully with pagination."
+        );
+        return response;
     }
 
     // Get Fields by User ID (GET)
     @GetMapping("/user-fields")
-    public ResponseEntity<List<FieldResponseDTO>> getFieldsByUserId(@AuthenticationPrincipal User currentUser) {
+    public ApiResponse<List<FieldResponseDTO>> getFieldsByUserId(@AuthenticationPrincipal User currentUser) {
         List<Field> fields = fieldService.getFieldsByUserId(currentUser.getID());
+        if (fields.isEmpty()) {
+            throw new AppException(HttpStatus.NOT_FOUND, "No fields found for user with id: " + currentUser.getID());
+        }
+
         List<FieldResponseDTO> fieldResponseDTOs = fields.stream()
                 .map(FieldResponseDTO::new)
                 .toList();
-        return ResponseEntity.ok(fieldResponseDTOs);
+
+        return ApiResponse.success(fieldResponseDTOs, "Fields retrieved successfully for user.");
     }
+    
 
     // Get Field Properties (GET)
     @GetMapping("/get-properties-with-field-id/{id}")
-    public ResponseEntity<FieldProperties> getPropertiesOfField(@PathVariable UUID id) {
+    public ApiResponse<FieldProperties> getPropertiesOfField(@PathVariable UUID id) {
         FieldProperties properties = fieldPropertyService.getFieldPropertiesByFieldId(id);
         if (properties == null) {
-            return ResponseEntity.notFound().build();
+            throw new AppException(HttpStatus.NOT_FOUND, "No field properties found for field with id: " + id);
         }
-        return ResponseEntity.ok(properties);
+        return ApiResponse.success(properties, "Field properties retrieved successfully.");
     }
 
     // Update (PUT)
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateFieldWithFieldId(@PathVariable UUID id, @RequestBody FieldDTO fieldDetails) {
+    public ApiResponse<Field> updateFieldWithFieldId(@PathVariable UUID id, @RequestBody FieldDTO fieldDetails) {
         Field updatedField;
 
         try {
             updatedField = fieldService.updateField(id, fieldDetails.toEntity());
         } catch (Exception e) {
-            ErrorResponse errorResponse = ErrorResponse.builder()
-                    .status(HttpStatus.BAD_REQUEST.value())
-                    .error("Bad Request")
-                    .message(e.getMessage())
-                    .build();
-            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+            throw new AppException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
+        
+        ApiResponse<Field> response = ApiResponse.success(
+            updatedField, "Field with id " + id + " updated successfully"
+        );
 
-        BasicResponse fieldResponse = BasicResponse.builder()
-                .id(updatedField.getId().toString())
-                .name(updatedField.getName())
-                .messageString("Field updated successfully")
-                .build();
-        return ResponseEntity.ok(fieldResponse);
+        return response;
     }
 
     // Update Field Properties (PUT)
     @PutMapping("/field-properties/{id}")
-    public ResponseEntity<FieldProperties> updateFieldProperties(@PathVariable UUID id, @RequestBody FieldPropertiesDTO properties) {
+    public ApiResponse<FieldProperties> updateFieldProperties(@PathVariable UUID id, @RequestBody FieldPropertiesDTO properties) {
         FieldProperties updatedProperties = fieldPropertyService.updateFieldProperties(id, properties.toEntity());
-        return ResponseEntity.ok(updatedProperties);
+
+        ApiResponse<FieldProperties> response = ApiResponse.success(
+            updatedProperties, "Field Properties for field " + id + " updated successfully"
+        );
+        return response;
     }
 
     // Delete (DELETE)
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteField(@PathVariable UUID id) {
+    public ApiResponse<Void> deleteField(@PathVariable UUID id) {
         fieldService.deleteField(id);
-        return ResponseEntity.noContent().build();
+
+        ApiResponse<Void> response = ApiResponse.success(
+            null, "Field with id " + id + " deleted successfully"
+        );
+
+        return response;
     }
 }
