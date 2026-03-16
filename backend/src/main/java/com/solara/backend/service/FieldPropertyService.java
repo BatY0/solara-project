@@ -3,10 +3,12 @@ package com.solara.backend.service;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.solara.backend.dto.request.FieldPropertiesDTO;
 import com.solara.backend.entity.FieldProperties;
+import com.solara.backend.exception.AppException;
 import com.solara.backend.repository.FieldPropertiesRepository;
 
 @Service
@@ -30,7 +32,7 @@ public class FieldPropertyService {
     public FieldProperties updateFieldProperties(UUID fieldID, FieldProperties properties) {
         FieldProperties existingProperties = fieldPropertiesRepository.findByFieldId(fieldID).orElse(null);
         if (existingProperties == null) {
-            throw new RuntimeException("Field properties not found for field id: " + fieldID);
+            throw new AppException(HttpStatus.NOT_FOUND, "Field properties not found for field id: " + fieldID);
         }
 
         LocalDateTime now = LocalDateTime.now();

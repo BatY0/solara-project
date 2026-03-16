@@ -25,6 +25,7 @@ public class FieldResponseDTO {
     private List<double[]> location; // Simple List of Arrays to avoid JTS serialization issues
     private Double areaHa;
     private String soilType;
+    private String deviceId;
     private UUID userId;
     private LocalDateTime createdAt;
 
@@ -34,9 +35,7 @@ public class FieldResponseDTO {
         this.name = field.getName();
         this.areaHa = field.getAreaHa();
         this.userId = field.getUserId();
-        // Assuming your Field entity has a getCreatedAt() method
-        // this.createdAt = field.getCreatedAt(); 
-
+        this.deviceId = field.getDeviceId();
         this.location = convertPolygonToCoordinates(field.getLocation());
         this.soilType = field.getSoilType();
         this.createdAt = field.getCreatedAt();
@@ -70,6 +69,9 @@ public class FieldResponseDTO {
 
     public UUID getUserId() { return userId; }
     public void setUserId(UUID userId) { this.userId = userId; }
+
+    public String getDeviceId() { return deviceId; }
+    public void setDeviceId(String deviceId) { this.deviceId = deviceId; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

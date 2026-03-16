@@ -105,7 +105,30 @@
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>2.8.6</version>
 		</dependency>
+
+		<!-- MQTT support via Spring Integration + Eclipse Paho -->
+		<dependency>
+			<groupId>org.springframework.integration</groupId>
+			<artifactId>spring-integration-mqtt</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-integration</artifactId>
+		</dependency>
+		<!-- Eclipse Paho MQTT v3 client (required by spring-integration-mqtt) -->
+		<dependency>
+			<groupId>org.eclipse.paho</groupId>
+			<artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+			<version>1.2.5</version>
+		</dependency>
+		<!-- Jackson for JSON parsing (already transitive, explicit for clarity) -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+		</dependency>
+
 	</dependencies>
+
 
 	<build>
 		<plugins>
@@ -113,6 +136,8 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
+					<!-- Retain parameter names at runtime for Spring MVC + Swagger -->
+					<parameters>true</parameters>
 					<annotationProcessorPaths>
 						<path>
 							<groupId>org.projectlombok</groupId>
