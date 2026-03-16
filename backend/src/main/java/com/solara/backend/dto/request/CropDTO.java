@@ -8,9 +8,15 @@ import com.solara.backend.exception.AppException;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class CropDTO {
 
     @NotBlank(message = "Crop name is required")
@@ -57,15 +63,19 @@ public class CropDTO {
                 throw new AppException(HttpStatus.BAD_REQUEST, "Optimal minimum temperature cannot be greater than maximum temperature");
             }
         }
+        cropGuide.setOptimalTemperatureMin(this.optimalTemperatureMin);
+        cropGuide.setOptimalTemperatureMax(this.optimalTemperatureMax);
         if (this.daysToMaturity <= 0) {
             throw new AppException(HttpStatus.BAD_REQUEST, "Days to maturity must be greater than 0");
         }
+        cropGuide.setDaysToMaturity(this.daysToMaturity);
         cropGuide.setDescription(this.description);
         cropGuide.setPlantingInstructions(this.plantingInstructions);
         cropGuide.setCareInstructions(this.careInstructions);
         if (this.image != null && this.image.length() > 255) {
             throw new AppException(HttpStatus.BAD_REQUEST, "Image URL must not exceed 255 characters");
         }
+        cropGuide.setImage(this.image);
         return cropGuide;
     }
 }

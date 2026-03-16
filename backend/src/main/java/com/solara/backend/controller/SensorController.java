@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -39,7 +40,8 @@ public class SensorController {
 
     @GetMapping("/telemetry/{id}/history")
     public List<SensorLogsService.AggregateLog> getHistoricalTelemetry(@PathVariable("id") UUID fieldId, @RequestParam String interval,
-         @RequestParam(required = false) LocalDateTime start, @RequestParam(required = false) LocalDateTime end) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
 
         if (!sensorService.hasLogsForField(fieldId)) {
             throw new AppException(HttpStatus.NOT_FOUND, "No sensor log has been  found for the provided id" + fieldId);
@@ -53,5 +55,36 @@ public class SensorController {
         );
 
         return logs;
+    }
+
+    public class HistoryRequestDto {
+        private String interval;
+        private LocalDateTime start;
+        private LocalDateTime end;
+
+        // Getters and setters
+        public String getInterval() {
+            return interval;
+        }
+
+        public void setInterval(String interval) {
+            this.interval = interval;
+        }
+
+        public LocalDateTime getStart() {
+            return start;
+        }
+
+        public void setStart(LocalDateTime start) {
+            this.start = start;
+        }
+
+        public LocalDateTime getEnd() {
+            return end;
+        }
+
+        public void setEnd(LocalDateTime end) {
+            this.end = end;
+        }
     }
 }
