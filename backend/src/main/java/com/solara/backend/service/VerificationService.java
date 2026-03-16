@@ -65,7 +65,7 @@ public class VerificationService {
         String email = request.getEmail();
         String code = request.getCode();
 
-        VerificationCode verificationCode = checkValidCode(email, code);
+        checkValidCode(email, code);
 
         log.info("Email {} verified successfully", email);
 

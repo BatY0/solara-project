@@ -72,7 +72,7 @@ public class SensorLogsService {
             throw new AppException(HttpStatus.BAD_REQUEST, "Start timestamp must be before end timestamp");
         }
 
-        List<SensorLogs> logs = sensorRepo.findByTimestampBetweenWithFieldId(start, end, fieldId);
+        List<SensorLogs> logs = sensorRepo.findByFieldIdAndTimestampBetween(fieldId, start, end);
 
         // Determine the truncation unit based on interval
         ChronoUnit unit = (interval == Intervals.HOURLY) ? ChronoUnit.HOURS : ChronoUnit.DAYS;

@@ -46,9 +46,18 @@ public class Field {
     @Column(name = "soil_type", length = 50)
     private String soilType;
 
+    /**
+     * The paired hardware device's serial number (e.g. "ESP32-A1B2C3D4E5F6").
+     * Nullable: a field may exist without a device paired to it.
+     * One device can only be linked to one field (enforced in FieldService).
+     */
+    @Column(name = "device_id", unique = true, length = 50)
+    private String deviceId;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
 
     public Polygon getLocation() {
         return location;

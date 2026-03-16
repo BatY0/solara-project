@@ -63,4 +63,35 @@ public class FieldService {
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Field not found with id: " + id));
         fieldRepository.delete(existingField);
     }
+
+    /**
+     * Pair a physical ESP32 device (identified by its device_id / serial number)
+     * to a field. Enforces the 1-to-1 rule: one device can only be paired to one field.
+     */
+    public Field pairDevice(UUID fieldId, String deviceId) {
+        Field field = fieldRepository.findById(fieldId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Field not found with id: " + fieldId));
+
+        // 1-to-1 check: ensure no other field already has this device
+        if (fieldRepository.existsByDeviceId(deviceId)) {
+            Field alreadyPaired = fieldRepository.findByDeviceId(deviceId).get();
+            if (!alreadyPaired.getId().equals(fieldId)) {
+                throw new AppException(HttpStatus.BAD_REQUEST,
+                        "Device '" + deviceId + "' is already paired to another field.");
+            }
+        }
+
+        field.setDeviceId(deviceId);
+        return fieldRepository.save(field);
+    }
+
+    /**
+     * Remove the device pairing from a field (set device_id to null).
+     */
+    public Field unpairDevice(UUID fieldId) {
+        Field field = fieldRepository.findById(fieldId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Field not found with id: " + fieldId));
+        field.setDeviceId(null);
+        return fieldRepository.save(field);
+    }
 }
