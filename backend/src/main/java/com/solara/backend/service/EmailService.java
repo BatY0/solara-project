@@ -56,4 +56,25 @@ public class EmailService {
             throw new AppException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to send verification email");
         }
     }
+
+    /**
+     * Generic HTML email sender — used for offline device alerts and any future notifications.
+     */
+    @Async
+    public void sendHtmlEmail(String to, String subject, String htmlContent) {
+        try {
+            MimeMessage message = javaMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(fromEmail);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(htmlContent, true);
+            javaMailSender.send(message);
+            log.info("Successfully sent email '{}' to {}", subject, to);
+        } catch (MessagingException e) {
+            log.error("Failed to send email to {}", to, e);
+            throw new AppException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to send email: " + subject);
+        }
+    }
 }
+
