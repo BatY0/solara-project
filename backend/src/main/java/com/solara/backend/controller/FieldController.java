@@ -90,9 +90,8 @@ public class FieldController {
     // Read One (GET)
     @GetMapping("/{id}")
     public ApiResponse<FieldResponseDTO> getFieldById(@PathVariable UUID id) {
-        FieldResponseDTO fieldResponse = fieldService.getFieldById(id)
-                .map(FieldResponseDTO::new)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Field with id " + id + " not found"));
+        Field field = fieldService.getFieldById(id);
+        FieldResponseDTO fieldResponse = new FieldResponseDTO(field);
         return ApiResponse.success(fieldResponse, HttpStatus.OK.value(), "Field retrieved successfully."); 
     }
 

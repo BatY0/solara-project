@@ -1,7 +1,6 @@
  package com.solara.backend.service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -18,14 +17,20 @@ import com.solara.backend.repository.FieldRepository;
 public class FieldService {
 
     private final FieldRepository fieldRepository;
+    private final WeatherSyncService weatherSyncService;
 
-    public FieldService(FieldRepository fieldRepo) {
+    public FieldService(FieldRepository fieldRepo, WeatherSyncService weatherSyncService) {
         this.fieldRepository = fieldRepo;
+        this.weatherSyncService = weatherSyncService;
     }
 
     @Transactional
     public Field createField(Field field) {
         Field savedField = fieldRepository.save(field);
+        
+        // Fetch past year's data for the new field
+        weatherSyncService.initializeFieldWeatherData(savedField);
+        
         return savedField;
     }
 
@@ -38,8 +43,8 @@ public class FieldService {
         return fieldRepository.findAll(pageable);
     }
  
-    public Optional<Field> getFieldById(UUID id) {
-        return fieldRepository.findById(id);
+    public Field getFieldById(UUID id) {
+        return fieldRepository.findById(id).orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Field not found with id: " + id));
     }
 
     public List<Field> getFieldsByUserId(UUID userId) {
@@ -50,17 +55,28 @@ public class FieldService {
         Field existingField = fieldRepository.findById(id)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Field not found with id: " + id));
 
+        boolean locationChanged = !existingField.getLocation().equals(fieldDetails.getLocation());
+
         existingField.setName(fieldDetails.getName());
         existingField.setLocation(fieldDetails.getLocation());
         existingField.setAreaHa(fieldDetails.getAreaHa());
         existingField.setSoilType(fieldDetails.getSoilType());
 
-        return fieldRepository.save(existingField);
+        Field savedField = fieldRepository.save(existingField);
+        
+        if (locationChanged) {
+            weatherSyncService.deleteWeatherLogsForField(id);
+            weatherSyncService.initializeFieldWeatherData(savedField);
+        }
+
+        return savedField;
     }
 
     public void deleteField(UUID id) {
         Field existingField = fieldRepository.findById(id)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Field not found with id: " + id));
+
+        weatherSyncService.deleteWeatherLogsForField(id);
         fieldRepository.delete(existingField);
     }
 
