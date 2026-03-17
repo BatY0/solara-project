@@ -56,35 +56,4 @@ public class SensorController {
 
         return logs;
     }
-
-    public class HistoryRequestDto {
-        private String interval;
-        private LocalDateTime start;
-        private LocalDateTime end;
-
-        // Getters and setters
-        public String getInterval() {
-            return interval;
-        }
-
-        public void setInterval(String interval) {
-            this.interval = interval;
-        }
-
-        public LocalDateTime getStart() {
-            return start;
-        }
-
-        public void setStart(LocalDateTime start) {
-            this.start = start;
-        }
-
-        public LocalDateTime getEnd() {
-            return end;
-        }
-
-        public void setEnd(LocalDateTime end) {
-            this.end = end;
-        }
-    }
 }
