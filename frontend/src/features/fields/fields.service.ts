@@ -77,6 +77,22 @@ export const fieldsService = {
     // Get live weather from WeatherAPIController (uses caching)
     getLiveWeather: async (fieldId: string): Promise<WeatherData> => {
         const response = await api.get(`/weather-api/live/${fieldId}`);
-        return response.data.data;
+        const raw = response.data.data;
+        
+        if (!raw || !raw.current) {
+            throw new Error("No live weather data available");
+        }
+
+        // Map OpenMeteo response to our clean WeatherData interface
+        // Support both snake_case (standard API) and camelCase (Record serialization)
+        return {
+            fieldId: fieldId,
+            temperature: raw.current.temperature_2m ?? raw.current.temperature2m ?? 0,
+            humidity: raw.current.relative_humidity_2m ?? raw.current.relativeHumidity2m ?? 0,
+            precipitation: raw.current.precipitation ?? 0,
+            description: "", 
+            iconUrl: "",
+            recordedAt: raw.current.time || new Date().toISOString()
+        };
     }
 };

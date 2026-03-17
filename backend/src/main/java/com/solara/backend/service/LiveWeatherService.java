@@ -32,7 +32,7 @@ public class LiveWeatherService {
         // Note: For live current weather, Open-Meteo uses api.open-meteo.com for current= variables.
         // We avoid historical-forecast-api.open-meteo.com as it can be unreliable for specific timeframes.
         String url = String.format(
-            "https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&current=temperature_2m,precipitation&timezone=auto",
+            "https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&current=temperature_2m,relative_humidity_2m,precipitation&timezone=auto",
             latitude, longitude
         );
 
