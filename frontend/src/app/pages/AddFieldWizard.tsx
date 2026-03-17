@@ -461,7 +461,7 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
                                             <Text px={2} py={1} bg="white" border="1px solid" borderColor="gray.200" borderRadius="md" fontSize="xs" fontWeight="bold" color="gray.600">N: {formData.nitrogen || t('add_field.auto')}</Text>
                                             <Text px={2} py={1} bg="white" border="1px solid" borderColor="gray.200" borderRadius="md" fontSize="xs" fontWeight="bold" color="gray.600">P: {formData.phosphorus || t('add_field.auto')}</Text>
                                             <Text px={2} py={1} bg="white" border="1px solid" borderColor="gray.200" borderRadius="md" fontSize="xs" fontWeight="bold" color="gray.600">K: {formData.potassium || t('add_field.auto')}</Text>
-                                            <Text px={2} py={1} bg="white" border="1px solid" borderColor="gray.200" borderRadius="md" fontSize="xs" fontWeight="bold" color="gray.600">pH: {formData.ph.toFixed(1)}</Text>
+                                            <Text px={2} py={1} bg="white" border="1px solid" borderColor="gray.200" borderRadius="md" fontSize="xs" fontWeight="bold" color="gray.600">pH: {formData.useDefaultPh ? t('add_field.auto') : formData.ph.toFixed(1)}</Text>
                                         </Flex>
                                     </Box>
                                 </Flex>

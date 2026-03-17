@@ -48,7 +48,7 @@ public class CropGuideController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/admin/update-guide/{id}")
-    public ApiResponse<CropDTO> updateCropGuide(@PathVariable UUID id, @Valid @RequestBody CropDTO cropDTO) {
+    public ApiResponse<CropDTO> updateCropGuide(@PathVariable("id") UUID id, @Valid @RequestBody CropDTO cropDTO) {
         CropGuide cropGuide = cropDTO.toEntity();
         cropGuide = cropGuideService.updateGuide(id, cropGuide);
         return ApiResponse.success(new CropDTO(cropGuide), HttpStatus.OK.value(), "Crop guide updated successfully.");
@@ -56,15 +56,15 @@ public class CropGuideController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/admin/delete-guide/{id}")
-    public ApiResponse<Void> deleteCropGuide(@PathVariable UUID id) {
+    public ApiResponse<Void> deleteCropGuide(@PathVariable("id") UUID id) {
         cropGuideService.deleteGuide(id);
         return ApiResponse.success(null, HttpStatus.OK.value(), "Crop guide with id " + id + " deleted successfully.");
     }
 
     @GetMapping("/get-guides-paginated")
     public ApiResponse<Page<CropDTO>> getAllGuidesPaginated(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
 
         Page<CropGuide> cropGuidesPage = cropGuideService.getAllPaginated(page, size);
         Page<CropDTO> cropDTOsPage = cropGuidesPage.map(CropDTO::new);
@@ -85,7 +85,7 @@ public class CropGuideController {
     }
     
     @GetMapping("/get-guide/{id}")
-    public ApiResponse<CropDTO> getGuide(@PathVariable UUID id) {
+    public ApiResponse<CropDTO> getGuide(@PathVariable("id") UUID id) {
         CropGuide cropGuide = cropGuideService.getById(id);
         return ApiResponse.success(new CropDTO(cropGuide), HttpStatus.OK.value(), "Crop guide retrieved successfully.");
     }

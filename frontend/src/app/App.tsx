@@ -5,6 +5,8 @@ import { Home } from './pages/Home'
 import { Login } from './pages/Login'
 import { Register } from './pages/Register'
 import { Dashboard } from './pages/Dashboard'
+import { FieldDetails } from './pages/FieldDetails'
+import { AllFields } from './pages/AllFields'
 import { VerifyEmail } from './pages/VerifyEmail'
 import { Settings } from './pages/Settings'
 
@@ -36,6 +38,8 @@ function App() {
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/fields" element={<AllFields />} />
+            <Route path="/fields/:id" element={<FieldDetails />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
         </Routes>

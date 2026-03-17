@@ -66,6 +66,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         new WebAuthenticationDetailsSource().buildDetails(request)
                 );
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+            } else {
+                // Token is syntactically valid but failed validation (e.g. wrong signing key after restart)
+                // Return 401 so the frontend interceptor redirects to login
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"error\":\"Token invalid. Please log in again.\"}");
+                return;
             }
         }
         filterChain.doFilter(request, response);

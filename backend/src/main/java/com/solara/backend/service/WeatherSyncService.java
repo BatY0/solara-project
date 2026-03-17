@@ -9,6 +9,7 @@ import org.locationtech.jts.geom.Point;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -53,9 +54,10 @@ public class WeatherSyncService {
                 double longitude = centroid.getX();
 
                 // 2. Fetch yesterday's total rainfall and average temperature
+                // Using api.open-meteo.com with past_days=1 for reliable "yesterday" data
                 String url = String.format(
-                    "https://historical-forecast-api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&start_date=%s&end_date=%s&daily=temperature_2m_mean,precipitation_sum", 
-                    latitude, longitude, yesterday, yesterday
+                    "https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&past_days=1&forecast_days=0&daily=temperature_2m_mean,precipitation_sum", 
+                    latitude, longitude
                 );
 
                 OpenMeteoResponse apiResponse = weatherRestTemplate.getForObject(url, OpenMeteoResponse.class);
@@ -84,6 +86,7 @@ public class WeatherSyncService {
         log.info("Daily weather sync completed.");
     }
 
+    @Async
     public void initializeFieldWeatherData(Field field) {
         log.info("Initializing 1 year of historical weather data for field {}", field.getId());
         
@@ -94,8 +97,9 @@ public class WeatherSyncService {
         double latitude = centroid.getY();
         double longitude = centroid.getX();
 
+        // Use the Archive API for long-term data as recommended by Open-Meteo docs
         String url = String.format(
-            "https://historical-forecast-api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&start_date=%s&end_date=%s&daily=temperature_2m_mean,precipitation_sum", 
+            "https://archive-api.open-meteo.com/v1/archive?latitude=%s&longitude=%s&start_date=%s&end_date=%s&daily=temperature_2m_mean,precipitation_sum", 
             latitude, longitude, startDate, endDate
         );
 
@@ -128,7 +132,6 @@ public class WeatherSyncService {
             }
         } catch (Exception e) {
             log.error("Failed to initialize historical data for field {}: {}", field.getId(), e.getMessage());
-            throw new AppException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
 

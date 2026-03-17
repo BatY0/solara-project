@@ -42,28 +42,28 @@ public class WeatherAPIController {
     }
 
     @GetMapping("/live/{fieldId}")
-    public ApiResponse<OpenMeteoCurrentResponse> getLiveWeather(@PathVariable UUID fieldId) {
+    public ApiResponse<OpenMeteoCurrentResponse> getLiveWeather(@PathVariable("fieldId") UUID fieldId) {
         var liveWeather = liveWeatherService.getCurrentWeather(fieldId);
         return ApiResponse.success(liveWeather, HttpStatus.OK.value(), "Live weather data fetched successfully");
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/get-all-for-field/{fieldID}")
-    public ApiResponse<List<WeatherLog>> getWeatherLogsForField(@PathVariable UUID fieldID) {
+    public ApiResponse<List<WeatherLog>> getWeatherLogsForField(@PathVariable("fieldID") UUID fieldID) {
         List<WeatherLog> logs = weatherSyncService.getWeatherLogsForField(fieldID);
         return ApiResponse.success(logs, HttpStatus.OK.value(), "Weather logs fetched successfully");
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/admin/delete-all-for-field/{fieldID}")
-    public ApiResponse<String> deleteWeatherLogsForField(@PathVariable UUID fieldID) {
+    public ApiResponse<String> deleteWeatherLogsForField(@PathVariable("fieldID") UUID fieldID) {
         weatherSyncService.deleteWeatherLogsForField(fieldID);
         return ApiResponse.success(null, HttpStatus.OK.value(), "Weather logs deleted successfully for field " + fieldID);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/admin/delete-one-for-field/{fieldID}/{logID}")
-    public ApiResponse<String> deleteWeatherLog(@PathVariable UUID fieldID, @PathVariable UUID logID) {
+    public ApiResponse<String> deleteWeatherLog(@PathVariable("fieldID") UUID fieldID, @PathVariable("logID") UUID logID) {
         weatherSyncService.deleteWeatherLog(logID, fieldID);
         return ApiResponse.success(null, HttpStatus.OK.value(), "Weather log deleted successfully for field " + fieldID);
     }

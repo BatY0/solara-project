@@ -42,7 +42,7 @@ public class AuthController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/admin/delete-user/{id}")
-    public ResponseEntity<AuthResponse> deleteUser(@PathVariable UUID id) {
+    public ResponseEntity<AuthResponse> deleteUser(@PathVariable("id") UUID id) {
         authService.deleteUser(id);
         return ResponseEntity.ok(AuthResponse.builder().message("User deleted successfully.").build());
     }

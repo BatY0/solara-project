@@ -1,6 +1,8 @@
-import { Box, Flex, Text, Button, Circle } from "@chakra-ui/react"
-import { Sprout, MapPin, Droplets, Thermometer, Zap, ArrowRight } from "lucide-react"
-import type { Field } from "../../features/fields/types"
+import { useState, useEffect } from "react"
+import { Box, Flex, Text, Button, Circle, Skeleton } from "@chakra-ui/react"
+import { Sprout, MapPin, Droplets, Thermometer, ArrowRight } from "lucide-react"
+import type { Field, SensorData } from "../../features/fields/types"
+import { fieldsService } from "../../features/fields/fields.service"
 import { useTranslation } from "react-i18next"
 
 interface FieldCardProps {
@@ -10,12 +12,51 @@ interface FieldCardProps {
 
 export const FieldCard = ({ field, onDetailsClick }: FieldCardProps) => {
     const { t } = useTranslation()
-    const isOnline = field.status === 'online'
+    
+    const [telemetry, setTelemetry] = useState<SensorData | null>(null)
+    const [isLoading, setIsLoading] = useState(true)
 
-    // Placeholder sensory values for UI mockup matching Tailwind version
-    const moisture = "45"
-    const temp = "28"
-    const battery = "85"
+    useEffect(() => {
+        let isMounted = true;
+        
+        const fetchData = async () => {
+            setIsLoading(true);
+            try {
+                // Backend returns 200 + null (or 204 No Content mapped to null in service) if no data yet.
+                // We fetch even if unpaired to show "Last Known" data if it exists in the logs.
+                const data = await fieldsService.getMostRecentTelemetry(field.id);
+                if (isMounted) setTelemetry(data ?? null);
+            } catch (err: any) {
+                if (err?.response?.status !== 404) {
+                    console.error(`Failed to fetch telemetry for ${field.id}:`, err);
+                }
+            } finally {
+                if (isMounted) setIsLoading(false);
+            }
+        };
+
+        fetchData();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [field.id]);
+
+    // Three-state status:
+    //  online  = paired device + received telemetry data
+    //  paired  = has deviceId but no telemetry data yet (device registered, not reporting)
+    //  offline = no device paired at all
+    const status: 'online' | 'paired' | 'offline' =
+        field.deviceId && telemetry ? 'online'
+        : field.deviceId           ? 'paired'
+        :                            'offline';
+
+    const statusConfig = {
+        online:  { bg: 'brand.50',  color: 'green.700',  border: 'brand.100', dot: 'green.500',  pulse: true,  label: t('dashboard.online') },
+        paired:  { bg: 'yellow.50', color: 'yellow.700', border: 'yellow.100', dot: 'yellow.500', pulse: false, label: t('dashboard.paired', 'Paired') },
+        offline: { bg: 'red.50',    color: 'red.700',    border: 'red.100',    dot: 'red.500',    pulse: false, label: t('dashboard.offline') },
+    }[status];
+
 
     return (
         <Flex
@@ -65,39 +106,49 @@ export const FieldCard = ({ field, onDetailsClick }: FieldCardProps) => {
                     border="1px solid"
                     align="center"
                     gap={1.5}
-                    bg={isOnline ? "brand.50" : "red.50"}
-                    color={isOnline ? "green.700" : "red.700"}
-                    borderColor={isOnline ? "brand.100" : "red.100"}
+                    bg={statusConfig.bg}
+                    color={statusConfig.color}
+                    borderColor={statusConfig.border}
                 >
-                    <Circle size={2} bg={isOnline ? "green.500" : "red.500"} animation={isOnline ? "pulse 2s infinite" : undefined} />
-                    {isOnline ? t('dashboard.online') : t('dashboard.offline')}
+                    <Circle size={2} bg={statusConfig.dot} animation={statusConfig.pulse ? "pulse 2s infinite" : undefined} />
+                    {statusConfig.label}
                 </Flex>
             </Flex>
 
             <Box display="grid" gridTemplateColumns="repeat(3, 1fr)" gap={4} p={5} flex={1}>
-                <Flex direction="column" bg="gray.50" p={3} borderRadius="lg" border="1px solid" borderColor="gray.100" align="center">
-                    <Text fontSize="xs" color="gray.500" mb={1}>{t('dashboard.moisture')}</Text>
-                    <Flex align="center" justify="center" gap={1.5}>
-                        <Droplets size={16} color="#3b82f6" />
-                        <Text fontWeight="bold" color="gray.700">{moisture}%</Text>
-                    </Flex>
-                </Flex>
+                {isLoading ? (
+                    <>
+                        <Skeleton height="60px" borderRadius="lg" />
+                        <Skeleton height="60px" borderRadius="lg" />
+                        <Skeleton height="60px" borderRadius="lg" />
+                    </>
+                ) : (
+                    <>
+                        <Flex direction="column" bg="gray.50" p={3} borderRadius="lg" border="1px solid" borderColor="gray.100" align="center">
+                            <Text fontSize="xs" color="gray.500" mb={1}>{t('dashboard.moisture')}</Text>
+                            <Flex align="center" justify="center" gap={1.5}>
+                                <Droplets size={16} color="#3b82f6" />
+                                <Text fontWeight="bold" color="gray.700">{telemetry?.soilHumidity ?? "--"}%</Text>
+                            </Flex>
+                        </Flex>
 
-                <Flex direction="column" bg="gray.50" p={3} borderRadius="lg" border="1px solid" borderColor="gray.100" align="center">
-                    <Text fontSize="xs" color="gray.500" mb={1}>{t('dashboard.temperature')}</Text>
-                    <Flex align="center" justify="center" gap={1.5}>
-                        <Thermometer size={16} color="#f97316" />
-                        <Text fontWeight="bold" color="gray.700">{temp}°C</Text>
-                    </Flex>
-                </Flex>
+                        <Flex direction="column" bg="gray.50" p={3} borderRadius="lg" border="1px solid" borderColor="gray.100" align="center">
+                            <Text fontSize="xs" color="gray.500" mb={1}>{t('dashboard.temperature')}</Text>
+                            <Flex align="center" justify="center" gap={1.5}>
+                                <Thermometer size={16} color="#f97316" />
+                                <Text fontWeight="bold" color="gray.700">{telemetry?.soilTemp ?? "--"}°C</Text>
+                            </Flex>
+                        </Flex>
 
-                <Flex direction="column" bg="gray.50" p={3} borderRadius="lg" border="1px solid" borderColor="gray.100" align="center">
-                    <Text fontSize="xs" color="gray.500" mb={1}>{t('dashboard.battery')}</Text>
-                    <Flex align="center" justify="center" gap={1.5}>
-                        <Zap size={16} color="#f59e0b" />
-                        <Text fontWeight="bold" color="gray.700">{battery}%</Text>
-                    </Flex>
-                </Flex>
+                        <Flex direction="column" bg="gray.50" p={3} borderRadius="lg" border="1px solid" borderColor="gray.100" align="center">
+                            <Text fontSize="xs" color="gray.500" mb={1}>{t('dashboard.air_temp') || 'Air Temp'}</Text>
+                            <Flex align="center" justify="center" gap={1.5}>
+                                <Thermometer size={16} color="#0ea5e9" />
+                                <Text fontWeight="bold" color="gray.700">{telemetry?.ambientTemp ?? "--"}°C</Text>
+                            </Flex>
+                        </Flex>
+                    </>
+                )}
             </Box>
 
             <Box p={4} pt={0}>
