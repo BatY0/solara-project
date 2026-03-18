@@ -41,6 +41,9 @@ public class WeatherLog {
     @Column(name = "average_temperature")
     private Double averageTemperature;
 
+    @Column(name = "average_humidity")
+    private Double averageHumidity;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

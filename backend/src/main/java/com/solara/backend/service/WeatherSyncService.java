@@ -57,7 +57,7 @@ public class WeatherSyncService {
                 // 2. Fetch yesterday's total rainfall and average temperature
                 // Using api.open-meteo.com with past_days=1 for reliable "yesterday" data
                 String url = String.format(
-                    "https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&past_days=1&forecast_days=0&daily=temperature_2m_mean,precipitation_sum", 
+                    "https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&past_days=1&forecast_days=0&daily=temperature_2m_mean,precipitation_sum,relative_humidity_2m_mean", 
                     latitude, longitude
                 );
 
@@ -66,13 +66,17 @@ public class WeatherSyncService {
                 // Since we only requested one day, the lists will have exactly 1 element at index 0
                 double fetchedAvgTemp = apiResponse.daily().temperature2mMean().get(0);
                 double fetchedRainfall = apiResponse.daily().precipitationSum().get(0);
+                Double fetchedHumidity = (apiResponse.daily().relativeHumidity2mMean() != null
+                        && !apiResponse.daily().relativeHumidity2mMean().isEmpty())
+                        ? apiResponse.daily().relativeHumidity2mMean().get(0) : null;
 
                 // 3. Save this to your local weather_logs PostgreSQL table
                 WeatherLog weatherLog = WeatherLog.builder()
-                        .fieldId(field.getId()) // Ensure field.getId() matches WeatherLog constructor/builder params
+                        .fieldId(field.getId())
                         .logDate(yesterday)
                         .totalRainfall(fetchedRainfall)
                         .averageTemperature(fetchedAvgTemp)
+                        .averageHumidity(fetchedHumidity)
                         .build();
 
                 weatherLogRepository.save(weatherLog);
@@ -87,10 +91,23 @@ public class WeatherSyncService {
         log.info("Daily weather sync completed.");
     }
 
+    /**
+     * Called on field creation — runs in a background thread so the HTTP response
+     * is not blocked while fetching 365 days of archive data.
+     */
     @Async
     public void initializeFieldWeatherData(Field field) {
+        initializeFieldWeatherDataSync(field);
+    }
+
+    /**
+     * Synchronous version used by AnalysisService as a self-healing fallback:
+     * if weather_logs is empty for a field (Open-Meteo was down at creation time),
+     * this is called inline before running analysis so the request can still succeed.
+     */
+    public void initializeFieldWeatherDataSync(Field field) {
         log.info("Initializing 1 year of historical weather data for field {}", field.getId());
-        
+
         LocalDate endDate = LocalDate.now().minusDays(1);
         LocalDate startDate = endDate.minusYears(1);
 
@@ -98,41 +115,45 @@ public class WeatherSyncService {
         double latitude = centroid.getY();
         double longitude = centroid.getX();
 
-        // Use the Archive API for long-term data as recommended by Open-Meteo docs
         String url = String.format(
-            "https://archive-api.open-meteo.com/v1/archive?latitude=%s&longitude=%s&start_date=%s&end_date=%s&daily=temperature_2m_mean,precipitation_sum", 
+            "https://archive-api.open-meteo.com/v1/archive?latitude=%s&longitude=%s&start_date=%s&end_date=%s&daily=temperature_2m_mean,precipitation_sum,relative_humidity_2m_mean",
             latitude, longitude, startDate, endDate
         );
 
         try {
             OpenMeteoResponse apiResponse = weatherRestTemplate.getForObject(url, OpenMeteoResponse.class);
-            
+
             if (apiResponse != null && apiResponse.daily() != null) {
                 List<WeatherLog> logsToSave = new ArrayList<>();
                 int dataSize = apiResponse.daily().time().size();
-                
-                // Loop through the arrays returned by Open-Meteo
+
                 for (int i = 0; i < dataSize; i++) {
                     LocalDate logDate = LocalDate.parse(apiResponse.daily().time().get(i));
                     Double avgTemp = apiResponse.daily().temperature2mMean().get(i);
                     Double rainfall = apiResponse.daily().precipitationSum().get(i);
-                    
+                    Double humidity = (apiResponse.daily().relativeHumidity2mMean() != null
+                            && i < apiResponse.daily().relativeHumidity2mMean().size())
+                            ? apiResponse.daily().relativeHumidity2mMean().get(i) : null;
+
                     WeatherLog logItem = WeatherLog.builder()
                         .fieldId(field.getId())
                         .logDate(logDate)
-                        .averageTemperature(avgTemp) // might be null if OpenMeteo lacks data for a specific day
+                        .averageTemperature(avgTemp)
                         .totalRainfall(rainfall)
+                        .averageHumidity(humidity)
                         .build();
-                        
+
                     logsToSave.add(logItem);
                 }
-                
-                // Batch save the full year
+
                 weatherLogRepository.saveAll(logsToSave);
-                log.info("Successfully saved {} historical weather records.", logsToSave.size());
+                log.info("Successfully saved {} historical weather records for field {}.",
+                        logsToSave.size(), field.getId());
             }
         } catch (Exception e) {
             log.error("Failed to initialize historical data for field {}: {}", field.getId(), e.getMessage());
+            throw new AppException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "Weather data service is currently unavailable. Please try again later.");
         }
     }
 

@@ -8,6 +8,7 @@ public record OpenMeteoResponse(Daily daily) {
     public record Daily(
         List<String> time,
         @JsonProperty("temperature_2m_mean") List<Double> temperature2mMean,
-        @JsonProperty("precipitation_sum") List<Double> precipitationSum
+        @JsonProperty("precipitation_sum") List<Double> precipitationSum,
+        @JsonProperty("relative_humidity_2m_mean") List<Double> relativeHumidity2mMean
     ) {}
 }
