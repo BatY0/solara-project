@@ -68,10 +68,10 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
 
             await fieldsService.updateFieldProperties(createRes.id, {
                 name: formData.name,
-                nitrogen: parseFloat(formData.nitrogen) || null,
-                phosphorus: parseFloat(formData.phosphorus) || null,
-                potassium: parseFloat(formData.potassium) || null,
-                ph: formData.useDefaultPh ? null : formData.ph,
+                nitrogen: parseFloat(formData.nitrogen) || 52.6,
+                phosphorus: parseFloat(formData.phosphorus) || 58.1,
+                potassium: parseFloat(formData.potassium) || 52.0,
+                ph: formData.useDefaultPh ? 6.44 : formData.ph,
             });
 
             onSuccess?.();
