@@ -24,7 +24,13 @@ export const Dashboard = () => {
   const fetchFields = useCallback(async () => {
     try {
       const data = await fieldsService.getUserFields()
-      setFields(data)
+      // Sort: paired (online-capable) fields first
+      const sorted = [...data].sort((a, b) => {
+        const aOnline = a.deviceId ? 1 : 0
+        const bOnline = b.deviceId ? 1 : 0
+        return bOnline - aOnline
+      })
+      setFields(sorted)
     } catch (error) {
       console.error("Error fetching fields:", error)
     } finally {
@@ -57,7 +63,7 @@ export const Dashboard = () => {
     )
   }
 
-  const onlineFieldsCount = fields.filter(f => f.status === 'online').length
+  const onlineFieldsCount = fields.filter(f => !!f.deviceId).length
 
   return (
     <>
@@ -109,7 +115,7 @@ export const Dashboard = () => {
             />
             <AlertCard
               title={t('dashboard.system_alert')}
-              message="Antalya Serası'nda nem oranı düşük. Sulama öneriliyor."
+              message={t('dashboard.alert_msg', "Low moisture in Antalya Greenhouse. Irrigation recommended.")}
               ctaText={t('dashboard.view_details')}
               onAction={() => console.log('Uyarı detay...')}
             />
@@ -121,22 +127,29 @@ export const Dashboard = () => {
               <Text fontSize="lg" fontWeight="bold" color="neutral.dark">
                 {t('dashboard.registered_fields')}
               </Text>
-              {fields.length > 6 && (
-                <Text fontSize="sm" color="brand.500" fontWeight="medium" cursor="pointer" onClick={() => navigate('/fields')}>
-                  {t('dashboard.view_all_fields', { count: fields.length })}
-                </Text>
-              )}
+              <Flex align="center" gap={4}>
+                {fields.length > 0 && (
+                  <Text fontSize="sm" color="neutral.subtext" fontWeight="medium">
+                    {fields.length} {t('dashboard.total_fields').toLowerCase()}
+                  </Text>
+                )}
+                {fields.length > 4 && (
+                  <Button variant="outline" size="sm" onClick={() => navigate('/fields')}>
+                    {t('dashboard.view_all_fields', { count: fields.length })}
+                  </Button>
+                )}
+              </Flex>
             </Flex>
 
             <Box display="grid" gridTemplateColumns={{ base: "1fr", xl: "repeat(2, 1fr)" }} gap={6}>
-              {fields.slice(0, 6).map(field => (
+              {fields.slice(0, 4).map(field => (
                 <FieldCard
                   key={field.id}
                   field={field}
                   onDetailsClick={handleViewFieldDetails}
                 />
               ))}
-              <AddNewFieldCard onAddClick={handleAddNewField} />
+              {fields.length < 4 && <AddNewFieldCard onAddClick={handleAddNewField} />}
             </Box>
           </Box>
         </Flex>

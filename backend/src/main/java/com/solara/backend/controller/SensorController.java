@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,8 +13,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.solara.backend.dto.response.SensorResponse;
-import com.solara.backend.entity.SensorLogs;
-import com.solara.backend.exception.AppException;
 import com.solara.backend.service.SensorLogsService;
 
 
@@ -29,22 +27,20 @@ public class SensorController {
     }
 
     @GetMapping("/most-recent/{id}")
-    public SensorResponse getMostRecentSensorData(@PathVariable UUID id) {
-        if (!sensorService.hasLogsForField(id)) {
-            throw new AppException(HttpStatus.NOT_FOUND, "No sensor log has been  found for the provided id" + id);
-        }
-
-        SensorLogs mostRecent = sensorService.getMostRecent(id);
-        return new SensorResponse(mostRecent);
+    public ResponseEntity<SensorResponse> getMostRecentSensorData(@PathVariable("id") UUID id) {
+        return sensorService.getMostRecent(id)
+                .map(log -> ResponseEntity.ok(new SensorResponse(log)))
+                .orElse(ResponseEntity.noContent().build());
     }
 
     @GetMapping("/telemetry/{id}/history")
-    public List<SensorLogsService.AggregateLog> getHistoricalTelemetry(@PathVariable("id") UUID fieldId, @RequestParam String interval,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
+    public List<SensorLogsService.AggregateLog> getHistoricalTelemetry(@PathVariable("id") UUID fieldId, @RequestParam("interval") String interval,
+            @RequestParam("start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
+            @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
 
+        // No logs yet — return empty list instead of 404
         if (!sensorService.hasLogsForField(fieldId)) {
-            throw new AppException(HttpStatus.NOT_FOUND, "No sensor log has been  found for the provided id" + fieldId);
+            return List.of();
         }
 
         List<SensorLogsService.AggregateLog> logs = sensorService.getLogsByInterval(

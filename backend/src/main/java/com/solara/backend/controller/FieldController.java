@@ -89,7 +89,7 @@ public class FieldController {
 
     // Read One (GET)
     @GetMapping("/{id}")
-    public ApiResponse<FieldResponseDTO> getFieldById(@PathVariable UUID id) {
+    public ApiResponse<FieldResponseDTO> getFieldById(@PathVariable("id") UUID id) {
         Field field = fieldService.getFieldById(id);
         FieldResponseDTO fieldResponse = new FieldResponseDTO(field);
         return ApiResponse.success(fieldResponse, HttpStatus.OK.value(), "Field retrieved successfully."); 
@@ -99,8 +99,8 @@ public class FieldController {
     // Example usage: GET /api/fields/paginated?page=0&size=10
     @GetMapping("/paginated")
     public ApiResponse<Page<FieldResponseDTO>> getFieldsPaginated(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
         
         Page<Field> fieldsPage = fieldService.getAllFieldsPaginated(page, size);
         Page<FieldResponseDTO> fieldResponseDTOPage = fieldsPage.map(FieldResponseDTO::new);
@@ -129,7 +129,7 @@ public class FieldController {
 
     // Get Field Properties (GET)
     @GetMapping("/get-properties-with-field-id/{id}")
-    public ApiResponse<FieldProperties> getPropertiesOfField(@PathVariable UUID id) {
+    public ApiResponse<FieldProperties> getPropertiesOfField(@PathVariable("id") UUID id) {
         FieldProperties properties = fieldPropertyService.getFieldPropertiesByFieldId(id);
         if (properties == null) {
             throw new AppException(HttpStatus.NOT_FOUND, "No field properties found for field with id: " + id);

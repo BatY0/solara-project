@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -38,29 +39,26 @@ public class SensorLogsService {
         private Double avgAmbientTemp;
         private Double avgSoilTemp;
         private Double avgAmbientHumidity;
+        private Double avgSoilHumidity;
 
-        public AggregateLog(LocalDateTime period, Double avgAmbientTemp, Double avgSoilTemp, Double avgAmbientHumidity) {
+        public AggregateLog(LocalDateTime period, Double avgAmbientTemp, Double avgSoilTemp, Double avgAmbientHumidity, Double avgSoilHumidity) {
             this.period = period;
             this.avgAmbientTemp = avgAmbientTemp;
             this.avgSoilTemp = avgSoilTemp;
             this.avgAmbientHumidity = avgAmbientHumidity;
+            this.avgSoilHumidity = avgSoilHumidity;
         }
 
         public LocalDateTime getPeriod() { return period; }
         public Double getAvgAmbientTemp() { return avgAmbientTemp; }
         public Double getAvgSoilTemp() { return avgSoilTemp; }
         public Double getAvgAmbientHumidity() { return avgAmbientHumidity; }
+        public Double getAvgSoilHumidity() { return avgSoilHumidity; }
     }
 
-    public SensorLogs getMostRecent(UUID fieldId) {
-        if (!sensorRepo.existsByFieldId(fieldId)) {
-            throw new AppException(HttpStatus.NOT_FOUND, "No sensor logs found for field with ID: " + fieldId);
-        }
-
-        SensorLogs mostRecent = sensorRepo.findByFieldId(fieldId).stream()
-                .max((s1, s2) -> s1.getTimestamp().compareTo(s2.getTimestamp()))
-                .orElse(null);
-        return mostRecent;
+    public Optional<SensorLogs> getMostRecent(UUID fieldId) {
+        return sensorRepo.findByFieldId(fieldId).stream()
+                .max(Comparator.comparing(SensorLogs::getTimestamp));
     }
 
     public List<AggregateLog> getLogsByInterval(Intervals interval, LocalDateTime start, LocalDateTime end, UUID fieldId) {
@@ -85,13 +83,26 @@ public class SensorLogsService {
                 LocalDateTime period = entry.getKey();
                 List<SensorLogs> periodLogs = entry.getValue();
 
-                // Calculate averages
-                // Ensure SensorLogs entity has getAmbientTemp(), getSoilTemp(), getAmbientHumidity()
-                double avgAmbTemp = periodLogs.stream().mapToDouble(SensorLogs::getAmbientTemp).average().orElse(0.0);
-                double avgSoilTemp = periodLogs.stream().mapToDouble(SensorLogs::getSoilTemp).average().orElse(0.0);
-                double avgAmbHum = periodLogs.stream().mapToDouble(SensorLogs::getAmbientHumidity).average().orElse(0.0);
+                // Calculate averages, filtering nulls to avoid NullPointerException
+                // (sensor may omit individual fields in some readings)
+                double avgAmbTemp = periodLogs.stream()
+                        .filter(l -> l.getAmbientTemp() != null)
+                        .mapToDouble(SensorLogs::getAmbientTemp)
+                        .average().orElse(0.0);
+                double avgSoilTemp = periodLogs.stream()
+                        .filter(l -> l.getSoilTemp() != null)
+                        .mapToDouble(SensorLogs::getSoilTemp)
+                        .average().orElse(0.0);
+                double avgAmbHum = periodLogs.stream()
+                        .filter(l -> l.getAmbientHumidity() != null)
+                        .mapToDouble(SensorLogs::getAmbientHumidity)
+                        .average().orElse(0.0);
+                double avgSoilHum = periodLogs.stream()
+                        .filter(l -> l.getSoilHumidity() != null)
+                        .mapToDouble(SensorLogs::getSoilHumidity)
+                        .average().orElse(0.0);
 
-                return new AggregateLog(period, avgAmbTemp, avgSoilTemp, avgAmbHum);
+                return new AggregateLog(period, avgAmbTemp, avgSoilTemp, avgAmbHum, avgSoilHum);
             })
             // Sort by period
             .sorted(Comparator.comparing(AggregateLog::getPeriod))
