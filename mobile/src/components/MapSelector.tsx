@@ -36,6 +36,20 @@ export function MapSelector({ value, onChange, onAreaCalculated }: MapSelectorPr
         if (!value) {
             setPoints([]);
             setFinished(false);
+        } else {
+            // When an existing polygon is passed in (e.g. Edit tapped),
+            // animate the map to fit it instead of staying at the default region.
+            const loaded = fromBackend(value);
+            if (loaded.length > 0) {
+                const coords = loaded.map(([lat, lng]) => ({ latitude: lat, longitude: lng }));
+                const t = setTimeout(() => {
+                    mapRef.current?.fitToCoordinates(coords, {
+                        edgePadding: { top: 60, right: 60, bottom: 60, left: 60 },
+                        animated: true,
+                    });
+                }, 350);
+                return () => clearTimeout(t);
+            }
         }
     }, [value]);
 
@@ -60,6 +74,13 @@ export function MapSelector({ value, onChange, onAreaCalculated }: MapSelectorPr
         },
         [points, finished, handleSetPoints]
     );
+
+    const handleVertexDrag = useCallback((index: number, e: { nativeEvent: { coordinate: { latitude: number; longitude: number } } }) => {
+        const { latitude, longitude } = e.nativeEvent.coordinate;
+        const newPoints = [...points];
+        newPoints[index] = [latitude, longitude];
+        handleSetPoints(newPoints);
+    }, [points, handleSetPoints]);
 
     const handleFinish = useCallback(() => {
         if (points.length < 3) return;
@@ -103,15 +124,22 @@ export function MapSelector({ value, onChange, onAreaCalculated }: MapSelectorPr
         }
     }, []);
 
-    const initialRegion =
-        points.length > 0
-            ? {
-                  latitude: points[0][0],
-                  longitude: points[0][1],
-                  latitudeDelta: 0.02,
-                  longitudeDelta: 0.02,
-              }
-            : DEFAULT_REGION;
+    let initialRegion = DEFAULT_REGION;
+    if (points.length > 0) {
+        const lats = points.map(p => p[0]);
+        const lngs = points.map(p => p[1]);
+        const minLat = Math.min(...lats);
+        const maxLat = Math.max(...lats);
+        const minLng = Math.min(...lngs);
+        const maxLng = Math.max(...lngs);
+
+        initialRegion = {
+            latitude: (minLat + maxLat) / 2,
+            longitude: (minLng + maxLng) / 2,
+            latitudeDelta: Math.max((maxLat - minLat) * 2, 0.001),
+            longitudeDelta: Math.max((maxLng - minLng) * 2, 0.001),
+        };
+    }
 
     const polygonCoords =
         points.length >= 2
@@ -178,6 +206,8 @@ export function MapSelector({ value, onChange, onAreaCalculated }: MapSelectorPr
                         key={i}
                         coordinate={{ latitude: lat, longitude: lng }}
                         anchor={{ x: 0.5, y: 0.5 }}
+                        draggable={true}
+                        onDragEnd={(e) => handleVertexDrag(i, e)}
                     >
                         <View style={styles.vertexMarker}>
                             <Text style={styles.vertexLabel}>{i + 1}</Text>

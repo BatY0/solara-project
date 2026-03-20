@@ -377,7 +377,7 @@ export default function AddFieldModal({ visible, onClose, onSuccess }: Props) {
                                             { label: 'N', val: formData.nitrogen },
                                             { label: 'P', val: formData.phosphorus },
                                             { label: 'K', val: formData.potassium },
-                                            { label: 'pH', val: formData.useDefaultPh ? `${DEFAULT_PH} (auto)` : formData.ph.toFixed(1) },
+                                            { label: 'pH', val: formData.useDefaultPh ? `${DEFAULT_PH} (${t('add_field.auto').toLowerCase()})` : formData.ph.toFixed(1) },
                                         ].map(item => (
                                             <View key={item.label} style={styles.npkBadge}>
                                                 <Text style={styles.npkBadgeText}>{item.label}: {item.val || t('add_field.auto')}</Text>

@@ -34,7 +34,8 @@ export default function DashboardScreen() {
         if (!isRefresh) setIsLoading(true);
         try {
             const data = await fieldsService.getUserFields();
-            setFields(data);
+            const sorted = [...data].sort((a, b) => (b.deviceId ? 1 : 0) - (a.deviceId ? 1 : 0));
+            setFields(sorted);
         } catch (error) {
             console.error('Error fetching fields:', error);
         } finally {
@@ -74,7 +75,7 @@ export default function DashboardScreen() {
         fetchFields(true);
     };
 
-    const onlineCount = fields.filter(f => f.status === 'online').length;
+    const onlineCount = fields.filter(f => !!f.deviceId).length;
 
     return (
         <SafeAreaView style={styles.container}>
@@ -121,6 +122,13 @@ export default function DashboardScreen() {
                 {/* FIELDS SECTION */}
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>{t('dashboard.registered_fields')}</Text>
+                    {fields.length > 4 && (
+                        <TouchableOpacity onPress={() => router.push('/fields')}>
+                            <Text style={{color: theme.colors.brand[500], fontWeight: '600', fontSize: 13}}>
+                                {t('dashboard.view_all_fields', { count: fields.length })}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
 
                 {isLoading ? (
@@ -135,16 +143,18 @@ export default function DashboardScreen() {
                         <Text style={styles.emptyDesc}>{t('dashboard.no_fields_desc')}</Text>
                     </View>
                 ) : (
-                    fields.map(field => (
-                        <FieldCard key={field.id} field={field} t={t} />
+                    fields.slice(0, 4).map(field => (
+                        <FieldCard key={field.id} field={field} t={t} router={router} />
                     ))
                 )}
             </ScrollView>
 
             {/* FAB */}
-            <TouchableOpacity style={styles.fab} onPress={() => setIsWizardOpen(true)} activeOpacity={0.85}>
-                <Plus color="#fff" size={26} />
-            </TouchableOpacity>
+            {fields.length < 4 && (
+                <TouchableOpacity style={styles.fab} onPress={() => setIsWizardOpen(true)} activeOpacity={0.85}>
+                    <Plus color="#fff" size={26} />
+                </TouchableOpacity>
+            )}
 
             {/* ADD FIELD MODAL */}
             <AddFieldModal
@@ -156,13 +166,13 @@ export default function DashboardScreen() {
     );
 }
 
-function FieldCard({ field, t }: { field: Field; t: (key: string) => string }) {
-    const isOnline = field.status === 'online';
+function FieldCard({ field, t, router }: { field: Field; t: (key: string) => string; router: any }) {
+    const isOnline = !!field.deviceId;
     const soilKey = `add_field.${field.soilType}`;
     const translatedSoil = t(soilKey);
     const soilLabel = translatedSoil === soilKey ? field.soilType : translatedSoil;
     return (
-        <View style={styles.fieldCard}>
+        <TouchableOpacity style={styles.fieldCard} onPress={() => router.push(`/fields/${field.id}`)}>
             <View style={styles.fieldCardLeft}>
                 <View style={styles.fieldIconWrap}>
                     <MapPin color={theme.colors.brand[500]} size={18} />
@@ -170,7 +180,7 @@ function FieldCard({ field, t }: { field: Field; t: (key: string) => string }) {
                 <View style={{ flex: 1 }}>
                     <Text style={styles.fieldName} numberOfLines={1}>{field.name}</Text>
                     <Text style={styles.fieldMeta}>
-                        {field.areaHa} ha  ·  {soilLabel}
+                        {Number(field.areaHa.toFixed(2))} ha  ·  {soilLabel}
                     </Text>
                 </View>
             </View>
@@ -185,7 +195,7 @@ function FieldCard({ field, t }: { field: Field; t: (key: string) => string }) {
                 </View>
                 <ChevronRight color={theme.colors.neutral.subtext} size={18} />
             </View>
-        </View>
+        </TouchableOpacity>
     );
 }
 
