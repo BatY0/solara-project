@@ -25,7 +25,10 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
-        if (error.response?.status === 401) {
+        const url = error.config?.url ?? '';
+        // Only force-logout on 401 for non-profile endpoints.
+        // A 401 on /users/me is handled gracefully by AuthContext (falls back to token sub).
+        if (error.response?.status === 401 && !url.includes('/users/me')) {
             await SecureStore.deleteItemAsync('token');
         }
         return Promise.reject(error);
