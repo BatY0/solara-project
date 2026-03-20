@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CropDTO {
+    private java.util.UUID id;
 
     @NotBlank(message = "Crop name is required")
     @Size(max = 100, message = "Crop name must not exceed 100 characters")
@@ -39,6 +40,7 @@ public class CropDTO {
     private String image;
 
     public CropDTO(CropGuide cropGuide) {
+        this.id = cropGuide.getId();
         this.name = cropGuide.getName();
         this.scientificName = cropGuide.getScientificName();
         this.optimalTemperatureMin = cropGuide.getOptimalTemperatureMin();
