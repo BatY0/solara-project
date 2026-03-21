@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -11,15 +12,20 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.solara.backend.dto.request.AnalysisRequestDTO;
 import com.solara.backend.dto.request.MlPayloadDTO;
 import com.solara.backend.dto.response.AnalysisResultDTO;
 import com.solara.backend.dto.response.MlCropRecommendationDTO;
+import com.solara.backend.entity.AnalysisLog;
 import com.solara.backend.entity.Field;
 import com.solara.backend.entity.FieldProperties;
 import com.solara.backend.entity.SensorLogs;
 import com.solara.backend.entity.WeatherLog;
 import com.solara.backend.exception.AppException;
+import com.solara.backend.repository.AnalysisLogRepository;
 import com.solara.backend.repository.SensorLogsRepository;
 import com.solara.backend.repository.WeatherLogRepository;
 
@@ -27,7 +33,7 @@ import com.solara.backend.repository.WeatherLogRepository;
 public class AnalysisService {
 
     private static final Logger log = LoggerFactory.getLogger(AnalysisService.class);
-    private static final double CONFIDENCE_THRESHOLD = 20.0;
+    private static final double CONFIDENCE_THRESHOLD = 5.0;
 
     private final SensorLogsRepository sensorLogsRepository;
     private final WeatherLogRepository weatherLogRepository;
@@ -35,19 +41,25 @@ public class AnalysisService {
     private final MlEngineClient mlEngineClient;
     private final WeatherSyncService weatherSyncService;
     private final FieldService fieldService;
+    private final AnalysisLogRepository analysisLogRepository;
+    private final ObjectMapper objectMapper;
 
     public AnalysisService(SensorLogsRepository sensorLogsRepository,
                            WeatherLogRepository weatherLogRepository,
                            FieldPropertyService fieldPropertyService,
                            MlEngineClient mlEngineClient,
                            WeatherSyncService weatherSyncService,
-                           FieldService fieldService) {
+                           FieldService fieldService,
+                           AnalysisLogRepository analysisLogRepository,
+                           ObjectMapper objectMapper) {
         this.sensorLogsRepository = sensorLogsRepository;
         this.weatherLogRepository = weatherLogRepository;
         this.fieldPropertyService = fieldPropertyService;
         this.mlEngineClient = mlEngineClient;
         this.weatherSyncService = weatherSyncService;
         this.fieldService = fieldService;
+        this.analysisLogRepository = analysisLogRepository;
+        this.objectMapper = objectMapper;
     }
 
     public AnalysisResultDTO analyze(UUID fieldId, AnalysisRequestDTO request) {
@@ -142,12 +154,23 @@ public class AnalysisService {
         }
 
         // Rainfall always comes from weather_logs — sensors do not measure precipitation.
-        // We sum daily values to get total precipitation for the period, matching the
-        // scale expected by the ML model (trained on seasonal/period totals in mm).
-        List<WeatherLog> weatherForRainfall = weatherLogRepository
-                .findByFieldIdAndLogDateBetween(fieldId, start, end);
+        // IMPORTANT: The ML model was trained on ANNUAL rainfall values, so even in
+        // Scenario A (range analysis) we derive rainfall from a 1‑year window rather
+        // than just the requested dates. We use the last 12 months ending at 'end'.
+        LocalDate annualEnd = end;
+        LocalDate annualStart = annualEnd.minusYears(1).plusDays(1);
 
-        double rainfall = weatherForRainfall.stream()
+        List<WeatherLog> annualLogs = weatherLogRepository
+                .findByFieldIdAndLogDateBetween(fieldId, annualStart, annualEnd);
+
+        // If we somehow have no data for that rolling year (e.g., very new field),
+        // fall back to summing over the user-provided range so we still return
+        // something meaningful instead of failing.
+        List<WeatherLog> rainfallLogs = annualLogs.isEmpty()
+                ? weatherLogRepository.findByFieldIdAndLogDateBetween(fieldId, start, end)
+                : annualLogs;
+
+        double rainfall = rainfallLogs.stream()
                 .filter(w -> w.getTotalRainfall() != null)
                 .mapToDouble(WeatherLog::getTotalRainfall)
                 .sum();
@@ -155,13 +178,16 @@ public class AnalysisService {
         MlPayloadDTO payload = buildPayload(props, temperature, humidity, rainfall, request.getTopN());
         List<MlCropRecommendationDTO> recommendations = filterAndCall(payload);
 
-        return AnalysisResultDTO.builder()
+        AnalysisResultDTO result = AnalysisResultDTO.builder()
                 .fieldId(fieldId)
                 .scenario("RANGE")
                 .weatherSource(weatherSource)
                 .timestamp(LocalDateTime.now())
                 .recommendations(recommendations)
                 .build();
+
+        saveAnalysisLog(result);
+        return result;
     }
 
     // ── Scenario B & C ────────────────────────────────────────────────────────
@@ -175,43 +201,96 @@ public class AnalysisService {
                     "targetMonthStart and targetMonthEnd must be between 1 and 12.");
         }
 
-        // Fetch all stored weather logs for the field and filter to target months
+        // Fetch all stored weather logs for the field
         List<WeatherLog> allLogs = weatherLogRepository.findAllByFieldId(fieldId);
 
-        List<WeatherLog> seasonLogs = allLogs.stream()
-                .filter(w -> {
-                    int m = w.getLogDate().getMonthValue();
-                    if (monthStart <= monthEnd) {
-                        return m >= monthStart && m <= monthEnd;
-                    } else {
-                        // Wrap-around (e.g., Nov–Feb: 11,12,1,2)
-                        return m >= monthStart || m <= monthEnd;
-                    }
-                })
-                .toList();
-
-        if (seasonLogs.isEmpty()) {
+        if (allLogs.isEmpty()) {
             throw new AppException(HttpStatus.valueOf(422),
-                    "No historical weather data found for months " + monthStart + "–" + monthEnd
+                    "No historical weather data found for field " + fieldId
+                    + ". Ensure the field has at least one year of weather data.");
+        }
+
+        // Determine the most recent log date so we can walk backwards in 1-year windows.
+        LocalDate latestDate = allLogs.stream()
+                .map(WeatherLog::getLogDate)
+                .max(LocalDate::compareTo)
+                .orElseThrow();
+
+        int maxYears = 5; // cap how many past years to include in the climatology
+        int yearsUsed = 0;
+
+        double sumOfYearlyTemps = 0.0;
+        double sumOfYearlyHumidity = 0.0;
+        double sumOfYearlyRainfall = 0.0;
+
+        for (int k = 0; k < maxYears; k++) {
+            // Window: (end-1year, end] — i.e. one full year back from the current end
+            LocalDate windowEnd = latestDate.minusYears(k);
+            LocalDate windowStart = windowEnd.minusYears(1).plusDays(1);
+
+            // All logs in this 1-year window (used for ANNUAL rainfall)
+            List<WeatherLog> windowLogsYear = allLogs.stream()
+                    .filter(w -> {
+                        LocalDate d = w.getLogDate();
+                        return !d.isBefore(windowStart) && !d.isAfter(windowEnd);
+                    })
+                    .toList();
+
+            // Within that year, restrict to the target months (used for SEASONAL temp/humidity)
+            List<WeatherLog> windowLogsSeason = windowLogsYear.stream()
+                    .filter(w -> {
+                        int m = w.getLogDate().getMonthValue();
+                        if (monthStart <= monthEnd) {
+                            return m >= monthStart && m <= monthEnd;
+                        } else {
+                            // Wrap-around (e.g., Nov–Feb: 11,12,1,2)
+                            return m >= monthStart || m <= monthEnd;
+                        }
+                    })
+                    .toList();
+
+            if (windowLogsSeason.isEmpty() || windowLogsYear.isEmpty()) {
+                // No more complete years with data for the requested months
+                break;
+            }
+
+            // Seasonal temperature/humidity: only logs in the requested months
+            double yearTemp = windowLogsSeason.stream()
+                    .filter(w -> w.getAverageTemperature() != null)
+                    .mapToDouble(WeatherLog::getAverageTemperature)
+                    .average()
+                    .orElse(0.0);
+
+            double yearHum = windowLogsSeason.stream()
+                    .filter(w -> w.getAverageHumidity() != null)
+                    .mapToDouble(WeatherLog::getAverageHumidity)
+                    .average()
+                    .orElse(0.0);
+
+            // Annual rainfall: sum over the FULL year window, regardless of month,
+            // to match the ML model which was trained on yearly rainfall.
+            double yearRain = windowLogsYear.stream()
+                    .filter(w -> w.getTotalRainfall() != null)
+                    .mapToDouble(WeatherLog::getTotalRainfall)
+                    .sum();
+
+            sumOfYearlyTemps += yearTemp;
+            sumOfYearlyHumidity += yearHum;
+            sumOfYearlyRainfall += yearRain;
+            yearsUsed++;
+        }
+
+        if (yearsUsed == 0) {
+            throw new AppException(HttpStatus.valueOf(422),
+                    "Not enough historical weather data for months " + monthStart + "–" + monthEnd
                     + " for field " + fieldId + ". Ensure the field has at least one year of weather data.");
         }
 
-        double temperature = seasonLogs.stream()
-                .filter(w -> w.getAverageTemperature() != null)
-                .mapToDouble(WeatherLog::getAverageTemperature)
-                .average()
-                .orElse(0.0);
-
-        double humidity = seasonLogs.stream()
-                .filter(w -> w.getAverageHumidity() != null)
-                .mapToDouble(WeatherLog::getAverageHumidity)
-                .average()
-                .orElse(0.0);
-
-        double rainfall = seasonLogs.stream()
-                .filter(w -> w.getTotalRainfall() != null)
-                .mapToDouble(WeatherLog::getTotalRainfall)
-                .sum();
+        // Final climatology: average of per-year seasonal statistics, so rainfall is effectively
+        // \"average yearly\" rainfall for the requested months, matching the ML model training scale.
+        double temperature = sumOfYearlyTemps / yearsUsed;
+        double humidity = sumOfYearlyHumidity / yearsUsed;
+        double rainfall = sumOfYearlyRainfall / yearsUsed;
 
         // Scenario C: apply user overrides on top of the climatology baseline
         Map<String, Double> overrides = request.getOverrides();
@@ -230,13 +309,16 @@ public class AnalysisService {
         MlPayloadDTO payload = buildPayload(props, temperature, humidity, rainfall, request.getTopN());
         List<MlCropRecommendationDTO> recommendations = filterAndCall(payload);
 
-        return AnalysisResultDTO.builder()
+        AnalysisResultDTO result = AnalysisResultDTO.builder()
                 .fieldId(fieldId)
                 .scenario(isWhatIf ? "WHAT_IF" : "FUTURE")
                 .weatherSource("CLIMATOLOGY")
                 .timestamp(LocalDateTime.now())
                 .recommendations(recommendations)
                 .build();
+
+        saveAnalysisLog(result);
+        return result;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -260,5 +342,42 @@ public class AnalysisService {
         return raw.stream()
                 .filter(r -> r.getProbability() != null && r.getProbability() >= CONFIDENCE_THRESHOLD)
                 .toList();
+    }
+
+    private void saveAnalysisLog(AnalysisResultDTO result) {
+        try {
+            String recommendationsJson = objectMapper.writeValueAsString(result.getRecommendations());
+            AnalysisLog logEntry = AnalysisLog.builder()
+                    .fieldId(result.getFieldId())
+                    .scenario(result.getScenario())
+                    .weatherSource(result.getWeatherSource())
+                    .recommendations(recommendationsJson)
+                    .build();
+            analysisLogRepository.save(logEntry);
+            log.info("Saved analysis log for field {} scenario {}", result.getFieldId(), result.getScenario());
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize recommendations for analysis log: {}", e.getMessage());
+        }
+    }
+
+    public Optional<AnalysisResultDTO> getLastAnalysis(UUID fieldId) {
+        return analysisLogRepository.findTopByFieldIdOrderByCreatedAtDesc(fieldId)
+                .map(entry -> {
+                    try {
+                        List<MlCropRecommendationDTO> recommendations = objectMapper.readValue(
+                                entry.getRecommendations(),
+                                new TypeReference<List<MlCropRecommendationDTO>>() {});
+                        return AnalysisResultDTO.builder()
+                                .fieldId(entry.getFieldId())
+                                .scenario(entry.getScenario())
+                                .weatherSource(entry.getWeatherSource())
+                                .timestamp(entry.getCreatedAt())
+                                .recommendations(recommendations)
+                                .build();
+                    } catch (JsonProcessingException e) {
+                        log.error("Failed to deserialize analysis log {}: {}", entry.getId(), e.getMessage());
+                        return null;
+                    }
+                });
     }
 }
