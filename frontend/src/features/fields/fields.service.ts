@@ -7,7 +7,9 @@ import type {
     UpdateFieldPropertiesRequest,
     SensorData,
     HistoricalSensorData,
-    WeatherData
+    WeatherData,
+    AnalysisRequest,
+    AnalysisResult
 } from './types';
 
 export const fieldsService = {
@@ -72,6 +74,23 @@ export const fieldsService = {
             params: { interval, start, end }
         });
         return response.data;
+    },
+
+    // Run an ML crop analysis (Scenario A / B / C)
+    runAnalysis: async (request: AnalysisRequest): Promise<AnalysisResult> => {
+        const response = await api.post('/analysis/range', request);
+        return response.data.data;
+    },
+
+    // Fetch the most recently saved analysis for a field (null if none exist)
+    getLastAnalysis: async (fieldId: string): Promise<AnalysisResult | null> => {
+        try {
+            const response = await api.get(`/analysis/field/${fieldId}/last`);
+            return response.data.data;
+        } catch (err: any) {
+            if (err.response?.status === 404) return null;
+            throw err;
+        }
     },
 
     // Get live weather from WeatherAPIController (uses caching)

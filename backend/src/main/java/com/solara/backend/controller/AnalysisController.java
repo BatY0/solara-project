@@ -4,6 +4,8 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -56,5 +58,28 @@ public class AnalysisController {
 
         AnalysisResultDTO result = analysisService.analyze(fieldId, request);
         return ApiResponse.success(result, HttpStatus.OK.value(), "Analysis completed successfully.");
+    }
+
+    /**
+     * GET /api/v1/analysis/field/{fieldId}/last
+     * Returns the most recent saved analysis for a field.
+     * Returns 404 if no analysis has been run yet.
+     */
+    @GetMapping("/field/{fieldId}/last")
+    public ApiResponse<AnalysisResultDTO> getLastAnalysis(
+            @PathVariable UUID fieldId,
+            @AuthenticationPrincipal User currentUser) {
+
+        Field field = fieldService.getFieldById(fieldId);
+        if (!field.getUserId().equals(currentUser.getID())) {
+            throw new AppException(HttpStatus.FORBIDDEN,
+                    "You do not have permission to view analysis for this field.");
+        }
+
+        AnalysisResultDTO result = analysisService.getLastAnalysis(fieldId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND,
+                        "No analysis has been run yet for field: " + fieldId));
+
+        return ApiResponse.success(result, HttpStatus.OK.value(), "Last analysis retrieved successfully.");
     }
 }
