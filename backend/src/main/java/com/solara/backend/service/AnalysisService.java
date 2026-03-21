@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -11,15 +12,20 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.solara.backend.dto.request.AnalysisRequestDTO;
 import com.solara.backend.dto.request.MlPayloadDTO;
 import com.solara.backend.dto.response.AnalysisResultDTO;
 import com.solara.backend.dto.response.MlCropRecommendationDTO;
+import com.solara.backend.entity.AnalysisLog;
 import com.solara.backend.entity.Field;
 import com.solara.backend.entity.FieldProperties;
 import com.solara.backend.entity.SensorLogs;
 import com.solara.backend.entity.WeatherLog;
 import com.solara.backend.exception.AppException;
+import com.solara.backend.repository.AnalysisLogRepository;
 import com.solara.backend.repository.SensorLogsRepository;
 import com.solara.backend.repository.WeatherLogRepository;
 
@@ -35,19 +41,25 @@ public class AnalysisService {
     private final MlEngineClient mlEngineClient;
     private final WeatherSyncService weatherSyncService;
     private final FieldService fieldService;
+    private final AnalysisLogRepository analysisLogRepository;
+    private final ObjectMapper objectMapper;
 
     public AnalysisService(SensorLogsRepository sensorLogsRepository,
                            WeatherLogRepository weatherLogRepository,
                            FieldPropertyService fieldPropertyService,
                            MlEngineClient mlEngineClient,
                            WeatherSyncService weatherSyncService,
-                           FieldService fieldService) {
+                           FieldService fieldService,
+                           AnalysisLogRepository analysisLogRepository,
+                           ObjectMapper objectMapper) {
         this.sensorLogsRepository = sensorLogsRepository;
         this.weatherLogRepository = weatherLogRepository;
         this.fieldPropertyService = fieldPropertyService;
         this.mlEngineClient = mlEngineClient;
         this.weatherSyncService = weatherSyncService;
         this.fieldService = fieldService;
+        this.analysisLogRepository = analysisLogRepository;
+        this.objectMapper = objectMapper;
     }
 
     public AnalysisResultDTO analyze(UUID fieldId, AnalysisRequestDTO request) {
@@ -166,13 +178,16 @@ public class AnalysisService {
         MlPayloadDTO payload = buildPayload(props, temperature, humidity, rainfall, request.getTopN());
         List<MlCropRecommendationDTO> recommendations = filterAndCall(payload);
 
-        return AnalysisResultDTO.builder()
+        AnalysisResultDTO result = AnalysisResultDTO.builder()
                 .fieldId(fieldId)
                 .scenario("RANGE")
                 .weatherSource(weatherSource)
                 .timestamp(LocalDateTime.now())
                 .recommendations(recommendations)
                 .build();
+
+        saveAnalysisLog(result);
+        return result;
     }
 
     // ── Scenario B & C ────────────────────────────────────────────────────────
@@ -294,13 +309,16 @@ public class AnalysisService {
         MlPayloadDTO payload = buildPayload(props, temperature, humidity, rainfall, request.getTopN());
         List<MlCropRecommendationDTO> recommendations = filterAndCall(payload);
 
-        return AnalysisResultDTO.builder()
+        AnalysisResultDTO result = AnalysisResultDTO.builder()
                 .fieldId(fieldId)
                 .scenario(isWhatIf ? "WHAT_IF" : "FUTURE")
                 .weatherSource("CLIMATOLOGY")
                 .timestamp(LocalDateTime.now())
                 .recommendations(recommendations)
                 .build();
+
+        saveAnalysisLog(result);
+        return result;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -324,5 +342,42 @@ public class AnalysisService {
         return raw.stream()
                 .filter(r -> r.getProbability() != null && r.getProbability() >= CONFIDENCE_THRESHOLD)
                 .toList();
+    }
+
+    private void saveAnalysisLog(AnalysisResultDTO result) {
+        try {
+            String recommendationsJson = objectMapper.writeValueAsString(result.getRecommendations());
+            AnalysisLog logEntry = AnalysisLog.builder()
+                    .fieldId(result.getFieldId())
+                    .scenario(result.getScenario())
+                    .weatherSource(result.getWeatherSource())
+                    .recommendations(recommendationsJson)
+                    .build();
+            analysisLogRepository.save(logEntry);
+            log.info("Saved analysis log for field {} scenario {}", result.getFieldId(), result.getScenario());
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize recommendations for analysis log: {}", e.getMessage());
+        }
+    }
+
+    public Optional<AnalysisResultDTO> getLastAnalysis(UUID fieldId) {
+        return analysisLogRepository.findTopByFieldIdOrderByCreatedAtDesc(fieldId)
+                .map(entry -> {
+                    try {
+                        List<MlCropRecommendationDTO> recommendations = objectMapper.readValue(
+                                entry.getRecommendations(),
+                                new TypeReference<List<MlCropRecommendationDTO>>() {});
+                        return AnalysisResultDTO.builder()
+                                .fieldId(entry.getFieldId())
+                                .scenario(entry.getScenario())
+                                .weatherSource(entry.getWeatherSource())
+                                .timestamp(entry.getCreatedAt())
+                                .recommendations(recommendations)
+                                .build();
+                    } catch (JsonProcessingException e) {
+                        log.error("Failed to deserialize analysis log {}: {}", entry.getId(), e.getMessage());
+                        return null;
+                    }
+                });
     }
 }

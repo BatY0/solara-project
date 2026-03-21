@@ -70,3 +70,31 @@ export interface UpdateFieldPropertiesRequest {
     potassium: number | null;
     ph: number | null;
 }
+
+export interface AnalysisRequest {
+    fieldId: string;
+    isFuturePrediction: boolean;
+    startDate?: string;          // "YYYY-MM-DD" — Scenario A
+    endDate?: string;            // "YYYY-MM-DD" — Scenario A
+    targetMonthStart?: number;   // 1–12 — Scenario B/C
+    targetMonthEnd?: number;     // 1–12 — Scenario B/C
+    topN?: number;
+    overrides?: {
+        temperature?: number;
+        humidity?: number;
+        rainfall?: number;
+    };
+}
+
+export interface MlCropRecommendation {
+    crop: string;
+    probability: number;
+}
+
+export interface AnalysisResult {
+    fieldId: string;
+    scenario: 'RANGE' | 'FUTURE' | 'WHAT_IF';
+    weatherSource: 'IOT' | 'WEATHER_LOG' | 'CLIMATOLOGY';
+    timestamp: string;
+    recommendations: MlCropRecommendation[];
+}
