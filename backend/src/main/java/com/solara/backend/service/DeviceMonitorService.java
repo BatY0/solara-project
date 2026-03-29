@@ -66,7 +66,7 @@ public class DeviceMonitorService {
         String subject = "Solara - Device Offline Alert: " + field.getName();
         String htmlBody = "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"
                 + "padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;'>"
-                + "<h2 style='color: #C53030;'>⚠️ Device Offline Alert</h2>"
+                + "<h2 style='color: #C53030;'> Device Offline Alert</h2>"
                 + "<p>Hello,</p>"
                 + "<p>Your device <strong>" + field.getDeviceId() + "</strong> paired to field "
                 + "<strong>" + field.getName() + "</strong> has not sent any data in the last 24 hours.</p>"

@@ -67,7 +67,7 @@ public class AnalysisController {
      */
     @GetMapping("/field/{fieldId}/last")
     public ApiResponse<AnalysisResultDTO> getLastAnalysis(
-            @PathVariable UUID fieldId,
+            @PathVariable("fieldId") UUID fieldId,
             @AuthenticationPrincipal User currentUser) {
 
         Field field = fieldService.getFieldById(fieldId);

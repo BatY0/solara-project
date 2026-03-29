@@ -53,6 +53,10 @@ public class User implements UserDetails {
     private Role role;
 
     @Builder.Default
+    @Column(name = "preferred_language", nullable = false, length = 8)
+    private String preferredLanguage = "en";
+
+    @Builder.Default
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified = false;
 

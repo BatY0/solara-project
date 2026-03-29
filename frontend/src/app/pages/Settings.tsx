@@ -17,11 +17,21 @@ export const Settings = () => {
         i18n.changeLanguage(lng);
     };
 
-    const handleSave = () => {
-        // Persist to localStorage so the language survives page refresh
-        localStorage.setItem('i18nextLng', i18n.language);
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2500);
+    const handleSave = async () => {
+        try {
+            const { data } = await api.put('/users/me/profile', {
+                name,
+                surname,
+                preferredLanguage: i18n.language
+            });
+            updateLocalUser(data);
+            // Persist locally as well for initial boot before profile fetch
+            localStorage.setItem('i18nextLng', i18n.language);
+            setSaved(true);
+            setTimeout(() => setSaved(false), 2500);
+        } catch (error) {
+            console.error('Failed to save language preference:', error);
+        }
     };
 
     const { logout, user, updateLocalUser } = useAuth();
@@ -103,7 +113,11 @@ export const Settings = () => {
         setProfileSuccess('');
         setIsSavingProfile(true);
         try {
-            const { data } = await api.put('/users/me/profile', { name, surname });
+            const { data } = await api.put('/users/me/profile', {
+                name,
+                surname,
+                preferredLanguage: i18n.language
+            });
             updateLocalUser(data);
             setProfileSuccess(t('settings.update_profile_success'));
             setTimeout(() => setProfileSuccess(''), 3000);

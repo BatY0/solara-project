@@ -38,6 +38,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             try {
               const response = await api.get<User>('/users/me');
               setUser(response.data);
+              if (response.data?.preferredLanguage) {
+                localStorage.setItem('i18nextLng', response.data.preferredLanguage);
+              }
             } catch (err) {
               console.error('Failed to fetch user profile, falling back to token sub', err);
               setUser({ email: payload.sub });
@@ -75,6 +78,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const profile = await api.get<User>('/users/me');
       setUser(profile.data);
+      if (profile.data?.preferredLanguage) {
+        localStorage.setItem('i18nextLng', profile.data.preferredLanguage);
+      }
     } catch {
       setUser({ email: response.data.email || data.email });
     }

@@ -51,6 +51,7 @@ public class UserService {
                 .surname(user.getSurname())
                 .email(user.getEmail())
                 .role(user.getRole())
+                .preferredLanguage(user.getPreferredLanguage())
                 .createdAt(user.getCreatedAt())
                 .build();
     }
@@ -123,6 +124,9 @@ public class UserService {
 
         user.setName(request.getName());
         user.setSurname(request.getSurname());
+        if (request.getPreferredLanguage() != null && !request.getPreferredLanguage().isBlank()) {
+            user.setPreferredLanguage(request.getPreferredLanguage().toLowerCase());
+        }
         userRepository.save(user);
 
         return UserDTO.builder()
@@ -131,6 +135,7 @@ public class UserService {
                 .surname(user.getSurname())
                 .email(user.getEmail())
                 .role(user.getRole())
+                .preferredLanguage(user.getPreferredLanguage())
                 .createdAt(user.getCreatedAt())
                 .build();
     }

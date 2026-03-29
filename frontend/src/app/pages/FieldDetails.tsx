@@ -16,6 +16,7 @@ import { CartesianGrid, XAxis, YAxis, Tooltip, Area, ResponsiveContainer, AreaCh
 
 import { DashboardLayout } from "../../components/layout/DashboardLayout"
 import { fieldsService } from "../../features/fields/fields.service"
+import { normalizeCropName, toCropSlug } from "../../features/crop-guides/normalizeCropName"
 import type {
     Field as FieldType,
     SensorData,
@@ -111,10 +112,9 @@ const MonthSelect = ({
     onChange: (v: number) => void;
     labels: string[];
 }) => (
-    <Box
-        as="select"
+    <select
         value={value}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onChange(Number(e.target.value))}
+        onChange={(e) => onChange(Number(e.currentTarget.value))}
         style={{
             width: '100%',
             padding: '8px 12px',
@@ -128,7 +128,7 @@ const MonthSelect = ({
         {labels.map((name, idx) => (
             <option key={idx + 1} value={idx + 1}>{name}</option>
         ))}
-    </Box>
+    </select>
 );
 
 export const FieldDetails = () => {
@@ -331,6 +331,11 @@ export const FieldDetails = () => {
         if (color === 'green')  return t('field_details.ai.confidence_high');
         if (color === 'orange') return t('field_details.ai.confidence_moderate');
         return t('field_details.ai.confidence_low');
+    };
+
+    const cropLabel = (crop: string) => {
+        const key = normalizeCropName(crop);
+        return t(`crop_names.${key}`, { defaultValue: crop });
     };
 
     const status: 'online' | 'paired' | 'offline' =
@@ -828,8 +833,17 @@ export const FieldDetails = () => {
                                                 <Flex align="center" justify="space-between" mb={2}>
                                                     <Flex align="center" gap={2}>
                                                         <Leaf size={16} color={idx === 0 ? '#059669' : '#718096'} />
-                                                        <Text fontWeight="semibold" fontSize="md" textTransform="capitalize">
-                                                            {rec.crop}
+                                                        <Text
+                                                            as="button"
+                                                            fontWeight="semibold"
+                                                            fontSize="md"
+                                                            textTransform="capitalize"
+                                                            textAlign="left"
+                                                            cursor="pointer"
+                                                            _hover={{ textDecoration: "underline", color: "brand.700" }}
+                                                            onClick={() => navigate(`/guide/${toCropSlug(rec.crop)}`)}
+                                                        >
+                                                            {cropLabel(rec.crop)}
                                                         </Text>
                                                         {idx === 0 && (
                                                             <Flex px={2} py={0.5} borderRadius="full" fontSize="10px" fontWeight="bold" bg="green.500" color="white">
