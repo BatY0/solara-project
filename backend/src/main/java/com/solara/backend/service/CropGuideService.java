@@ -1,6 +1,7 @@
 package com.solara.backend.service;
 
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -172,7 +173,7 @@ public class CropGuideService {
     public void deleteGuide(UUID id) {
         CropGuide existingGuide = cropRepo.findById(id)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Crop guide not found with id: " + id));
-        translationRepo.deleteAll(translationRepo.findByCropGuideIdIn(List.of(id)));
+        translationRepo.deleteByCropGuideId(id);
         pestDiseaseRepo.deleteByCropGuideId(id);
         postHarvestRepo.deleteByCropGuideId(id);
         cropRepo.delete(existingGuide);
@@ -368,15 +369,28 @@ public class CropGuideService {
         if (request.getTranslations() == null || request.getTranslations().isEmpty()) {
             throw new AppException(HttpStatus.valueOf(422), "At least one translation row is required.");
         }
+        long uniqueLanguageCount = request.getTranslations().stream()
+                .map(t -> normalizeLanguage(t.getLanguageCode()))
+                .distinct()
+                .count();
+        if (uniqueLanguageCount != request.getTranslations().size()) {
+            throw new AppException(HttpStatus.valueOf(422),
+                    "Translation languages must be unique per crop guide (e.g. one 'en' and one 'tr').");
+        }
     }
 
     private void upsertNestedData(CropGuide guide, CropGuideAdminUpsertDTO request) {
-        translationRepo.deleteAll(translationRepo.findByCropGuideIdIn(List.of(guide.getId())));
+        translationRepo.deleteByCropGuideId(guide.getId());
+        translationRepo.flush();
         pestDiseaseRepo.deleteByCropGuideId(guide.getId());
         postHarvestRepo.deleteByCropGuideId(guide.getId());
 
         if (request.getTranslations() != null && !request.getTranslations().isEmpty()) {
-            List<CropGuideTranslation> translations = request.getTranslations().stream()
+            Map<String, CropGuideTranslationUpsertDTO> byLanguage = new LinkedHashMap<>();
+            request.getTranslations().forEach(item -> byLanguage.put(normalizeLanguage(item.getLanguageCode()), item));
+            List<CropGuideTranslationUpsertDTO> uniqueTranslations = byLanguage.values().stream().toList();
+
+            List<CropGuideTranslation> translations = uniqueTranslations.stream()
                     .map(tr -> mapTranslationUpsert(guide, tr))
                     .toList();
             translationRepo.saveAll(translations);

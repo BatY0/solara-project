@@ -267,6 +267,8 @@
     "new_guide": "New Guide",
     "edit": "Edit",
     "delete": "Delete",
+    "delete_title": "Delete Crop Guide",
+    "delete_confirm_named": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
     "delete_confirm": "Delete this crop guide? This action cannot be undone.",
     "editor_title": "Crop Guide Editor",
     "editor_subtitle": "Create or update guide details for both Turkish and English.",

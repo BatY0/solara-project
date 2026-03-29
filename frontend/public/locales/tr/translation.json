@@ -267,6 +267,8 @@
     "new_guide": "Yeni Rehber",
     "edit": "Düzenle",
     "delete": "Sil",
+    "delete_title": "Bitki Rehberini Sil",
+    "delete_confirm_named": "\"{{name}}\" rehberini silmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
     "delete_confirm": "Bu bitki rehberini silmek istiyor musunuz? Bu işlem geri alınamaz.",
     "editor_title": "Bitki Rehberi Editörü",
     "editor_subtitle": "Türkçe ve İngilizce rehber içeriklerini oluşturun veya güncelleyin.",

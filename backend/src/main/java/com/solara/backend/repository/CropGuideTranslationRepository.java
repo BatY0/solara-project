@@ -15,5 +15,7 @@ public interface CropGuideTranslationRepository extends JpaRepository<CropGuideT
     List<CropGuideTranslation> findByCropGuideIdInAndLanguageCode(Collection<UUID> cropGuideIds, String languageCode);
 
     List<CropGuideTranslation> findByCropGuideIdIn(Collection<UUID> cropGuideIds);
+
+    void deleteByCropGuideId(UUID cropGuideId);
 }
 
