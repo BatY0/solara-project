@@ -16,6 +16,7 @@ import { CartesianGrid, XAxis, YAxis, Tooltip, Area, ResponsiveContainer, AreaCh
 
 import { DashboardLayout } from "../../components/layout/DashboardLayout"
 import { fieldsService } from "../../features/fields/fields.service"
+import { toCropSlug } from "../../features/crop-guides/normalizeCropName"
 import type {
     Field as FieldType,
     SensorData,
@@ -828,7 +829,16 @@ export const FieldDetails = () => {
                                                 <Flex align="center" justify="space-between" mb={2}>
                                                     <Flex align="center" gap={2}>
                                                         <Leaf size={16} color={idx === 0 ? '#059669' : '#718096'} />
-                                                        <Text fontWeight="semibold" fontSize="md" textTransform="capitalize">
+                                                        <Text
+                                                            as="button"
+                                                            fontWeight="semibold"
+                                                            fontSize="md"
+                                                            textTransform="capitalize"
+                                                            textAlign="left"
+                                                            cursor="pointer"
+                                                            _hover={{ textDecoration: "underline", color: "brand.700" }}
+                                                            onClick={() => navigate(`/guide/${toCropSlug(rec.crop)}`)}
+                                                        >
                                                             {rec.crop}
                                                         </Text>
                                                         {idx === 0 && (

@@ -357,6 +357,25 @@
       "empty_desc": "No analysis has been run yet for this field. Click the button below to get your first AI crop prediction."
     }
   },
+  "crop_guide": {
+    "title": "Crop Guide",
+    "subtitle": "Browse crop profiles and care instructions.",
+    "details_title": "Crop Guide Details",
+    "loading": "Loading crop guides...",
+    "search_placeholder": "Search crops by name, scientific name, or description...",
+    "empty": "No crop guide matched your search.",
+    "view_details": "View Details",
+    "back_to_list": "Back to Guide List",
+    "not_found_title": "Guide not found",
+    "not_found_desc": "No crop guide matches this link.",
+    "days_to_maturity": "{{days}} days to maturity",
+    "optimal_temp": "Optimal Temperature",
+    "days_label": "Days to Maturity",
+    "description": "Description",
+    "planting_instructions": "Planting Instructions",
+    "care_instructions": "Care Instructions",
+    "no_data": "No data available for this section."
+  },
   "fields_page": {
     "search_ph": "Search by field name or soil type...",
     "no_results": "No fields match your search.",

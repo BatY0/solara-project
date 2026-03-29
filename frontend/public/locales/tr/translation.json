@@ -357,6 +357,25 @@
       "empty_desc": "Bu tarla için henüz analiz yapılmamış. İlk YZ ürün tahmininizi almak için aşağıdaki butona tıklayın."
     }
   },
+  "crop_guide": {
+    "title": "Bitki Rehberi",
+    "subtitle": "Bitki profillerini ve bakım talimatlarını inceleyin.",
+    "details_title": "Bitki Rehberi Detayı",
+    "loading": "Bitki rehberleri yükleniyor...",
+    "search_placeholder": "İsim, bilimsel ad veya açıklama ile bitki ara...",
+    "empty": "Aramanızla eşleşen bitki rehberi bulunamadı.",
+    "view_details": "Detayı Gör",
+    "back_to_list": "Rehber Listesine Dön",
+    "not_found_title": "Rehber bulunamadı",
+    "not_found_desc": "Bu bağlantıyla eşleşen bir bitki rehberi yok.",
+    "days_to_maturity": "Hasada kalan süre: {{days}} gün",
+    "optimal_temp": "Optimum Sıcaklık",
+    "days_label": "Hasat Süresi (Gün)",
+    "description": "Açıklama",
+    "planting_instructions": "Ekim Talimatları",
+    "care_instructions": "Bakım Talimatları",
+    "no_data": "Bu bölüm için veri bulunmuyor."
+  },
   "fields_page": {
     "search_ph": "Tarla adı veya toprak tipine göre ara...",
     "no_results": "Aramanıza uygun tarla bulunamadı.",
