@@ -16,7 +16,7 @@ import { CartesianGrid, XAxis, YAxis, Tooltip, Area, ResponsiveContainer, AreaCh
 
 import { DashboardLayout } from "../../components/layout/DashboardLayout"
 import { fieldsService } from "../../features/fields/fields.service"
-import { toCropSlug } from "../../features/crop-guides/normalizeCropName"
+import { normalizeCropName, toCropSlug } from "../../features/crop-guides/normalizeCropName"
 import type {
     Field as FieldType,
     SensorData,
@@ -332,6 +332,11 @@ export const FieldDetails = () => {
         if (color === 'green')  return t('field_details.ai.confidence_high');
         if (color === 'orange') return t('field_details.ai.confidence_moderate');
         return t('field_details.ai.confidence_low');
+    };
+
+    const cropLabel = (crop: string) => {
+        const key = normalizeCropName(crop);
+        return t(`crop_names.${key}`, { defaultValue: crop });
     };
 
     const status: 'online' | 'paired' | 'offline' =
@@ -839,7 +844,7 @@ export const FieldDetails = () => {
                                                             _hover={{ textDecoration: "underline", color: "brand.700" }}
                                                             onClick={() => navigate(`/guide/${toCropSlug(rec.crop)}`)}
                                                         >
-                                                            {rec.crop}
+                                                            {cropLabel(rec.crop)}
                                                         </Text>
                                                         {idx === 0 && (
                                                             <Flex px={2} py={0.5} borderRadius="full" fontSize="10px" fontWeight="bold" bg="green.500" color="white">

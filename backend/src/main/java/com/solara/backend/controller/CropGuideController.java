@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,8 +19,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import com.solara.backend.dto.request.CropDTO;
+import com.solara.backend.dto.response.CropGuideResponseDTO;
 import com.solara.backend.dto.response.ApiResponse;
 import com.solara.backend.entity.CropGuide;
+import com.solara.backend.entity.User;
 
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -62,12 +65,12 @@ public class CropGuideController {
     }
 
     @GetMapping("/get-guides-paginated")
-    public ApiResponse<Page<CropDTO>> getAllGuidesPaginated(
+    public ApiResponse<Page<CropGuideResponseDTO>> getAllGuidesPaginated(
             @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size) {
-
-        Page<CropGuide> cropGuidesPage = cropGuideService.getAllPaginated(page, size);
-        Page<CropDTO> cropDTOsPage = cropGuidesPage.map(CropDTO::new);
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @AuthenticationPrincipal User currentUser) {
+        String preferredLanguage = currentUser != null ? currentUser.getPreferredLanguage() : "en";
+        Page<CropGuideResponseDTO> cropDTOsPage = cropGuideService.getAllPaginatedLocalized(page, size, preferredLanguage);
 
         return ApiResponse.success(
             cropDTOsPage, HttpStatus.OK.value(), "Crop guides retrieved successfully with pagination."
@@ -75,9 +78,9 @@ public class CropGuideController {
     }
 
     @GetMapping("/get-all-guides")
-    public ApiResponse<List<CropDTO>> getAllGuides() {
-        List<CropGuide> cropGuides = cropGuideService.getAll();
-        List<CropDTO> cropDTOs = cropGuides.stream().map(CropDTO::new).toList();
+    public ApiResponse<List<CropGuideResponseDTO>> getAllGuides(@AuthenticationPrincipal User currentUser) {
+        String preferredLanguage = currentUser != null ? currentUser.getPreferredLanguage() : "en";
+        List<CropGuideResponseDTO> cropDTOs = cropGuideService.getAllLocalized(preferredLanguage);
 
         return ApiResponse.success(
             cropDTOs, HttpStatus.OK.value(), "All crop guides retrieved successfully."
@@ -85,9 +88,10 @@ public class CropGuideController {
     }
     
     @GetMapping("/get-guide/{id}")
-    public ApiResponse<CropDTO> getGuide(@PathVariable("id") UUID id) {
-        CropGuide cropGuide = cropGuideService.getById(id);
-        return ApiResponse.success(new CropDTO(cropGuide), HttpStatus.OK.value(), "Crop guide retrieved successfully.");
+    public ApiResponse<CropGuideResponseDTO> getGuide(@PathVariable("id") UUID id, @AuthenticationPrincipal User currentUser) {
+        String preferredLanguage = currentUser != null ? currentUser.getPreferredLanguage() : "en";
+        CropGuideResponseDTO cropGuide = cropGuideService.getByIdLocalized(id, preferredLanguage);
+        return ApiResponse.success(cropGuide, HttpStatus.OK.value(), "Crop guide retrieved successfully.");
     }
     
 }

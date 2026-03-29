@@ -13,7 +13,11 @@ export const cropGuidesService = {
         const guides = await cropGuidesService.getAllGuides();
 
         return (
-            guides.find((guide) => normalizeCropName(guide.name) === normalizedSlug) ?? null
+            guides.find((guide) => {
+                const bySlug = guide.slug ? normalizeCropName(guide.slug) === normalizedSlug : false;
+                const byName = normalizeCropName(guide.name) === normalizedSlug;
+                return bySlug || byName;
+            }) ?? null
         );
     },
 };

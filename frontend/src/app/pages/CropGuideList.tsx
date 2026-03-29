@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Box, Button, Flex, Image, Input, Spinner, Text } from "@chakra-ui/react";
+import { Badge, Box, Button, Flex, Image, Input, SimpleGrid, Spinner, Text } from "@chakra-ui/react";
 import { Search, Leaf } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -16,6 +16,14 @@ export const CropGuideList = () => {
     const [guides, setGuides] = useState<CropGuide[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState("");
+
+    const valueKey = (value: string) =>
+        value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+
+    const trValue = (group: "growth_habit" | "soil_type", value?: string) => {
+        if (!value) return "";
+        return t(`crop_guide.values.${group}.${valueKey(value)}`, { defaultValue: value });
+    };
 
     useEffect(() => {
         let isMounted = true;
@@ -112,71 +120,77 @@ export const CropGuideList = () => {
                         </Text>
                     </Flex>
                 ) : (
-                    <Flex direction="column" gap={4}>
+                    <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} gap={4}>
                         {filteredGuides.map((guide) => (
-                            <Flex
-                                key={guide.name}
+                            <Box
+                                key={guide.id || guide.name}
                                 bg="white"
                                 border="1px solid"
                                 borderColor="neutral.border"
-                                borderRadius="xl"
-                                p={4}
-                                align="center"
-                                justify="space-between"
-                                gap={4}
+                                borderRadius="2xl"
+                                overflow="hidden"
+                                shadow="sm"
                             >
-                                <Flex align="center" gap={4} flex="1" minW={0}>
-                                    {guide.image ? (
-                                        <Image
-                                            src={guide.image}
-                                            alt={guide.name}
-                                            boxSize="64px"
-                                            objectFit="cover"
-                                            borderRadius="lg"
-                                            flexShrink={0}
-                                        />
-                                    ) : (
-                                        <Flex
-                                            boxSize="64px"
-                                            borderRadius="lg"
-                                            bg="green.50"
-                                            align="center"
-                                            justify="center"
-                                            flexShrink={0}
-                                        >
-                                            <Leaf size={20} color="#059669" />
-                                        </Flex>
-                                    )}
+                                {guide.image ? (
+                                    <Image
+                                        src={guide.image}
+                                        alt={guide.name}
+                                        h="140px"
+                                        w="full"
+                                        objectFit="cover"
+                                    />
+                                ) : (
+                                    <Flex h="140px" bg="green.50" align="center" justify="center">
+                                        <Leaf size={28} color="#059669" />
+                                    </Flex>
+                                )}
 
-                                    <Box minW={0}>
-                                        <Text fontWeight="bold" fontSize="md" truncate>
+                                <Flex p={4} direction="column" gap={3}>
+                                    <Box>
+                                        <Text fontWeight="bold" fontSize="lg" lineClamp={1}>
                                             {guide.name}
                                         </Text>
                                         {guide.scientificName && (
-                                            <Text color="neutral.subtext" fontSize="sm" truncate>
+                                            <Text color="neutral.subtext" fontSize="sm" lineClamp={1}>
                                                 {guide.scientificName}
                                             </Text>
                                         )}
-                                        {typeof guide.daysToMaturity === "number" && (
-                                            <Text color="gray.500" fontSize="xs" mt={1}>
-                                                {t("crop_guide.days_to_maturity", {
-                                                    days: guide.daysToMaturity,
-                                                })}
-                                            </Text>
-                                        )}
                                     </Box>
-                                </Flex>
 
-                                <Button
-                                    size="sm"
-                                    colorPalette="brand"
-                                    onClick={() => navigate(`/guide/${toCropSlug(guide.name)}`)}
-                                >
-                                    {t("crop_guide.view_details")}
-                                </Button>
-                            </Flex>
+                                    <Flex gap={2} wrap="wrap">
+                                        {guide.growthHabit && (
+                                            <Badge colorPalette="green">{trValue("growth_habit", guide.growthHabit)}</Badge>
+                                        )}
+                                        {guide.soilType && (
+                                            <Badge colorPalette="purple">{trValue("soil_type", guide.soilType)}</Badge>
+                                        )}
+                                        {typeof guide.daysToMaturity === "number" && (
+                                            <Badge colorPalette="blue">
+                                                {t("crop_guide.days_short", { days: guide.daysToMaturity })}
+                                            </Badge>
+                                        )}
+                                    </Flex>
+
+                                    <Text color="gray.600" fontSize="sm" lineClamp={3}>
+                                        {guide.description || t("crop_guide.no_data")}
+                                    </Text>
+
+                                    <Flex justify="space-between" align="center" mt={1}>
+                                        <Text fontSize="xs" color="gray.500">
+                                            {guide.family || t("crop_guide.family_unknown")}
+                                        </Text>
+                                        <Button
+                                            size="sm"
+                                            colorPalette="brand"
+                                            onClick={() => navigate(`/guide/${toCropSlug(guide.slug || guide.name)}`)}
+                                        >
+                                            {t("crop_guide.view_details")}
+                                        </Button>
+                                    </Flex>
+                                </Flex>
+                            </Box>
                         ))}
-                    </Flex>
+                    </SimpleGrid>
                 )}
             </Flex>
         </DashboardLayout>

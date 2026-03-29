@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Box, Button, Flex, Image, Spinner, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, Image, SimpleGrid, Spinner, Text } from "@chakra-ui/react";
 import { ArrowLeft, Leaf } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -95,6 +95,33 @@ export const CropGuideDetails = () => {
         );
     }
 
+    const valueKey = (value: string) =>
+        value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+
+    const trValue = (group: "growth_habit" | "soil_type", value?: string) => {
+        if (!value) return "";
+        return t(`crop_guide.values.${group}.${valueKey(value)}`, { defaultValue: value });
+    };
+
+    const SectionCard = ({ title, items, content }: { title: string; items?: string[]; content?: string | null }) => (
+        <Box bg="white" borderRadius="2xl" border="1px solid" borderColor="neutral.border" p={6}>
+            <Text fontWeight="bold" mb={2}>{title}</Text>
+            {items && items.length > 0 ? (
+                <Flex direction="column" gap={1}>
+                    {items.map((item, idx) => (
+                        <Text key={idx} color="neutral.subtext">
+                            {"- "}{item}
+                        </Text>
+                    ))}
+                </Flex>
+            ) : (
+                <Text color="neutral.subtext">
+                    {content && content.trim().length > 0 ? content : t("crop_guide.coming_soon")}
+                </Text>
+            )}
+        </Box>
+    );
+
     return (
         <DashboardLayout title={guide.name} subtitle={guide.scientificName || t("crop_guide.details_title")}>
             <Flex direction="column" gap={5}>
@@ -103,13 +130,7 @@ export const CropGuideDetails = () => {
                     {t("crop_guide.back_to_list")}
                 </Button>
 
-                <Box
-                    bg="white"
-                    borderRadius="2xl"
-                    border="1px solid"
-                    borderColor="neutral.border"
-                    p={6}
-                >
+                <Box bg="white" borderRadius="2xl" border="1px solid" borderColor="neutral.border" p={6}>
                     <Flex direction={{ base: "column", md: "row" }} gap={6}>
                         {guide.image ? (
                             <Image
@@ -137,6 +158,11 @@ export const CropGuideDetails = () => {
                             <Text fontSize="2xl" fontWeight="bold">
                                 {guide.name}
                             </Text>
+                            {guide.commonNames && (
+                                <Text fontSize="sm" color="neutral.subtext">
+                                    {t("crop_guide.common_names")}: {guide.commonNames}
+                                </Text>
+                            )}
                             {guide.scientificName && (
                                 <Text fontSize="sm" color="neutral.subtext">
                                     {guide.scientificName}
@@ -166,37 +192,93 @@ export const CropGuideDetails = () => {
                                         </Text>
                                     </Box>
                                 )}
+                                {guide.family && (
+                                    <Box bg="purple.50" px={3} py={2} borderRadius="lg">
+                                        <Text fontSize="xs" color="purple.700">
+                                            {t("crop_guide.family")}
+                                        </Text>
+                                        <Text fontWeight="semibold" color="purple.800">
+                                            {guide.family}
+                                        </Text>
+                                    </Box>
+                                )}
                             </Flex>
                         </Flex>
                     </Flex>
                 </Box>
 
-                <Box bg="white" borderRadius="2xl" border="1px solid" borderColor="neutral.border" p={6}>
-                    <Text fontWeight="bold" mb={2}>
-                        {t("crop_guide.description")}
-                    </Text>
-                    <Text color="neutral.subtext">
-                        {guide.description || t("crop_guide.no_data")}
-                    </Text>
-                </Box>
-
-                <Box bg="white" borderRadius="2xl" border="1px solid" borderColor="neutral.border" p={6}>
-                    <Text fontWeight="bold" mb={2}>
-                        {t("crop_guide.planting_instructions")}
-                    </Text>
-                    <Text color="neutral.subtext">
-                        {guide.plantingInstructions || t("crop_guide.no_data")}
-                    </Text>
-                </Box>
-
-                <Box bg="white" borderRadius="2xl" border="1px solid" borderColor="neutral.border" p={6}>
-                    <Text fontWeight="bold" mb={2}>
-                        {t("crop_guide.care_instructions")}
-                    </Text>
-                    <Text color="neutral.subtext">
-                        {guide.careInstructions || t("crop_guide.no_data")}
-                    </Text>
-                </Box>
+                <SimpleGrid columns={{ base: 1, lg: 2 }} gap={4}>
+                    <SectionCard title={t("crop_guide.section_overview")} content={guide.description} />
+                    <SectionCard
+                        title={t("crop_guide.section_environment")}
+                        items={[
+                            guide.climateHardiness ? `${t("crop_guide.climate_hardiness")}: ${guide.climateHardiness}` : null,
+                            guide.frostTolerance ? `${t("crop_guide.frost_tolerance")}: ${guide.frostTolerance}` : null,
+                            typeof guide.sunlightHours === "number" ? `${t("crop_guide.sunlight_hours")}: ${guide.sunlightHours}` : null,
+                            typeof guide.waterWeeklyMm === "number" ? `${t("crop_guide.weekly_water")}: ${guide.waterWeeklyMm} mm` : null,
+                            guide.droughtTolerance ? `${t("crop_guide.drought_tolerance")}: ${guide.droughtTolerance}` : null,
+                            guide.waterloggingSensitivity ? `${t("crop_guide.waterlogging_sensitivity")}: ${guide.waterloggingSensitivity}` : null,
+                        ].filter(Boolean) as string[]}
+                    />
+                    <SectionCard
+                        title={t("crop_guide.section_soil")}
+                        items={[
+                            guide.soilType ? `${t("crop_guide.soil_type")}: ${trValue("soil_type", guide.soilType)}` : null,
+                            typeof guide.phMin === "number" && typeof guide.phMax === "number"
+                                ? `${t("crop_guide.ph_range")}: ${guide.phMin} - ${guide.phMax}`
+                                : null,
+                            guide.nRequirement ? `N: ${guide.nRequirement}` : null,
+                            guide.pRequirement ? `P: ${guide.pRequirement}` : null,
+                            guide.kRequirement ? `K: ${guide.kRequirement}` : null,
+                            guide.soilPreparationSteps ? `${t("crop_guide.soil_preparation")}: ${guide.soilPreparationSteps}` : null,
+                        ].filter(Boolean) as string[]}
+                    />
+                    <SectionCard
+                        title={t("crop_guide.section_planting")}
+                        items={[
+                            guide.plantingMethod ? `${t("crop_guide.planting_method")}: ${guide.plantingMethod}` : null,
+                            guide.plantingTiming ? `${t("crop_guide.planting_timing")}: ${guide.plantingTiming}` : null,
+                            typeof guide.spacingPlantCm === "number" ? `${t("crop_guide.spacing_plant")}: ${guide.spacingPlantCm} cm` : null,
+                            typeof guide.spacingRowCm === "number" ? `${t("crop_guide.spacing_row")}: ${guide.spacingRowCm} cm` : null,
+                            typeof guide.depthCm === "number" ? `${t("crop_guide.depth")}: ${guide.depthCm} cm` : null,
+                            typeof guide.germinationDays === "number" ? `${t("crop_guide.germination_days")}: ${guide.germinationDays}` : null,
+                        ].filter(Boolean) as string[]}
+                    />
+                    <SectionCard
+                        title={t("crop_guide.section_management")}
+                        items={[
+                            guide.irrigation ? `${t("crop_guide.irrigation")}: ${guide.irrigation}` : null,
+                            guide.fertilization ? `${t("crop_guide.fertilization")}: ${guide.fertilization}` : null,
+                            guide.weedControl ? `${t("crop_guide.weed_control")}: ${guide.weedControl}` : null,
+                            guide.supportPruning ? `${t("crop_guide.support_pruning")}: ${guide.supportPruning}` : null,
+                        ].filter(Boolean) as string[]}
+                    />
+                    <SectionCard
+                        title={t("crop_guide.section_pests")}
+                        items={[
+                            guide.commonPests ? `${t("crop_guide.common_pests")}: ${guide.commonPests}` : null,
+                            guide.commonDiseases ? `${t("crop_guide.common_diseases")}: ${guide.commonDiseases}` : null,
+                            guide.managementStrategies ? `${t("crop_guide.management_strategies")}: ${guide.managementStrategies}` : null,
+                        ].filter(Boolean) as string[]}
+                    />
+                    <SectionCard
+                        title={t("crop_guide.section_harvest")}
+                        items={[
+                            typeof guide.daysToMaturity === "number" ? `${t("crop_guide.days_label")}: ${guide.daysToMaturity}` : null,
+                            guide.signsOfReadiness ? `${t("crop_guide.signs_of_readiness")}: ${guide.signsOfReadiness}` : null,
+                            guide.harvestingMethod ? `${t("crop_guide.harvesting_method")}: ${guide.harvestingMethod}` : null,
+                            guide.expectedYield ? `${t("crop_guide.expected_yield")}: ${guide.expectedYield}` : null,
+                        ].filter(Boolean) as string[]}
+                    />
+                    <SectionCard
+                        title={t("crop_guide.section_storage")}
+                        items={[
+                            guide.curing ? `${t("crop_guide.curing")}: ${guide.curing}` : null,
+                            guide.storageConditions ? `${t("crop_guide.storage_conditions")}: ${guide.storageConditions}` : null,
+                            guide.shelfLife ? `${t("crop_guide.shelf_life")}: ${guide.shelfLife}` : null,
+                        ].filter(Boolean) as string[]}
+                    />
+                </SimpleGrid>
             </Flex>
         </DashboardLayout>
     );

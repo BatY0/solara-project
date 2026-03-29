@@ -3,6 +3,7 @@ export interface User {
   email: string;
   name?: string;
   surname?: string;
+  preferredLanguage?: 'tr' | 'en' | string;
 }
 
 export interface LoginRequest {
