@@ -8,13 +8,20 @@ export const Sidebar = () => {
     const { t } = useTranslation()
     const location = useLocation()
     const { user, logout } = useAuth()
+    const isAdmin = String(user?.role ?? "").toUpperCase().includes("ADMIN")
 
-    const navItems = [
-        { path: "/dashboard", icon: LayoutDashboard, label: t("sidebar.dashboard") },
-        { path: "/fields", icon: MapPin, label: t("sidebar.fields") },
-        { path: "/guide", icon: BookOpen, label: t("sidebar.guide") },
-        { path: "/settings", icon: Settings, label: t("sidebar.settings") },
-    ]
+    const navItems = isAdmin
+        ? [
+            { path: "/admin/crop-guides", icon: BookOpen, label: t("sidebar.crop_guide_admin") },
+            { path: "/guide", icon: BookOpen, label: t("sidebar.guide") },
+            { path: "/settings", icon: Settings, label: t("sidebar.settings") },
+        ]
+        : [
+            { path: "/dashboard", icon: LayoutDashboard, label: t("sidebar.dashboard") },
+            { path: "/fields", icon: MapPin, label: t("sidebar.fields") },
+            { path: "/guide", icon: BookOpen, label: t("sidebar.guide") },
+            { path: "/settings", icon: Settings, label: t("sidebar.settings") },
+        ]
 
     return (
         <Flex
@@ -95,7 +102,7 @@ export const Sidebar = () => {
                             {user?.name} {user?.surname}
                         </Text>
                         <Text fontSize="xs" color="neutral.subtext">
-                            {t("sidebar.farmer")}
+                            {isAdmin ? t("sidebar.admin") : t("sidebar.farmer")}
                         </Text>
                     </Box>
                 </Flex>

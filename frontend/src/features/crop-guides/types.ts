@@ -1,3 +1,28 @@
+export interface CropGuidePestDisease {
+    id?: string;
+    languageCode?: string;
+    itemType: string;
+    name: string;
+    severity?: string;
+    prevention?: string;
+    organicTreatment?: string;
+    chemicalTreatment?: string;
+    notes?: string;
+}
+
+export interface CropGuidePostHarvestProfile {
+    id?: string;
+    languageCode?: string;
+    climateBand?: string;
+    curing?: string;
+    storageTemperatureMin?: number;
+    storageTemperatureMax?: number;
+    storageHumidityMin?: number;
+    storageHumidityMax?: number;
+    shelfLifeDays?: number;
+    storageNotes?: string;
+}
+
 export interface CropGuide {
     id: string;
     slug: string;
@@ -56,5 +81,8 @@ export interface CropGuide {
     curing?: string;
     storageConditions?: string;
     shelfLife?: string;
+
+    pestDiseases?: CropGuidePestDisease[];
+    postHarvestProfiles?: CropGuidePostHarvestProfile[];
 }
 

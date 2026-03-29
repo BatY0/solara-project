@@ -6,12 +6,14 @@ import { useTranslation } from "react-i18next";
 
 import { DashboardLayout } from "../../components/layout/DashboardLayout";
 import { cropGuidesService } from "../../features/crop-guides/cropGuides.service";
+import { normalizeCropName } from "../../features/crop-guides/normalizeCropName";
 import type { CropGuide } from "../../features/crop-guides/types";
 
 export const CropGuideDetails = () => {
     const { slug } = useParams<{ slug: string }>();
     const navigate = useNavigate();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const isTurkish = i18n.language.toLowerCase().startsWith("tr");
 
     const [guide, setGuide] = useState<CropGuide | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -103,6 +105,53 @@ export const CropGuideDetails = () => {
         return t(`crop_guide.values.${group}.${valueKey(value)}`, { defaultValue: value });
     };
 
+    const pickPreferredCommonName = (commonNames?: string) => {
+        if (!commonNames) return "";
+        const parts = commonNames.split(",").map((x) => x.trim()).filter(Boolean);
+        if (parts.length === 0) return "";
+        if (isTurkish && parts.length > 1) return parts[1];
+        return parts[0];
+    };
+
+    const localizedGuideName = () => {
+        if (!guide?.name) return "";
+        const key = normalizeCropName(guide.name);
+        const translated = t(`crop_names.${key}`, { defaultValue: "" });
+        if (translated) return translated;
+        const commonName = pickPreferredCommonName(guide.commonNames);
+        if (commonName) return commonName;
+        return isTurkish ? "" : guide.name;
+    };
+
+    const pestDiseaseItems =
+        guide.pestDiseases && guide.pestDiseases.length > 0
+            ? guide.pestDiseases.map((item) => {
+                  const type = item.itemType === "DISEASE" ? "Disease" : "Pest";
+                  const severity = item.severity ? ` (${item.severity})` : "";
+                  const treatment = [item.organicTreatment, item.chemicalTreatment].filter(Boolean).join(" | ");
+                  return [ `${type}: ${item.name}${severity}`, item.prevention, treatment, item.notes ]
+                      .filter(Boolean)
+                      .join(" - ");
+              })
+            : [];
+
+    const postHarvestItems =
+        guide.postHarvestProfiles && guide.postHarvestProfiles.length > 0
+            ? guide.postHarvestProfiles.map((profile) => {
+                  const temp =
+                      typeof profile.storageTemperatureMin === "number" && typeof profile.storageTemperatureMax === "number"
+                          ? `${profile.storageTemperatureMin}-${profile.storageTemperatureMax}°C`
+                          : null;
+                  const humidity =
+                      typeof profile.storageHumidityMin === "number" && typeof profile.storageHumidityMax === "number"
+                          ? `${profile.storageHumidityMin}-${profile.storageHumidityMax}% RH`
+                          : null;
+                  return [profile.climateBand, profile.curing, temp, humidity, profile.shelfLifeDays ? `${profile.shelfLifeDays} days` : null, profile.storageNotes]
+                      .filter(Boolean)
+                      .join(" - ");
+              })
+            : [];
+
     const SectionCard = ({ title, items, content }: { title: string; items?: string[]; content?: string | null }) => (
         <Box bg="white" borderRadius="2xl" border="1px solid" borderColor="neutral.border" p={6}>
             <Text fontWeight="bold" mb={2}>{title}</Text>
@@ -123,7 +172,10 @@ export const CropGuideDetails = () => {
     );
 
     return (
-        <DashboardLayout title={guide.name} subtitle={guide.scientificName || t("crop_guide.details_title")}>
+        <DashboardLayout
+            title={localizedGuideName() || guide.name}
+            subtitle={isTurkish ? t("crop_guide.details_title") : (guide.scientificName || t("crop_guide.details_title"))}
+        >
             <Flex direction="column" gap={5}>
                 <Button alignSelf="flex-start" variant="ghost" onClick={() => navigate("/guide")}>
                     <ArrowLeft size={14} />
@@ -156,7 +208,7 @@ export const CropGuideDetails = () => {
 
                         <Flex direction="column" gap={3} flex="1">
                             <Text fontSize="2xl" fontWeight="bold">
-                                {guide.name}
+                                {localizedGuideName() || guide.name}
                             </Text>
                             {guide.commonNames && (
                                 <Text fontSize="sm" color="neutral.subtext">
@@ -256,9 +308,14 @@ export const CropGuideDetails = () => {
                     <SectionCard
                         title={t("crop_guide.section_pests")}
                         items={[
-                            guide.commonPests ? `${t("crop_guide.common_pests")}: ${guide.commonPests}` : null,
-                            guide.commonDiseases ? `${t("crop_guide.common_diseases")}: ${guide.commonDiseases}` : null,
-                            guide.managementStrategies ? `${t("crop_guide.management_strategies")}: ${guide.managementStrategies}` : null,
+                            ...pestDiseaseItems,
+                            ...(pestDiseaseItems.length === 0
+                                ? [
+                                      guide.commonPests ? `${t("crop_guide.common_pests")}: ${guide.commonPests}` : null,
+                                      guide.commonDiseases ? `${t("crop_guide.common_diseases")}: ${guide.commonDiseases}` : null,
+                                      guide.managementStrategies ? `${t("crop_guide.management_strategies")}: ${guide.managementStrategies}` : null,
+                                  ]
+                                : []),
                         ].filter(Boolean) as string[]}
                     />
                     <SectionCard
@@ -273,9 +330,14 @@ export const CropGuideDetails = () => {
                     <SectionCard
                         title={t("crop_guide.section_storage")}
                         items={[
-                            guide.curing ? `${t("crop_guide.curing")}: ${guide.curing}` : null,
-                            guide.storageConditions ? `${t("crop_guide.storage_conditions")}: ${guide.storageConditions}` : null,
-                            guide.shelfLife ? `${t("crop_guide.shelf_life")}: ${guide.shelfLife}` : null,
+                            ...postHarvestItems,
+                            ...(postHarvestItems.length === 0
+                                ? [
+                                      guide.curing ? `${t("crop_guide.curing")}: ${guide.curing}` : null,
+                                      guide.storageConditions ? `${t("crop_guide.storage_conditions")}: ${guide.storageConditions}` : null,
+                                      guide.shelfLife ? `${t("crop_guide.shelf_life")}: ${guide.shelfLife}` : null,
+                                  ]
+                                : []),
                         ].filter(Boolean) as string[]}
                     />
                 </SimpleGrid>

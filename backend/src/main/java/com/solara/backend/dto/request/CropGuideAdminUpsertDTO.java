@@ -1,16 +1,22 @@
-package com.solara.backend.dto.response;
+package com.solara.backend.dto.request;
 
-import java.util.UUID;
+import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-public class CropGuideResponseDTO {
-    private UUID id;
-    private String slug;
+@NoArgsConstructor
+@AllArgsConstructor
+public class CropGuideAdminUpsertDTO {
+    @NotBlank
     private String name;
     private String commonNames;
     private String scientificName;
@@ -40,34 +46,25 @@ public class CropGuideResponseDTO {
     private String nRequirement;
     private String pRequirement;
     private String kRequirement;
-
     private Double spacingPlantCm;
     private Double spacingRowCm;
     private Double depthCm;
     private Integer germinationDays;
-    private int daysToMaturity;
+
+    @NotNull
+    private Integer daysToMaturity;
     private String expectedYield;
 
-    private String description;
-    private String commonVarieties;
-    private String uses;
-    private String soilPreparationSteps;
-    private String plantingMethod;
-    private String plantingTiming;
-    private String irrigation;
-    private String fertilization;
-    private String weedControl;
-    private String supportPruning;
-    private String commonPests;
-    private String commonDiseases;
-    private String managementStrategies;
-    private String signsOfReadiness;
-    private String harvestingMethod;
-    private String curing;
-    private String storageConditions;
-    private String shelfLife;
+    @Builder.Default
+    @Valid
+    private List<CropGuideTranslationUpsertDTO> translations = new ArrayList<>();
 
-    private List<CropGuidePestDiseaseDTO> pestDiseases;
-    private List<CropGuidePostHarvestDTO> postHarvestProfiles;
+    @Builder.Default
+    @Valid
+    private List<CropGuidePestDiseaseUpsertDTO> pestDiseases = new ArrayList<>();
+
+    @Builder.Default
+    @Valid
+    private List<CropGuidePostHarvestUpsertDTO> postHarvestProfiles = new ArrayList<>();
 }
 

@@ -11,6 +11,8 @@ import { VerifyEmail } from './pages/VerifyEmail'
 import { Settings } from './pages/Settings'
 import { CropGuideList } from './pages/CropGuideList'
 import { CropGuideDetails } from './pages/CropGuideDetails'
+import { CropGuideAdminList } from './pages/admin/CropGuideAdminList'
+import { CropGuideAdminEditor } from './pages/admin/CropGuideAdminEditor'
 
 // Protected Route Component
 const ProtectedRoute = () => {
@@ -44,6 +46,9 @@ function App() {
             <Route path="/fields/:id" element={<FieldDetails />} />
             <Route path="/guide" element={<CropGuideList />} />
             <Route path="/guide/:slug" element={<CropGuideDetails />} />
+            <Route path="/admin/crop-guides" element={<CropGuideAdminList />} />
+            <Route path="/admin/crop-guides/new" element={<CropGuideAdminEditor />} />
+            <Route path="/admin/crop-guides/:id/edit" element={<CropGuideAdminEditor />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
         </Routes>

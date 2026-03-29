@@ -1,0 +1,135 @@
+[
+  {
+    "slug": "rice",
+    "nameEn": "Rice",
+    "nameTr": "Pirinç",
+    "imageUrl": "https://t4.ftcdn.net/jpg/04/73/73/37/360_F_473733756_rS9ps9Ko6RcIj2j7G5FVLei4NdL9717r.jpg"
+  },
+  {
+    "slug": "maize",
+    "nameEn": "Maize",
+    "nameTr": "Mısır",
+    "imageUrl": "https://gardenbetty.com/wp-content/uploads/2021/06/corn-vs-maize-01.jpg"
+  },
+  {
+    "slug": "chickpea",
+    "nameEn": "Chickpea",
+    "nameTr": "Nohut",
+    "imageUrl": "https://www.bhg.com/thmb/AFG80NSx7Vc0YRX9fTWU9ye9e6Y=/3500x0/filters:no_upscale():strip_icc()/grow-chickpeas-8655370-fea1e109fea143d1a09a862f0cbb17f1.jpg"
+  },
+  {
+    "slug": "kidneybeans",
+    "nameEn": "Kidneybeans",
+    "nameTr": "Barbunya fasulyesi",
+    "imageUrl": "https://cdn.shopify.com/s/files/1/0530/2596/4187/files/Shutterstock_1447247864.jpg?v=1737555387"
+  },
+  {
+    "slug": "pigeonpeas",
+    "nameEn": "Pigeonpeas",
+    "nameTr": "Güvercin bezelyesi",
+    "imageUrl": "https://sustainableholly.com/wp-content/uploads/2025/06/pigeon-pea-green-pods-edited.jpg"
+  },
+  {
+    "slug": "mothbeans",
+    "nameEn": "Mothbeans",
+    "nameTr": "Güve fasulyesi",
+    "imageUrl": "https://www.feedipedia.org/sites/default/files/images/vigna_aconitifolia_leaves_siddarthmachado.jpg"
+  },
+  {
+    "slug": "mungbean",
+    "nameEn": "Mungbean",
+    "nameTr": "Maş fasulyesi",
+    "imageUrl": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQkXnzsmGb4uunAZY5cGoQMnqKdyCUJ6vF1gA&s"
+  },
+  {
+    "slug": "blackgram",
+    "nameEn": "Blackgram",
+    "nameTr": "Kara maş fasulyesi / Urad",
+    "imageUrl": "https://tiimg.tistatic.com/fp/1/006/615/premium-organic-black-gram-895.jpg"
+  },
+  {
+    "slug": "lentil",
+    "nameEn": "Lentil",
+    "nameTr": "Mercimek",
+    "imageUrl": "https://heartbeetfarms.com/wp-content/uploads/2021/01/lentil-harvest-1600x899.jpg"
+  },
+  {
+    "slug": "pomegranate",
+    "nameEn": "Pomegranate",
+    "nameTr": "Nar",
+    "imageUrl": "https://shegrowsveg.com/wp-content/uploads/bis-images/27529/Cover-Pomegranate-_DSF2437-copy-1-scaled-1-536x360-f50_50.jpg"
+  },
+  {
+    "slug": "banana",
+    "nameEn": "Banana",
+    "nameTr": "Muz",
+    "imageUrl": "https://thefinestexotics.co.uk/cdn/shop/files/Apple_Banana.jpg?v=1754235829&width=1946"
+  },
+  {
+    "slug": "mango",
+    "nameEn": "Mango",
+    "nameTr": "Mango",
+    "imageUrl": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDh6RmUj-ZuZw_77mK_iQzGxg1R46_hVjSxg&s"
+  },
+  {
+    "slug": "grapes",
+    "nameEn": "Grapes",
+    "nameTr": "Üzüm",
+    "imageUrl": "https://www.seriouseats.com/thmb/XwtcUWlY3TDauWPbBiID1yZ-6Jw=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/GettyImages-1289843973-karandaev-hero-ca6df1eb21504ba0965e2319ef4c26e3.jpg"
+  },
+  {
+    "slug": "watermelon",
+    "nameEn": "Watermelon",
+    "nameTr": "Karpuz",
+    "imageUrl": "https://hips.hearstapps.com/hmg-prod/images/fresh-ripe-watermelon-slices-on-wooden-table-royalty-free-image-1684966820.jpg?crop=0.88973xw:1xh;center,top&resize=1200:*"
+  },
+  {
+    "slug": "muskmelon",
+    "nameEn": "Muskmelon",
+    "nameTr": "Kavun",
+    "imageUrl": "https://c.ndtvimg.com/2023-05/t1tfkt5_muskmelon_625x300_02_May_23.jpg"
+  },
+  {
+    "slug": "apple",
+    "nameEn": "Apple",
+    "nameTr": "Elma",
+    "imageUrl": "https://img.lb.wbmdstatic.com/vim/live/webmd/consumer_assets/site_images/articles/health_tools/healing_foods_slideshow/1800ss_getty_rf_apples.jpg?resize=750px:*&output-quality=75"
+  },
+  {
+    "slug": "orange",
+    "nameEn": "Orange",
+    "nameTr": "Portakal",
+    "imageUrl": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWy2deoCitSxEOI52ZF-v5s0YK5B74oDSDIQ&s"
+  },
+  {
+    "slug": "papaya",
+    "nameEn": "Papaya",
+    "nameTr": "Papaya",
+    "imageUrl": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSZYT1tOS5o7hV4hje57tDhYLYd-f6WwZdDpg&s"
+  },
+  {
+    "slug": "coconut",
+    "nameEn": "Coconut",
+    "nameTr": "Hindistan cevizi",
+    "imageUrl": "https://img.lb.wbmdstatic.com/vim/live/webmd/consumer_assets/site_images/article_thumbnails/BigBead/coconut_bigbead/1800x1200_getty_rf_coconut_bigbead.jpg?resize=750px:*&output-quality=75"
+  },
+  {
+    "slug": "cotton",
+    "nameEn": "Cotton",
+    "nameTr": "Pamuk",
+    "imageUrl": "https://fadfay.com/cdn/shop/articles/cotton-plants-are-tall-and-green-with-a-branching--Xi2ktwlpS02wO48TO6CUsw-sqZ-RNRzS1GLIO91uGXvnA_4e161561-ae25-4e3c-9ffa-f94494a731b2.jpg?v=1772613814&width=1024"
+  },
+  {
+    "slug": "jute",
+    "nameEn": "Jute",
+    "nameTr": "Jüt",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/9/9e/Jute_Field_Bangladesh_%287749587518%29.jpg"
+  },
+  {
+    "slug": "coffee",
+    "nameEn": "Coffee",
+    "nameTr": "Kahve",
+    "imageUrl": "https://www.aboutcoffee.org/wp-content/uploads/2024/10/ripe-coffee-cherries-on-branch-of-coffee-tree-1024x576.jpg"
+  }
+]
+

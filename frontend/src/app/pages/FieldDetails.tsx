@@ -112,10 +112,9 @@ const MonthSelect = ({
     onChange: (v: number) => void;
     labels: string[];
 }) => (
-    <Box
-        as="select"
+    <select
         value={value}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onChange(Number(e.target.value))}
+        onChange={(e) => onChange(Number(e.currentTarget.value))}
         style={{
             width: '100%',
             padding: '8px 12px',
@@ -129,7 +128,7 @@ const MonthSelect = ({
         {labels.map((name, idx) => (
             <option key={idx + 1} value={idx + 1}>{name}</option>
         ))}
-    </Box>
+    </select>
 );
 
 export const FieldDetails = () => {

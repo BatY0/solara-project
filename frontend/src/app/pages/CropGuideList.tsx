@@ -6,12 +6,13 @@ import { useTranslation } from "react-i18next";
 
 import { DashboardLayout } from "../../components/layout/DashboardLayout";
 import { cropGuidesService } from "../../features/crop-guides/cropGuides.service";
-import { toCropSlug } from "../../features/crop-guides/normalizeCropName";
+import { normalizeCropName, toCropSlug } from "../../features/crop-guides/normalizeCropName";
 import type { CropGuide } from "../../features/crop-guides/types";
 
 export const CropGuideList = () => {
     const navigate = useNavigate();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const isTurkish = i18n.language.toLowerCase().startsWith("tr");
 
     const [guides, setGuides] = useState<CropGuide[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -23,6 +24,23 @@ export const CropGuideList = () => {
     const trValue = (group: "growth_habit" | "soil_type", value?: string) => {
         if (!value) return "";
         return t(`crop_guide.values.${group}.${valueKey(value)}`, { defaultValue: value });
+    };
+
+    const pickPreferredCommonName = (commonNames?: string) => {
+        if (!commonNames) return "";
+        const parts = commonNames.split(",").map((x) => x.trim()).filter(Boolean);
+        if (parts.length === 0) return "";
+        if (isTurkish && parts.length > 1) return parts[1];
+        return parts[0];
+    };
+
+    const cropLabel = (name?: string, commonNames?: string) => {
+        if (!name) return "";
+        const translated = t(`crop_names.${normalizeCropName(name)}`, { defaultValue: "" });
+        if (translated) return translated;
+        const commonName = pickPreferredCommonName(commonNames);
+        if (commonName) return commonName;
+        return isTurkish ? "" : name;
     };
 
     useEffect(() => {
@@ -52,8 +70,11 @@ export const CropGuideList = () => {
         if (!q) return guides;
 
         return guides.filter((guide) => {
+            const localizedName = cropLabel(guide.name, guide.commonNames);
             const haystack = [
                 guide.name,
+                localizedName,
+                guide.commonNames ?? "",
                 guide.scientificName ?? "",
                 guide.description ?? "",
             ]
@@ -148,7 +169,7 @@ export const CropGuideList = () => {
                                 <Flex p={4} direction="column" gap={3}>
                                     <Box>
                                         <Text fontWeight="bold" fontSize="lg" lineClamp={1}>
-                                            {guide.name}
+                                            {cropLabel(guide.name, guide.commonNames) || guide.commonNames || guide.name}
                                         </Text>
                                         {guide.scientificName && (
                                             <Text color="neutral.subtext" fontSize="sm" lineClamp={1}>

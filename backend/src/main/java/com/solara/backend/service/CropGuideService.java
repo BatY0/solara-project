@@ -13,11 +13,23 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.solara.backend.dto.request.CropGuideAdminUpsertDTO;
+import com.solara.backend.dto.request.CropGuidePestDiseaseUpsertDTO;
+import com.solara.backend.dto.request.CropGuidePostHarvestUpsertDTO;
+import com.solara.backend.dto.request.CropGuideTranslationUpsertDTO;
+import com.solara.backend.dto.response.CropGuideAdminResponseDTO;
+import com.solara.backend.dto.response.CropGuidePestDiseaseDTO;
+import com.solara.backend.dto.response.CropGuidePostHarvestDTO;
 import com.solara.backend.dto.response.CropGuideResponseDTO;
+import com.solara.backend.dto.response.CropGuideTranslationDTO;
 import com.solara.backend.repository.CropGuideRepository;
+import com.solara.backend.repository.CropGuidePestDiseaseRepository;
+import com.solara.backend.repository.CropGuidePostHarvestProfileRepository;
 import com.solara.backend.repository.CropGuideTranslationRepository;
 
 import com.solara.backend.entity.CropGuide;
+import com.solara.backend.entity.CropGuidePestDisease;
+import com.solara.backend.entity.CropGuidePostHarvestProfile;
 import com.solara.backend.entity.CropGuideTranslation;
 import com.solara.backend.exception.AppException;
 
@@ -25,10 +37,18 @@ import com.solara.backend.exception.AppException;
 public class CropGuideService {
     private final CropGuideRepository cropRepo;
     private final CropGuideTranslationRepository translationRepo;
+    private final CropGuidePestDiseaseRepository pestDiseaseRepo;
+    private final CropGuidePostHarvestProfileRepository postHarvestRepo;
 
-    public CropGuideService(CropGuideRepository cropRepo, CropGuideTranslationRepository translationRepo) {
+    public CropGuideService(
+            CropGuideRepository cropRepo,
+            CropGuideTranslationRepository translationRepo,
+            CropGuidePestDiseaseRepository pestDiseaseRepo,
+            CropGuidePostHarvestProfileRepository postHarvestRepo) {
         this.cropRepo = cropRepo;
         this.translationRepo = translationRepo;
+        this.pestDiseaseRepo = pestDiseaseRepo;
+        this.postHarvestRepo = postHarvestRepo;
     }
 
     public Page<CropGuide> getAllPaginated(int page, int size) {
@@ -47,7 +67,7 @@ public class CropGuideService {
                 guides.getContent().stream().map(CropGuide::getId).toList(),
                 preferredLanguage);
 
-        return guides.map(guide -> toLocalizedDTO(guide, localizedMap.get(guide.getId())));
+        return guides.map(guide -> toLocalizedDTO(guide, localizedMap.get(guide.getId()), preferredLanguage));
     }
 
     public List<CropGuideResponseDTO> getAllLocalized(String preferredLanguage) {
@@ -57,14 +77,43 @@ public class CropGuideService {
                 preferredLanguage);
 
         return guides.stream()
-                .map(guide -> toLocalizedDTO(guide, localizedMap.get(guide.getId())))
+                .map(guide -> toLocalizedDTO(guide, localizedMap.get(guide.getId()), preferredLanguage))
                 .toList();
     }
 
     public CropGuideResponseDTO getByIdLocalized(UUID id, String preferredLanguage) {
         CropGuide guide = getById(id);
         CropGuideTranslation translation = resolveTranslation(guide.getId(), preferredLanguage).orElse(null);
-        return toLocalizedDTO(guide, translation);
+        return toLocalizedDTO(guide, translation, preferredLanguage);
+    }
+
+    public List<CropGuideAdminResponseDTO> getAdminList() {
+        return cropRepo.findAll().stream()
+                .map(guide -> toAdminResponseDTO(guide))
+                .toList();
+    }
+
+    public CropGuideAdminResponseDTO getAdminById(UUID id) {
+        return toAdminResponseDTO(getById(id));
+    }
+
+    @Transactional
+    public CropGuideAdminResponseDTO createAdminGuide(CropGuideAdminUpsertDTO request) {
+        validateAdminRequest(request);
+        CropGuide guide = applyCoreFields(CropGuide.builder().build(), request);
+        guide = cropRepo.save(guide);
+        upsertNestedData(guide, request);
+        return toAdminResponseDTO(guide);
+    }
+
+    @Transactional
+    public CropGuideAdminResponseDTO updateAdminGuide(UUID id, CropGuideAdminUpsertDTO request) {
+        validateAdminRequest(request);
+        CropGuide existing = getById(id);
+        existing = applyCoreFields(existing, request);
+        existing = cropRepo.save(existing);
+        upsertNestedData(existing, request);
+        return toAdminResponseDTO(existing);
     }
 
     public CropGuide getById(UUID id) {
@@ -123,6 +172,9 @@ public class CropGuideService {
     public void deleteGuide(UUID id) {
         CropGuide existingGuide = cropRepo.findById(id)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Crop guide not found with id: " + id));
+        translationRepo.deleteAll(translationRepo.findByCropGuideIdIn(List.of(id)));
+        pestDiseaseRepo.deleteByCropGuideId(id);
+        postHarvestRepo.deleteByCropGuideId(id);
         cropRepo.delete(existingGuide);
     }
 
@@ -161,7 +213,10 @@ public class CropGuideService {
         return translationRepo.findByCropGuideIdIn(List.of(cropId)).stream().findFirst();
     }
 
-    private CropGuideResponseDTO toLocalizedDTO(CropGuide guide, CropGuideTranslation tr) {
+    private CropGuideResponseDTO toLocalizedDTO(CropGuide guide, CropGuideTranslation tr, String preferredLanguage) {
+        List<CropGuidePestDiseaseDTO> localizedPestsDiseases = resolveLocalizedPestDiseases(guide.getId(), preferredLanguage);
+        List<CropGuidePostHarvestDTO> localizedPostHarvest = resolveLocalizedPostHarvestProfiles(guide.getId(), preferredLanguage);
+
         return CropGuideResponseDTO.builder()
                 .id(guide.getId())
                 .slug(toSlug(guide.getName()))
@@ -216,6 +271,238 @@ public class CropGuideService {
                 .curing(tr != null ? tr.getCuring() : null)
                 .storageConditions(tr != null ? tr.getStorageConditions() : null)
                 .shelfLife(tr != null ? tr.getShelfLife() : null)
+                .pestDiseases(localizedPestsDiseases)
+                .postHarvestProfiles(localizedPostHarvest)
+                .build();
+    }
+
+    private CropGuideAdminResponseDTO toAdminResponseDTO(CropGuide guide) {
+        List<CropGuideTranslationDTO> translations = translationRepo.findByCropGuideIdIn(List.of(guide.getId()))
+                .stream()
+                .map(tr -> CropGuideTranslationDTO.builder()
+                        .id(tr.getId())
+                        .languageCode(tr.getLanguageCode())
+                        .description(tr.getDescription())
+                        .commonVarieties(tr.getCommonVarieties())
+                        .uses(tr.getUses())
+                        .soilPreparationSteps(tr.getSoilPreparationSteps())
+                        .plantingMethod(tr.getPlantingMethod())
+                        .plantingTiming(tr.getPlantingTiming())
+                        .irrigation(tr.getIrrigation())
+                        .fertilization(tr.getFertilization())
+                        .weedControl(tr.getWeedControl())
+                        .supportPruning(tr.getSupportPruning())
+                        .commonPests(tr.getCommonPests())
+                        .commonDiseases(tr.getCommonDiseases())
+                        .managementStrategies(tr.getManagementStrategies())
+                        .signsOfReadiness(tr.getSignsOfReadiness())
+                        .harvestingMethod(tr.getHarvestingMethod())
+                        .curing(tr.getCuring())
+                        .storageConditions(tr.getStorageConditions())
+                        .shelfLife(tr.getShelfLife())
+                        .build())
+                .toList();
+
+        List<CropGuidePestDiseaseDTO> pestDiseases = pestDiseaseRepo.findByCropGuideId(guide.getId())
+                .stream()
+                .map(this::toPestDiseaseDTO)
+                .toList();
+
+        List<CropGuidePostHarvestDTO> postHarvestProfiles = postHarvestRepo.findByCropGuideId(guide.getId())
+                .stream()
+                .map(this::toPostHarvestDTO)
+                .toList();
+
+        return CropGuideAdminResponseDTO.builder()
+                .core(toLocalizedDTO(guide, resolveTranslation(guide.getId(), "en").orElse(null), "en"))
+                .translations(translations)
+                .pestDiseases(pestDiseases)
+                .postHarvestProfiles(postHarvestProfiles)
+                .build();
+    }
+
+    private CropGuide applyCoreFields(CropGuide target, CropGuideAdminUpsertDTO source) {
+        target.setName(source.getName());
+        target.setCommonNames(source.getCommonNames());
+        target.setScientificName(source.getScientificName());
+        target.setFamily(source.getFamily());
+        target.setGrowthHabit(source.getGrowthHabit());
+        target.setLifespan(source.getLifespan());
+        target.setImage(source.getImage());
+        target.setClimateHardiness(source.getClimateHardiness());
+        target.setFrostTolerance(source.getFrostTolerance());
+        target.setSunlightHours(source.getSunlightHours());
+        target.setOptimalTemperatureMin(source.getOptimalTemperatureMin());
+        target.setOptimalTemperatureMax(source.getOptimalTemperatureMax());
+        target.setGerminationTempMin(source.getGerminationTempMin());
+        target.setGerminationTempMax(source.getGerminationTempMax());
+        target.setGrowthTempMin(source.getGrowthTempMin());
+        target.setGrowthTempMax(source.getGrowthTempMax());
+        target.setFruitingTempMin(source.getFruitingTempMin());
+        target.setFruitingTempMax(source.getFruitingTempMax());
+        target.setWaterWeeklyMm(source.getWaterWeeklyMm());
+        target.setDroughtTolerance(source.getDroughtTolerance());
+        target.setWaterloggingSensitivity(source.getWaterloggingSensitivity());
+        target.setSoilType(source.getSoilType());
+        target.setPhMin(source.getPhMin());
+        target.setPhMax(source.getPhMax());
+        target.setNRequirement(source.getNRequirement());
+        target.setPRequirement(source.getPRequirement());
+        target.setKRequirement(source.getKRequirement());
+        target.setSpacingPlantCm(source.getSpacingPlantCm());
+        target.setSpacingRowCm(source.getSpacingRowCm());
+        target.setDepthCm(source.getDepthCm());
+        target.setGerminationDays(source.getGerminationDays());
+        target.setDaysToMaturity(source.getDaysToMaturity());
+        target.setExpectedYield(source.getExpectedYield());
+        return target;
+    }
+
+    private void validateAdminRequest(CropGuideAdminUpsertDTO request) {
+        if (request.getName() == null || request.getName().isBlank()) {
+            throw new AppException(HttpStatus.BAD_REQUEST, "Crop guide name is required.");
+        }
+        if (request.getDaysToMaturity() == null || request.getDaysToMaturity() <= 0) {
+            throw new AppException(HttpStatus.valueOf(422), "daysToMaturity must be greater than zero.");
+        }
+        if (request.getTranslations() == null || request.getTranslations().isEmpty()) {
+            throw new AppException(HttpStatus.valueOf(422), "At least one translation row is required.");
+        }
+    }
+
+    private void upsertNestedData(CropGuide guide, CropGuideAdminUpsertDTO request) {
+        translationRepo.deleteAll(translationRepo.findByCropGuideIdIn(List.of(guide.getId())));
+        pestDiseaseRepo.deleteByCropGuideId(guide.getId());
+        postHarvestRepo.deleteByCropGuideId(guide.getId());
+
+        if (request.getTranslations() != null && !request.getTranslations().isEmpty()) {
+            List<CropGuideTranslation> translations = request.getTranslations().stream()
+                    .map(tr -> mapTranslationUpsert(guide, tr))
+                    .toList();
+            translationRepo.saveAll(translations);
+        }
+
+        if (request.getPestDiseases() != null && !request.getPestDiseases().isEmpty()) {
+            List<CropGuidePestDisease> pestsDiseases = request.getPestDiseases().stream()
+                    .map(item -> mapPestDiseaseUpsert(guide, item))
+                    .toList();
+            pestDiseaseRepo.saveAll(pestsDiseases);
+        }
+
+        if (request.getPostHarvestProfiles() != null && !request.getPostHarvestProfiles().isEmpty()) {
+            List<CropGuidePostHarvestProfile> postHarvestProfiles = request.getPostHarvestProfiles().stream()
+                    .map(item -> mapPostHarvestUpsert(guide, item))
+                    .toList();
+            postHarvestRepo.saveAll(postHarvestProfiles);
+        }
+    }
+
+    private CropGuideTranslation mapTranslationUpsert(CropGuide guide, CropGuideTranslationUpsertDTO source) {
+        return CropGuideTranslation.builder()
+                .cropGuide(guide)
+                .languageCode(normalizeLanguage(source.getLanguageCode()))
+                .description(source.getDescription())
+                .commonVarieties(source.getCommonVarieties())
+                .uses(source.getUses())
+                .soilPreparationSteps(source.getSoilPreparationSteps())
+                .plantingMethod(source.getPlantingMethod())
+                .plantingTiming(source.getPlantingTiming())
+                .irrigation(source.getIrrigation())
+                .fertilization(source.getFertilization())
+                .weedControl(source.getWeedControl())
+                .supportPruning(source.getSupportPruning())
+                .commonPests(source.getCommonPests())
+                .commonDiseases(source.getCommonDiseases())
+                .managementStrategies(source.getManagementStrategies())
+                .signsOfReadiness(source.getSignsOfReadiness())
+                .harvestingMethod(source.getHarvestingMethod())
+                .curing(source.getCuring())
+                .storageConditions(source.getStorageConditions())
+                .shelfLife(source.getShelfLife())
+                .build();
+    }
+
+    private CropGuidePestDisease mapPestDiseaseUpsert(CropGuide guide, CropGuidePestDiseaseUpsertDTO source) {
+        return CropGuidePestDisease.builder()
+                .cropGuide(guide)
+                .languageCode(normalizeLanguage(source.getLanguageCode()))
+                .itemType(source.getItemType())
+                .name(source.getName())
+                .severity(source.getSeverity())
+                .prevention(source.getPrevention())
+                .organicTreatment(source.getOrganicTreatment())
+                .chemicalTreatment(source.getChemicalTreatment())
+                .notes(source.getNotes())
+                .build();
+    }
+
+    private CropGuidePostHarvestProfile mapPostHarvestUpsert(CropGuide guide, CropGuidePostHarvestUpsertDTO source) {
+        return CropGuidePostHarvestProfile.builder()
+                .cropGuide(guide)
+                .languageCode(normalizeLanguage(source.getLanguageCode()))
+                .climateBand(source.getClimateBand())
+                .curing(source.getCuring())
+                .storageTemperatureMin(source.getStorageTemperatureMin())
+                .storageTemperatureMax(source.getStorageTemperatureMax())
+                .storageHumidityMin(source.getStorageHumidityMin())
+                .storageHumidityMax(source.getStorageHumidityMax())
+                .shelfLifeDays(source.getShelfLifeDays())
+                .storageNotes(source.getStorageNotes())
+                .build();
+    }
+
+    private List<CropGuidePestDiseaseDTO> resolveLocalizedPestDiseases(UUID cropId, String preferredLanguage) {
+        String lang = normalizeLanguage(preferredLanguage);
+        List<CropGuidePestDisease> preferred = pestDiseaseRepo.findByCropGuideIdAndLanguageCode(cropId, lang);
+        if (!preferred.isEmpty()) {
+            return preferred.stream().map(this::toPestDiseaseDTO).toList();
+        }
+        List<CropGuidePestDisease> english = pestDiseaseRepo.findByCropGuideIdAndLanguageCode(cropId, "en");
+        if (!english.isEmpty()) {
+            return english.stream().map(this::toPestDiseaseDTO).toList();
+        }
+        return pestDiseaseRepo.findByCropGuideId(cropId).stream().map(this::toPestDiseaseDTO).toList();
+    }
+
+    private List<CropGuidePostHarvestDTO> resolveLocalizedPostHarvestProfiles(UUID cropId, String preferredLanguage) {
+        String lang = normalizeLanguage(preferredLanguage);
+        List<CropGuidePostHarvestProfile> preferred = postHarvestRepo.findByCropGuideIdAndLanguageCode(cropId, lang);
+        if (!preferred.isEmpty()) {
+            return preferred.stream().map(this::toPostHarvestDTO).toList();
+        }
+        List<CropGuidePostHarvestProfile> english = postHarvestRepo.findByCropGuideIdAndLanguageCode(cropId, "en");
+        if (!english.isEmpty()) {
+            return english.stream().map(this::toPostHarvestDTO).toList();
+        }
+        return postHarvestRepo.findByCropGuideId(cropId).stream().map(this::toPostHarvestDTO).toList();
+    }
+
+    private CropGuidePestDiseaseDTO toPestDiseaseDTO(CropGuidePestDisease item) {
+        return CropGuidePestDiseaseDTO.builder()
+                .id(item.getId())
+                .languageCode(item.getLanguageCode())
+                .itemType(item.getItemType())
+                .name(item.getName())
+                .severity(item.getSeverity())
+                .prevention(item.getPrevention())
+                .organicTreatment(item.getOrganicTreatment())
+                .chemicalTreatment(item.getChemicalTreatment())
+                .notes(item.getNotes())
+                .build();
+    }
+
+    private CropGuidePostHarvestDTO toPostHarvestDTO(CropGuidePostHarvestProfile item) {
+        return CropGuidePostHarvestDTO.builder()
+                .id(item.getId())
+                .languageCode(item.getLanguageCode())
+                .climateBand(item.getClimateBand())
+                .curing(item.getCuring())
+                .storageTemperatureMin(item.getStorageTemperatureMin())
+                .storageTemperatureMax(item.getStorageTemperatureMax())
+                .storageHumidityMin(item.getStorageHumidityMin())
+                .storageHumidityMax(item.getStorageHumidityMax())
+                .shelfLifeDays(item.getShelfLifeDays())
+                .storageNotes(item.getStorageNotes())
                 .build();
     }
 

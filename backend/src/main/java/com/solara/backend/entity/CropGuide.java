@@ -128,4 +128,10 @@ public class CropGuide {
 
     @OneToMany(mappedBy = "cropGuide")
     private List<CropGuideTranslation> translations;
+
+    @OneToMany(mappedBy = "cropGuide")
+    private List<CropGuidePestDisease> pestDiseases;
+
+    @OneToMany(mappedBy = "cropGuide")
+    private List<CropGuidePostHarvestProfile> postHarvestProfiles;
 }
