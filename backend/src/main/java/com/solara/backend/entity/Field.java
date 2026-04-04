@@ -10,6 +10,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -51,8 +52,9 @@ public class Field {
      * Nullable: a field may exist without a device paired to it.
      * One device can only be linked to one field (enforced in FieldService).
      */
-    @Column(name = "device_id", unique = true, length = 50)
-    private String deviceId;
+    @OneToOne(fetch = jakarta.persistence.FetchType.EAGER)
+    @jakarta.persistence.JoinColumn(name = "esp_device_id", referencedColumnName = "id", unique = true)
+    private EspDevice espDevice;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

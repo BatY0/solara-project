@@ -14,6 +14,6 @@ public interface FieldRepository extends  JpaRepository<Field, UUID> {
     List<Field> findByUserId(UUID userId);
 
     // Device pairing queries
-    Optional<Field> findByDeviceId(String deviceId);
-    boolean existsByDeviceId(String deviceId);
+    Optional<Field> findByEspDevice_SerialNumber(String serialNumber);
+    boolean existsByEspDevice_SerialNumber(String serialNumber);
 }

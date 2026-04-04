@@ -42,7 +42,7 @@ public class DeviceMonitorService {
 
         // Get all fields that have a device paired
         List<Field> pairedFields = fieldRepository.findAll().stream()
-                .filter(f -> f.getDeviceId() != null && !f.getDeviceId().isBlank())
+                .filter(f -> f.getEspDevice() != null && !f.getEspDevice().getSerialNumber().isBlank())
                 .toList();
 
         for (Field field : pairedFields) {
@@ -51,7 +51,7 @@ public class DeviceMonitorService {
 
             if (!hasRecentData) {
                 log.warn("[DeviceMonitor] Field '{}' (device='{}') has been OFFLINE for 24h. Sending alert.",
-                        field.getName(), field.getDeviceId());
+                        field.getName(), field.getEspDevice().getSerialNumber());
 
                 // Send alert to the field owner
                 userRepository.findById(field.getUserId()).ifPresent(user ->
@@ -68,7 +68,7 @@ public class DeviceMonitorService {
                 + "padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;'>"
                 + "<h2 style='color: #C53030;'> Device Offline Alert</h2>"
                 + "<p>Hello,</p>"
-                + "<p>Your device <strong>" + field.getDeviceId() + "</strong> paired to field "
+                + "<p>Your device <strong>" + field.getEspDevice().getSerialNumber() + "</strong> paired to field "
                 + "<strong>" + field.getName() + "</strong> has not sent any data in the last 24 hours.</p>"
                 + "<p>Please check that your device is powered on and connected to WiFi.</p>"
                 + "<p>Thanks,<br/>The Solara Team</p>"
