@@ -256,7 +256,32 @@
     "settings": "Ayarlar",
     "admin": "Yönetici",
     "farmer": "Çiftçi",
-    "logout": "Oturumu Kapat"
+    "logout": "Oturumu Kapat",
+    "iot_devices": "IoT Cihazları"
+  },
+  "admin_devices": {
+    "title": "IoT Cihaz Takibi",
+    "subtitle": "Sistem genelindeki ESP cihazlarını yönetin",
+    "delete_title": "Cihazı Sil",
+    "delete_confirm": "ESP cihazını silmek istediğinize emin misiniz:",
+    "delete_warning": "Bu işlem geri alınamaz.",
+    "cancel": "İptal",
+    "delete_btn": "Sil",
+    "register_title": "Yeni ESP Cihazı Kaydet",
+    "serial_number": "Seri Numarası",
+    "register_btn": "Cihazı Kaydet",
+    "assign_title": "Tarlaya Ata",
+    "select_field": "Tarla Seçin (Mevcut atamayı geçersiz kılar)",
+    "select_placeholder": "Bir tarla seçin",
+    "assign_btn": "Ata",
+    "registry": "Cihaz Kayıtları",
+    "new_device": "Yeni Cihaz Kaydet",
+    "no_devices": "Henüz kayıtlı IoT cihazı yok.",
+    "tracking": "Takip Ediyor",
+    "available": "Boşta - Eşleştirilmemiş",
+    "disconnect": "Bağlantıyı Kes",
+    "assign_field": "Tarlaya Ata",
+    "owner_id": "Sahip Kimliği"
   },
   "admin_crop_guides": {
     "title": "Bitki Rehberi Admin",

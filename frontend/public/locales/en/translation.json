@@ -256,7 +256,32 @@
     "settings": "Settings",
     "admin": "Admin",
     "farmer": "Farmer",
-    "logout": "Log Out"
+    "logout": "Log Out",
+    "iot_devices": "IoT Devices"
+  },
+  "admin_devices": {
+    "title": "IoT Devices Tracker",
+    "subtitle": "Manage ESP devices across the system",
+    "delete_title": "Delete Device",
+    "delete_confirm": "Are you sure you want to delete ESP device",
+    "delete_warning": "This action cannot be undone.",
+    "cancel": "Cancel",
+    "delete_btn": "Delete",
+    "register_title": "Register New ESP Device",
+    "serial_number": "Serial Number",
+    "register_btn": "Register Device",
+    "assign_title": "Assign to Field",
+    "select_field": "Select Field (Overrides existing assigned field)",
+    "select_placeholder": "Select a field",
+    "assign_btn": "Assign",
+    "registry": "Device Registry",
+    "new_device": "Register New Device",
+    "no_devices": "No IoT Devices registered yet.",
+    "tracking": "Tracking",
+    "available": "Available - Not paired",
+    "disconnect": "Disconnect",
+    "assign_field": "Assign Field",
+    "owner_id": "Owner ID"
   },
   "admin_crop_guides": {
     "title": "Crop Guide Admin",

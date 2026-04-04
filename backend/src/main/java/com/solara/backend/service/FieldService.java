@@ -18,10 +18,12 @@ public class FieldService {
 
     private final FieldRepository fieldRepository;
     private final WeatherSyncService weatherSyncService;
+    private final com.solara.backend.repository.EspDeviceRepository espDeviceRepository;
 
-    public FieldService(FieldRepository fieldRepo, WeatherSyncService weatherSyncService) {
+    public FieldService(FieldRepository fieldRepo, WeatherSyncService weatherSyncService, com.solara.backend.repository.EspDeviceRepository espDeviceRepository) {
         this.fieldRepository = fieldRepo;
         this.weatherSyncService = weatherSyncService;
+        this.espDeviceRepository = espDeviceRepository;
     }
 
     @Transactional
@@ -81,33 +83,36 @@ public class FieldService {
     }
 
     /**
-     * Pair a physical ESP32 device (identified by its device_id / serial number)
-     * to a field. Enforces the 1-to-1 rule: one device can only be paired to one field.
+     * Pair a physical ESP32 device (identified by its serial number)
+     * to a field. Enforces the 1-to-1 rule.
      */
     public Field pairDevice(UUID fieldId, String deviceId) {
         Field field = fieldRepository.findById(fieldId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Field not found with id: " + fieldId));
 
+        com.solara.backend.entity.EspDevice espDevice = espDeviceRepository.findBySerialNumber(deviceId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Device with serial number '" + deviceId + "' not found in registry."));
+
         // 1-to-1 check: ensure no other field already has this device
-        if (fieldRepository.existsByDeviceId(deviceId)) {
-            Field alreadyPaired = fieldRepository.findByDeviceId(deviceId).get();
+        if (fieldRepository.existsByEspDevice_SerialNumber(deviceId)) {
+            Field alreadyPaired = fieldRepository.findByEspDevice_SerialNumber(deviceId).get();
             if (!alreadyPaired.getId().equals(fieldId)) {
                 throw new AppException(HttpStatus.BAD_REQUEST,
                         "Device '" + deviceId + "' is already paired to another field.");
             }
         }
 
-        field.setDeviceId(deviceId);
+        field.setEspDevice(espDevice);
         return fieldRepository.save(field);
     }
 
     /**
-     * Remove the device pairing from a field (set device_id to null).
+     * Remove the device pairing from a field.
      */
     public Field unpairDevice(UUID fieldId) {
         Field field = fieldRepository.findById(fieldId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Field not found with id: " + fieldId));
-        field.setDeviceId(null);
+        field.setEspDevice(null);
         return fieldRepository.save(field);
     }
 }

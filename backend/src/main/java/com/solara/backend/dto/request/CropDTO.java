@@ -20,8 +20,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CropDTO {
-    private java.util.UUID id;
-
     private UUID id;
 
     @NotBlank(message = "Crop name is required")

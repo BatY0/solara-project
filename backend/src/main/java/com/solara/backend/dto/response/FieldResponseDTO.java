@@ -35,7 +35,7 @@ public class FieldResponseDTO {
         this.name = field.getName();
         this.areaHa = field.getAreaHa();
         this.userId = field.getUserId();
-        this.deviceId = field.getDeviceId();
+        this.deviceId = field.getEspDevice() != null ? field.getEspDevice().getSerialNumber() : null;
         this.location = convertPolygonToCoordinates(field.getLocation());
         this.soilType = field.getSoilType();
         this.createdAt = field.getCreatedAt();

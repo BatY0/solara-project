@@ -52,7 +52,7 @@ public class TelemetrySubscriber {
             // double batteryPct = json.has("battery_pct") ? json.get("battery_pct").asDouble() : -1;
 
             // Look up the field that has this device paired
-            Field field = fieldRepository.findByDeviceId(deviceId).orElse(null);
+            Field field = fieldRepository.findByEspDevice_SerialNumber(deviceId).orElse(null);
             if (field == null) {
                 log.warn("Received payload from unknown device_id='{}'. Pair the device to a field first.", deviceId);
                 return;

@@ -1,5 +1,5 @@
 import { Box, Flex, Text, VStack, Link as ChakraLink } from "@chakra-ui/react"
-import { LayoutDashboard, MapPin, BookOpen, Settings, Sprout, LogOut } from "lucide-react"
+import { LayoutDashboard, MapPin, BookOpen, Settings, Sprout, LogOut, Radio } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Link, useLocation } from "react-router-dom"
 import { useAuth } from "../../features/auth/useAuth"
@@ -12,6 +12,7 @@ export const Sidebar = () => {
 
     const navItems = isAdmin
         ? [
+            { path: "/admin/devices", icon: Radio, label: t("sidebar.iot_devices") },
             { path: "/admin/crop-guides", icon: BookOpen, label: t("sidebar.crop_guide_admin") },
             { path: "/guide", icon: BookOpen, label: t("sidebar.guide") },
             { path: "/settings", icon: Settings, label: t("sidebar.settings") },

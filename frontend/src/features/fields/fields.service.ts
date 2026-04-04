@@ -19,6 +19,12 @@ export const fieldsService = {
         return response.data.data;
     },
 
+    // Get all fields in the system (Admin only)
+    getAllFields: async (): Promise<Field[]> => {
+        const response = await api.get('/fields/all');
+        return response.data.data;
+    },
+
     // Get field by ID
     getFieldById: async (id: string): Promise<Field> => {
         const response = await api.get(`/fields/${id}`);
