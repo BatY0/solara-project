@@ -26,6 +26,7 @@ import type {
     AnalysisResult,
     FieldProperties,
 } from "../../features/fields/types"
+import { getDeviceStatus } from "../../utils/deviceStatus"
 
 const ESRI_SATELLITE = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 const ESRI_LABELS = 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
@@ -701,7 +702,14 @@ export const FieldDetails = () => {
 
                 {/* ══════════════ LIVE TELEMETRY ══════════════ */}
                 <Box mb={6}>
-                    <Text fontSize="lg" fontWeight="bold" mb={4} color="gray.800">{t('field_details.live_telemetry')}</Text>
+                    <Flex align="center" gap={3} mb={4}>
+                        <Text fontSize="lg" fontWeight="bold" color="gray.800">{t('field_details.live_telemetry')}</Text>
+                        {getDeviceStatus(field, t).timeAgo && (
+                            <Text fontSize="sm" color="gray.500" fontWeight="medium">
+                                (updated {getDeviceStatus(field, t).timeAgo})
+                            </Text>
+                        )}
+                    </Flex>
                     <Flex gap={4} wrap="wrap">
                         <MetricCard label={t('field_details.soil_temp')} value={telemetry?.soilTemp} unit="°C" icon={<Thermometer size={18} />} accent="orange" />
                         <MetricCard label={t('field_details.soil_moisture')} value={telemetry?.soilHumidity} unit="%" icon={<Droplets size={18} />} accent="blue" />

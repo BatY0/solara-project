@@ -6,10 +6,12 @@ import { useTranslation } from "react-i18next"
 import { DashboardLayout } from "../../components/layout/DashboardLayout"
 import { fieldsService } from "../../features/fields/fields.service"
 import type { Field } from "../../features/fields/types"
+import { getDeviceStatus } from "../../utils/deviceStatus"
 
 const FieldRow = ({ field, onDetailsClick }: { field: Field; onDetailsClick: (id: string) => void }) => {
     const { t } = useTranslation()
-    const isOnline = !!field.deviceId
+    const deviceStatus = getDeviceStatus(field, t)
+    
     return (
         <Flex
             align="center"
@@ -29,13 +31,15 @@ const FieldRow = ({ field, onDetailsClick }: { field: Field; onDetailsClick: (id
             <Flex align="center" gap={4}>
                 <Flex
                     w={10} h={10}
-                    bg={isOnline ? "brand.50" : "gray.50"}
+                    bg={deviceStatus.status === 'online' ? "brand.50" : deviceStatus.status === 'inactive' ? "yellow.50" : "gray.50"}
                     borderRadius="lg"
                     align="center"
                     justify="center"
                 >
-                    {isOnline
+                    {deviceStatus.status === 'online' 
                         ? <Wifi size={18} color="#059669" />
+                        : deviceStatus.status === 'inactive'
+                        ? <Wifi size={18} color="#D97706" /> 
                         : <WifiOff size={18} color="#9ca3af" />
                     }
                 </Flex>
@@ -59,9 +63,9 @@ const FieldRow = ({ field, onDetailsClick }: { field: Field; onDetailsClick: (id
                     borderRadius="full"
                     fontSize="xs"
                     fontWeight="bold"
-                    colorScheme={isOnline ? "green" : "red"}
+                    colorScheme={deviceStatus.colorScheme}
                 >
-                    {isOnline ? t('fields_page.online') : t('fields_page.offline')}
+                    {deviceStatus.text}
                 </Badge>
             </Flex>
         </Flex>
@@ -78,11 +82,11 @@ export const AllFields = () => {
     const fetchFields = useCallback(async () => {
         try {
             const data = await fieldsService.getUserFields()
-            // Sort: online (has deviceId) first
             const sorted = [...data].sort((a, b) => {
-                const aOnline = a.deviceId ? 1 : 0
-                const bOnline = b.deviceId ? 1 : 0
-                return bOnline - aOnline
+                const statusOrder = { online: 2, inactive: 1, offline: 0 }
+                const aStatus = statusOrder[getDeviceStatus(a, t).status]
+                const bStatus = statusOrder[getDeviceStatus(b, t).status]
+                return bStatus - aStatus
             })
             setFields(sorted)
         } catch (error) {
@@ -90,7 +94,7 @@ export const AllFields = () => {
         } finally {
             setIsLoading(false)
         }
-    }, [])
+    }, [t])
 
     useEffect(() => {
         fetchFields()
@@ -101,7 +105,7 @@ export const AllFields = () => {
         f.soilType?.toLowerCase().includes(search.toLowerCase())
     )
 
-    const onlineCount = fields.filter(f => !!f.deviceId).length
+    const onlineCount = fields.filter(f => getDeviceStatus(f, t).status === 'online').length
 
     if (isLoading) {
         return (

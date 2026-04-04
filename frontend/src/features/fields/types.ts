@@ -34,6 +34,7 @@ export interface Field {
     userId: string;
     createdAt: string;
     deviceId?: string | null;
+    deviceLastSeenAt?: string | null;
 
     // Frontend convenience property
     status?: 'online' | 'offline'; // In real app, might come from backend or computed
