@@ -137,14 +137,14 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
                     direction="column"
                     bg="white"
                     w="full"
-                    maxW="2xl"
+                    maxW="4xl"
                     borderRadius="3xl"
                     shadow="2xl"
                     border="1px solid"
                     borderColor="gray.100"
                     overflow="hidden"
                     pointerEvents="auto"
-                    maxH="90vh"
+                    h="90vh"
                 >
                     {/* HEADER */}
                     <Flex bg="neutral.dark" p={6} color="white" justify="space-between" align="center" flexShrink={0}>
@@ -160,10 +160,10 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
                     </Flex>
 
                     {/* BODY — scrollable */}
-                    <Box p={8} flex={1} overflowY="auto" minH="400px">
+                    <Flex p={8} flex={1} overflowY="auto" direction="column">
                         {/* ─── STEP 1 ─── */}
                         {step === 1 && (
-                            <Flex direction="column" gap={6}>
+                            <Flex direction="column" gap={6} flex={1}>
                                 {/* Field Name */}
                                 <Box>
                                     <Flex align="center" gap={1.5} mb={1}>
@@ -236,26 +236,31 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
                                 </Box>
 
                                 {/* Map Selector */}
-                                <Box>
+                                <Flex direction="column" flex={1} minH="240px">
                                     <Flex align="center" gap={1.5} mb={2}>
                                         <MapIcon size={16} color="#059669" />
                                         <Text fontSize="sm" fontWeight="semibold" color="gray.700">{t('add_field.draw_boundaries')}</Text>
                                         <Text fontSize="xs" color="red.400" fontWeight="medium">*</Text>
                                     </Flex>
-                                    <MapSelector
-                                        value={formData.location}
-                                        onChange={(coords) => {
-                                            setField('location', coords);
-                                            if (errors.location && coords && coords.length >= 4) setErrors(prev => ({ ...prev, location: '' }));
-                                        }}
-                                        onAreaCalculated={(ha) => {
-                                            const rounded = parseFloat(ha.toFixed(2));
-                                            setField('areaHa', String(rounded));
-                                            if (errors.areaHa && rounded > 0) setErrors(prev => ({ ...prev, areaHa: '' }));
-                                        }}
-                                    />
+                                    <Box flex={1} position="relative">
+                                        <Box position="absolute" inset={0}>
+                                            <MapSelector
+                                                value={formData.location}
+                                                mapHeight="100%"
+                                                onChange={(coords) => {
+                                                    setField('location', coords);
+                                                    if (errors.location && coords && coords.length >= 4) setErrors(prev => ({ ...prev, location: '' }));
+                                                }}
+                                                onAreaCalculated={(ha) => {
+                                                    const rounded = parseFloat(ha.toFixed(2));
+                                                    setField('areaHa', String(rounded));
+                                                    if (errors.areaHa && rounded > 0) setErrors(prev => ({ ...prev, areaHa: '' }));
+                                                }}
+                                            />
+                                        </Box>
+                                    </Box>
                                     {errors.location && <Text fontSize="xs" color="red.500" mt={1} fontWeight="medium">⚠ {errors.location}</Text>}
-                                </Box>
+                                </Flex>
                             </Flex>
                         )}
 
@@ -467,7 +472,7 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
                                 </Flex>
                             </Flex>
                         )}
-                    </Box>
+                    </Flex>
 
                     {/* FOOTER */}
                     <Flex p={6} borderTop="1px solid" borderColor="gray.100" justify="space-between" bg="gray.50" flexShrink={0}>
