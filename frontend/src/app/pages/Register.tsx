@@ -8,7 +8,7 @@ import { User, Mail, Lock, CheckCircle, ArrowLeft, Loader2, AlertCircle, Eye, Ey
 import { Sprout } from "lucide-react"
 
 export const Register = () => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [name, setName] = useState("")
   const [surname, setSurname] = useState("")
   const [email, setEmail] = useState("")
@@ -61,7 +61,8 @@ export const Register = () => {
         name,
         surname,
         email,
-        password
+        password,
+        preferredLanguage: i18n.language
       })
       navigate(`/verify-email?email=${encodeURIComponent(email)}`)
     } catch (err) {

@@ -10,6 +10,7 @@ import com.solara.backend.dto.response.VerifyResponse;
 import com.solara.backend.entity.VerificationCode;
 import com.solara.backend.repository.UserRepository;
 import com.solara.backend.repository.VerificationCodeRepository;
+import com.solara.backend.entity.User;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,9 +36,11 @@ public class VerificationService {
     public VerifyResponse requestVerification(VerifyRequestDTO request) {
         String email = request.getEmail();
 
-        if (userRepo.findByEmail(email).isEmpty()) {
+        var userOpt = userRepo.findByEmail(email);
+        if (userOpt.isEmpty()) {
             throw new IllegalArgumentException("No account found with this email address");
         }
+        User user = userOpt.get();
 
         // Generate 6-digit code
         String code = String.format("%06d", new Random().nextInt(999999));
@@ -54,7 +57,7 @@ public class VerificationService {
         verificationCodeRepo.save(verificationCode);
 
         // Send email
-        emailService.sendVerificationCode(email, code);
+        emailService.sendVerificationCode(email, code, user.getPreferredLanguage());
 
         return VerifyResponse.builder()
                 .message("Verification code sent to " + email)

@@ -39,6 +39,8 @@ public class AuthService {
                 .surname(registerRequest.getSurname())
                 .password(passwordEncoder.encode(registerRequest.getPassword()))
                 .role(Role.USER) // Using Enum
+                .preferredLanguage(registerRequest.getPreferredLanguage() != null && !registerRequest.getPreferredLanguage().isBlank() 
+                                    ? registerRequest.getPreferredLanguage().toLowerCase() : "en")
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
