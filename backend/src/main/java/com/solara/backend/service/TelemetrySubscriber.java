@@ -1,5 +1,6 @@
 package com.solara.backend.service;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.springframework.integration.annotation.ServiceActivator;
@@ -8,8 +9,10 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.solara.backend.entity.EspDevice;
 import com.solara.backend.entity.Field;
 import com.solara.backend.entity.SensorLogs;
+import com.solara.backend.repository.EspDeviceRepository;
 import com.solara.backend.repository.FieldRepository;
 import com.solara.backend.repository.SensorLogsRepository;
 
@@ -29,6 +32,7 @@ public class TelemetrySubscriber {
 
     private final FieldRepository fieldRepository;
     private final SensorLogsRepository sensorLogsRepository;
+    private final EspDeviceRepository espDeviceRepository;
     private final ObjectMapper objectMapper;
 
     /**
@@ -70,6 +74,12 @@ public class TelemetrySubscriber {
                     .build();
 
             sensorLogsRepository.save(log_entry);
+            
+            // Update the lastSeenAt for the device
+            EspDevice espDevice = field.getEspDevice();
+            espDevice.setLastSeenAt(LocalDateTime.now());
+            espDeviceRepository.save(espDevice);
+            
             log.info("Saved telemetry from device='{}' for field='{}'", deviceId, fieldId);
 
         } catch (Exception e) {

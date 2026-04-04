@@ -28,6 +28,7 @@ public class FieldResponseDTO {
     private String deviceId;
     private UUID userId;
     private LocalDateTime createdAt;
+    private LocalDateTime deviceLastSeenAt;
 
     // Constructor to convert Entity -> DTO
     public FieldResponseDTO(Field field) {
@@ -36,6 +37,7 @@ public class FieldResponseDTO {
         this.areaHa = field.getAreaHa();
         this.userId = field.getUserId();
         this.deviceId = field.getEspDevice() != null ? field.getEspDevice().getSerialNumber() : null;
+        this.deviceLastSeenAt = field.getEspDevice() != null ? field.getEspDevice().getLastSeenAt() : null;
         this.location = convertPolygonToCoordinates(field.getLocation());
         this.soilType = field.getSoilType();
         this.createdAt = field.getCreatedAt();
@@ -75,4 +77,7 @@ public class FieldResponseDTO {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public LocalDateTime getDeviceLastSeenAt() { return deviceLastSeenAt; }
+    public void setDeviceLastSeenAt(LocalDateTime deviceLastSeenAt) { this.deviceLastSeenAt = deviceLastSeenAt; }
 }

@@ -71,7 +71,7 @@ public class UserService {
                 .build();
         verificationCodeRepo.save(verificationCode);
 
-        emailService.sendAccountDeletionCode(email, code);
+        emailService.sendAccountDeletionCode(email, code, user.getPreferredLanguage());
 
         return VerifyResponse.builder()
                 .message("Account deletion verification code sent to " + email)

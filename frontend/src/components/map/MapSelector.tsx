@@ -22,19 +22,20 @@ const DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 // Small numbered circle icon for polygon vertices
-const vertexIcon = (index: number) =>
+const vertexIcon = (index: number, isDragging?: boolean) =>
     L.divIcon({
         className: '',
         html: `<div style="
-            width: 24px; height: 24px; border-radius: 50%;
-            background: #059669; border: 2px solid white;
+            width: 26px; height: 26px; border-radius: 50%;
+            background: ${isDragging ? '#0284c7' : '#059669'}; border: 2.5px solid white;
             display: flex; align-items: center; justify-content: center;
             color: white; font-size: 11px; font-weight: bold;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.45);
+            cursor: grab;
+            transition: background 0.15s;
         ">${index + 1}</div>`,
-        iconSize: [24, 24],
-        iconAnchor: [12, 12],
+        iconSize: [26, 26],
+        iconAnchor: [13, 13],
     });
 
 // Esri World Imagery tile URL (no API key required for basic usage)
@@ -50,6 +51,8 @@ interface Props {
     onChange: (coords: number[][] | null) => void;
     /** fired with calculated area in hectares whenever polygon has 3+ points */
     onAreaCalculated?: (ha: number) => void;
+    /** override the map container height — defaults to 'clamp(240px, 35vh, 360px)' */
+    mapHeight?: string;
 }
 
 /** Geodesic polygon area using the spherical excess formula. Returns hectares. */
@@ -139,7 +142,7 @@ function LocateButton({ title }: { title: string }) {
             style={{
                 position: 'absolute',
                 bottom: '80px',
-                left: '10px',
+                right: '10px',
                 zIndex: 1000,
             }}
         >
@@ -177,9 +180,9 @@ function LocateButton({ title }: { title: string }) {
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Flex, Text, Button } from '@chakra-ui/react';
-import { Trash2, CheckCheck, Undo2, MapPin, LocateFixed } from 'lucide-react';
+import { Trash2, CheckCheck, Undo2, MapPin, LocateFixed, Ruler } from 'lucide-react';
 
-export const MapSelector = ({ value, onChange, onAreaCalculated }: Props) => {
+export const MapSelector = ({ value, onChange, onAreaCalculated, mapHeight = 'clamp(240px, 35vh, 360px)' }: Props) => {
     const { t } = useTranslation();
     const [points, setPoints] = useState<[number, number][]>(
         value ? fromBackend(value) : []
@@ -196,7 +199,6 @@ export const MapSelector = ({ value, onChange, onAreaCalculated }: Props) => {
 
     const handleSetPoints = (newPoints: [number, number][]) => {
         setPoints(newPoints);
-        // Fire live area estimate for 3+ points
         if (newPoints.length >= 3) {
             onAreaCalculated?.(computeAreaHa(newPoints));
         }
@@ -212,10 +214,10 @@ export const MapSelector = ({ value, onChange, onAreaCalculated }: Props) => {
         onAreaCalculated?.(computeAreaHa(points));
     };
 
+    // Edit: just unlocks for dragging/adding — does NOT clear the polygon
     const handleUndo = () => {
         if (finished) {
             setFinished(false);
-            onChange(null);
             return;
         }
         const newPoints = points.slice(0, -1);
@@ -223,17 +225,16 @@ export const MapSelector = ({ value, onChange, onAreaCalculated }: Props) => {
         if (newPoints.length === 0) onChange(null);
     };
 
+    // Clear: wipes everything so user can redraw from scratch
     const handleClear = () => {
         setPoints([]);
         setFinished(false);
         onChange(null);
     };
 
-    // Default center — Turkey if nothing selected
     const center: [number, number] =
         points.length > 0 ? points[0] : [38.9637, 35.2433];
 
-    // Live area estimate (shown when 3+ points exist)
     const liveAreaHa = points.length >= 3 ? computeAreaHa(points) : null;
 
     return (
@@ -244,6 +245,9 @@ export const MapSelector = ({ value, onChange, onAreaCalculated }: Props) => {
             borderColor={finished ? '#059669' : 'gray.300'}
             transition="border-color 0.3s"
             position="relative"
+            display="flex"
+            flexDirection="column"
+            h="full"
         >
             {/* ── Toolbar ───────────────────────────────────────────────── */}
             <Flex
@@ -269,10 +273,12 @@ export const MapSelector = ({ value, onChange, onAreaCalculated }: Props) => {
                 >
                     <MapPin size={12} />
                     {finished
-                        ? t('map.status_locked', { area: liveAreaHa != null ? liveAreaHa.toFixed(2) : '?' })
-                        : points.length < 3
-                            ? t('map.status_add_points', { count: points.length })
-                            : t('map.status_ready', { count: points.length, area: liveAreaHa?.toFixed(2) })}
+                        ? `Boundary locked — ${liveAreaHa != null ? liveAreaHa.toFixed(2) : '?'} ha`
+                        : points.length === 0
+                            ? 'Click map to start drawing'
+                            : points.length < 3
+                                ? `${points.length} / 3 min. points`
+                                : `${points.length} pts — ~${liveAreaHa?.toFixed(2)} ha`}
                 </Flex>
 
                 {/* Buttons */}
@@ -281,53 +287,57 @@ export const MapSelector = ({ value, onChange, onAreaCalculated }: Props) => {
                         <Button
                             size="xs"
                             onClick={handleUndo}
-                            title={finished ? 'Edit polygon' : 'Undo last point'}
                             bg="rgba(0,0,0,0.6)"
                             color="white"
                             _hover={{ bg: 'rgba(0,0,0,0.8)' }}
                             borderRadius="lg"
                             backdropFilter="blur(6px)"
+                            gap={1}
                         >
-                            <Undo2 size={14} />
+                            <Undo2 size={13} />
+                            {finished ? 'Edit' : 'Undo'}
                         </Button>
                     )}
-                    {points.length > 0 && !finished && (
+                    {/* Always show Clear when polygon exists so users know they can redraw */}
+                    {points.length > 0 && (
                         <Button
                             size="xs"
                             onClick={handleClear}
-                            title="Clear all"
                             bg="rgba(220,38,38,0.75)"
                             color="white"
                             _hover={{ bg: 'rgba(220,38,38,1)' }}
                             borderRadius="lg"
                             backdropFilter="blur(6px)"
+                            gap={1}
                         >
-                            <Trash2 size={14} />
+                            <Trash2 size={13} />
+                            Clear
                         </Button>
                     )}
                     {points.length >= 3 && !finished && (
                         <Button
                             size="xs"
                             onClick={handleFinish}
-                            title="Finish polygon"
                             bg="#059669"
                             color="white"
                             _hover={{ bg: '#047857' }}
                             borderRadius="lg"
                             backdropFilter="blur(6px)"
+                            gap={1}
                         >
-                            <CheckCheck size={14} />
-                            &nbsp;Finish
+                            <CheckCheck size={13} />
+                            Finish
                         </Button>
                     )}
                 </Flex>
+
             </Flex>
 
             {/* ── Map ───────────────────────────────────────────────────── */}
             <MapContainer
                 center={center}
                 zoom={points.length > 0 ? 14 : 6}
-                style={{ height: '360px', width: '100%', cursor: finished ? 'default' : 'crosshair' }}
+                style={{ height: mapHeight, width: '100%', cursor: finished ? 'default' : 'crosshair' }}
                 scrollWheelZoom
             >
                 {/* Esri Satellite base layer */}
@@ -368,9 +378,24 @@ export const MapSelector = ({ value, onChange, onAreaCalculated }: Props) => {
                     />
                 )}
 
-                {/* Vertex markers */}
+                {/* Vertex markers — stable key so React never remounts during drag */}
                 {points.map((pt, i) => (
-                    <Marker key={i} position={pt} icon={vertexIcon(i)} />
+                    <Marker
+                        key={i}
+                        position={pt}
+                        icon={vertexIcon(i)}
+                        draggable={true}
+                        eventHandlers={{
+                            dragend(e) {
+                                const pos = (e.target as L.Marker).getLatLng();
+                                const newPoints: [number, number][] = points.map((p, idx) =>
+                                    idx === i ? [pos.lat, pos.lng] : p
+                                );
+                                handleSetPoints(newPoints);
+                                if (finished) onChange(toBackendClosed(newPoints));
+                            },
+                        }}
+                    />
                 ))}
             </MapContainer>
 
@@ -390,21 +415,29 @@ export const MapSelector = ({ value, onChange, onAreaCalculated }: Props) => {
                         <Flex align="center" gap={2}>
                             <CheckCheck size={14} color="#059669" />
                             <Text fontSize="xs" color="#059669" fontWeight="medium">
-                                {t('map.boundary_saved', { count: points.length })}
+                                Boundary saved — {points.length} points. Drag any corner to adjust, or use
+                                {' '}<strong>Edit</strong> to add more points /{' '}
+                                <strong>Clear</strong> to redraw.
                             </Text>
                         </Flex>
                         {liveAreaHa != null && (
-                            <Text fontSize="xs" color="#059669" fontWeight="bold">
-                                📏 {liveAreaHa.toFixed(4)} ha
-                            </Text>
+                            <Flex align="center" gap={1}>
+                                <Ruler size={12} color="#059669" />
+                                <Text fontSize="xs" color="#059669" fontWeight="bold" whiteSpace="nowrap">
+                                    {liveAreaHa.toFixed(4)} ha
+                                </Text>
+                            </Flex>
                         )}
                     </>
                 ) : (
                     <>
-                        <Text fontSize="xs" color="gray.400">
-                            {points.length < 3
-                                ? t('map.click_hint_few')
-                                : t('map.click_hint_enough')}
+                        <Text fontSize="xs" color="gray.500">
+                            {points.length === 0
+                                ? 'Click on the satellite map to place your first field corner.'
+                                : points.length < 3
+                                    ? `${points.length} point${points.length > 1 ? 's' : ''} placed — add at least ${3 - points.length} more to form a polygon.`
+                                    : `${points.length} points placed. Add more corners or press “Finish” to lock the boundary.`
+                            }
                         </Text>
                         {liveAreaHa != null && (
                             <Text fontSize="xs" color="blue.500" fontWeight="semibold" whiteSpace="nowrap">

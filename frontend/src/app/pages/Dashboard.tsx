@@ -12,6 +12,7 @@ import { AddNewFieldCard } from "../../components/dashboard/AddNewFieldCard"
 import { AddFieldWizard } from "./AddFieldWizard"
 import { fieldsService } from "../../features/fields/fields.service"
 import type { Field } from "../../features/fields/types"
+import { getDeviceStatus } from "../../utils/deviceStatus"
 
 export const Dashboard = () => {
   const { t } = useTranslation()
@@ -26,9 +27,10 @@ export const Dashboard = () => {
       const data = await fieldsService.getUserFields()
       // Sort: paired (online-capable) fields first
       const sorted = [...data].sort((a, b) => {
-        const aOnline = a.deviceId ? 1 : 0
-        const bOnline = b.deviceId ? 1 : 0
-        return bOnline - aOnline
+        const statusOrder = { online: 2, inactive: 1, offline: 0 }
+        const aStatus = statusOrder[getDeviceStatus(a, t).status]
+        const bStatus = statusOrder[getDeviceStatus(b, t).status]
+        return bStatus - aStatus
       })
       setFields(sorted)
     } catch (error) {
@@ -36,7 +38,7 @@ export const Dashboard = () => {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     fetchFields()
@@ -63,7 +65,7 @@ export const Dashboard = () => {
     )
   }
 
-  const onlineFieldsCount = fields.filter(f => !!f.deviceId).length
+  const onlineFieldsCount = fields.filter(f => getDeviceStatus(f, t).status === 'online').length;
 
   return (
     <>

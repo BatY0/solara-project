@@ -12,6 +12,13 @@ import type {
     AnalysisResult
 } from './types';
 
+export interface UpdateFieldRequest {
+    name: string;
+    location?: number[][];
+    areaHa: number;
+    soilType: string;
+}
+
 export const fieldsService = {
     // Get all fields for the currently authenticated user
     getUserFields: async (): Promise<Field[]> => {
@@ -41,6 +48,12 @@ export const fieldsService = {
     createField: async (data: CreateFieldRequest): Promise<CreateFieldResponse> => {
         const response = await api.post('/fields/create-field', data);
         return response.data;
+    },
+
+    // Update a field's core data (name, polygon, area, soil type)
+    updateField: async (id: string, data: UpdateFieldRequest): Promise<Field> => {
+        const response = await api.put(`/fields/${id}`, data);
+        return response.data.data;
     },
 
     // Update field properties
@@ -103,7 +116,7 @@ export const fieldsService = {
     getLiveWeather: async (fieldId: string): Promise<WeatherData> => {
         const response = await api.get(`/weather-api/live/${fieldId}`);
         const raw = response.data.data;
-        
+
         if (!raw || !raw.current) {
             throw new Error("No live weather data available");
         }
@@ -115,7 +128,7 @@ export const fieldsService = {
             temperature: raw.current.temperature_2m ?? raw.current.temperature2m ?? 0,
             humidity: raw.current.relative_humidity_2m ?? raw.current.relativeHumidity2m ?? 0,
             precipitation: raw.current.precipitation ?? 0,
-            description: "", 
+            description: "",
             iconUrl: "",
             recordedAt: raw.current.time || new Date().toISOString()
         };

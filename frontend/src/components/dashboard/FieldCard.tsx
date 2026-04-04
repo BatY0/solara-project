@@ -4,6 +4,7 @@ import { Sprout, MapPin, Droplets, Thermometer, ArrowRight } from "lucide-react"
 import type { Field, SensorData } from "../../features/fields/types"
 import { fieldsService } from "../../features/fields/fields.service"
 import { useTranslation } from "react-i18next"
+import { getDeviceStatus } from "../../utils/deviceStatus"
 
 interface FieldCardProps {
     field: Field
@@ -42,21 +43,14 @@ export const FieldCard = ({ field, onDetailsClick }: FieldCardProps) => {
         };
     }, [field.id]);
 
-    // Three-state status:
-    //  online  = paired device + received telemetry data
-    //  paired  = has deviceId but no telemetry data yet (device registered, not reporting)
-    //  offline = no device paired at all
-    const status: 'online' | 'paired' | 'offline' =
-        field.deviceId && telemetry ? 'online'
-        : field.deviceId           ? 'paired'
-        :                            'offline';
+    const deviceStatus = getDeviceStatus(field, t);
+    const status: 'online' | 'inactive' | 'offline' = deviceStatus.status;
 
     const statusConfig = {
-        online:  { bg: 'brand.50',  color: 'green.700',  border: 'brand.100', dot: 'green.500',  pulse: true,  label: t('dashboard.online') },
-        paired:  { bg: 'yellow.50', color: 'yellow.700', border: 'yellow.100', dot: 'yellow.500', pulse: false, label: t('dashboard.paired', 'Paired') },
-        offline: { bg: 'red.50',    color: 'red.700',    border: 'red.100',    dot: 'red.500',    pulse: false, label: t('dashboard.offline') },
+        online:   { bg: 'brand.50',  color: 'green.700',  border: 'brand.100', dot: 'green.500',  pulse: true,  label: deviceStatus.text },
+        inactive: { bg: 'yellow.50', color: 'yellow.700', border: 'yellow.100', dot: 'yellow.500', pulse: false, label: deviceStatus.text },
+        offline:  { bg: 'red.50',    color: 'red.700',    border: 'red.100',    dot: 'red.500',    pulse: false, label: deviceStatus.text },
     }[status];
-
 
     return (
         <Flex
