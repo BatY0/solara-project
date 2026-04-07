@@ -317,13 +317,22 @@
     "save": "Rehberi Kaydet",
     "placeholders": {
       "description": "Açıklama",
+      "common_varieties": "Yaygın çeşitler",
       "uses": "Kullanım alanları",
+      "soil_preparation_steps": "Toprak hazırlama adımları",
       "planting_method": "Ekim yöntemi",
+      "planting_timing": "Ekim zamanlaması",
       "irrigation": "Sulama",
       "fertilization": "Gübreleme",
+      "weed_control": "Yabancı ot kontrolü",
+      "support_pruning": "Destek & budama",
+      "common_pests": "Yaygın zararlılar",
+      "common_diseases": "Yaygın hastalıklar",
       "management_strategies": "Yönetim stratejileri",
+      "signs_of_readiness": "Hasat olgunluğu işaretleri",
       "harvesting_method": "Hasat yöntemi",
       "storage_conditions": "Depolama koşulları",
+      "shelf_life": "Raf ömrü",
       "name": "Ad",
       "severity": "Şiddet düzeyi",
       "prevention": "Önleme",
@@ -344,10 +353,55 @@
       "scientific_name": "Bilimsel ad",
       "family": "Aile",
       "growth_habit": "Büyüme şekli",
+      "lifespan": "Yaşam süresi",
+      "common_names": "Yaygın adlar",
       "soil_type": "Toprak tipi",
       "expected_yield": "Beklenen verim",
       "days_to_maturity": "Hasada kalan gün",
       "image_url": "Görsel URL"
+    },
+    "climate_title": "İklim & Ortam",
+    "climate_desc": "İklim dayanıklılığı, su ve ışık gereksinimleri.",
+    "temperature_title": "Sıcaklık Gereksinimleri",
+    "temperature_desc": "Optimum, çimlenme, büyüme ve meyve oluşumu sıcaklık aralıkları.",
+    "soil_nutrients_title": "Toprak & Besin Maddeleri",
+    "soil_nutrients_desc": "pH aralığı ve N-P-K gübreleme gereksinimleri.",
+    "planting_title": "Ekim & Aralıklar",
+    "planting_desc": "Bitki ve sıra aralıkları, derinlik ve çimlenme verileri.",
+    "climate_fields": {
+      "climate_hardiness": "İklim Dayanıklılığı",
+      "frost_tolerance": "Don Toleransı",
+      "sunlight_hours": "Günlük Güneş Saati",
+      "water_weekly_mm": "Haftalık Su İhtiyacı (mm)",
+      "drought_tolerance": "Kuraklık Toleransı",
+      "waterlogging_sensitivity": "Su Baskını Hassasiyeti"
+    },
+    "temp_fields": {
+      "optimal_min": "Optimum Sıcaklık Min (°C)",
+      "optimal_max": "Optimum Sıcaklık Max (°C)",
+      "germination_min": "Çimlenme Sıcaklığı Min (°C)",
+      "germination_max": "Çimlenme Sıcaklığı Max (°C)",
+      "growth_min": "Büyüme Sıcaklığı Min (°C)",
+      "growth_max": "Büyüme Sıcaklığı Max (°C)",
+      "fruiting_min": "Meyve Sıcaklığı Min (°C)",
+      "fruiting_max": "Meyve Sıcaklığı Max (°C)"
+    },
+    "soil_fields": {
+      "ph_min": "pH Min",
+      "ph_max": "pH Max",
+      "n_requirement": "Azot Gereksinimi",
+      "p_requirement": "Fosfor Gereksinimi",
+      "k_requirement": "Potasyum Gereksinimi"
+    },
+    "planting_fields": {
+      "spacing_plant": "Bitki Aralığı (cm)",
+      "spacing_row": "Sıra Aralığı (cm)",
+      "depth": "Ekim Derinliği (cm)",
+      "germination_days": "Çimlenme Süresi (gün)"
+    },
+    "validation": {
+      "max_gte_min": "Maks, Min değerinden büyük veya eşit olmalıdır",
+      "min_lte_max": "Min, Maks değerinden küçük veya eşit olmalıdır"
     }
   },
   "validation": {

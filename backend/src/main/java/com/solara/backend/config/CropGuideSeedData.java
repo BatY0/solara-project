@@ -40,8 +40,13 @@ public class CropGuideSeedData implements CommandLineRunner {
     private void upsertRice() {
         CropGuide guide = upsertBase(
                 "Rice", "Pirinç", "Oryza sativa", "Poaceae", "Grass", "Annual",
-                20.0, 35.0, 90, "Clay loam", 5.5, 7.0,
-                "Medium", "Medium", "High", 20.0, 25.0, 3.0, 7,
+                20.0, 35.0, 90,
+                "Tropical", "None", 6.0,
+                20.0, 35.0, 18.0, 35.0, 22.0, 30.0,
+                100.0, "Low", "High",
+                "Clay loam", 5.5, 7.0,
+                "Medium", "Medium", "High",
+                20.0, 25.0, 3.0, 7,
                 "4-7 t/ha", "https://t4.ftcdn.net/jpg/04/73/73/37/360_F_473733756_rS9ps9Ko6RcIj2j7G5FVLei4NdL9717r.jpg");
 
         upsertTranslation(guide, "en",
@@ -89,8 +94,13 @@ public class CropGuideSeedData implements CommandLineRunner {
     private void upsertKidneybeans() {
         CropGuide guide = upsertBase(
                 "Kidneybeans", "Böbrek Fasulyesi", "Phaseolus vulgaris", "Fabaceae", "Bush/Climber", "Annual",
-                18.0, 30.0, 95, "Well-drained loam", 6.0, 7.0,
-                "Medium", "Medium", "Medium", 12.0, 50.0, 4.0, 8,
+                18.0, 30.0, 95,
+                "Temperate", "Frost Sensitive", 6.0,
+                15.0, 30.0, 16.0, 29.0, 18.0, 27.0,
+                50.0, "Low", "Low",
+                "Well-drained loam", 6.0, 7.0,
+                "Medium", "Medium", "Medium",
+                12.0, 50.0, 4.0, 8,
                 "1.5-2.5 t/ha", "https://cdn.shopify.com/s/files/1/0530/2596/4187/files/Shutterstock_1447247864.jpg?v=1737555387");
 
         upsertTranslation(guide, "en",
@@ -138,8 +148,13 @@ public class CropGuideSeedData implements CommandLineRunner {
     private void upsertChickpea() {
         CropGuide guide = upsertBase(
                 "Chickpea", "Nohut", "Cicer arietinum", "Fabaceae", "Bush", "Annual",
-                15.0, 30.0, 100, "Loam", 6.0, 8.0,
-                "Low", "Medium", "Medium", 10.0, 35.0, 5.0, 10,
+                15.0, 30.0, 100,
+                "Semi-arid", "Moderate", 8.0,
+                10.0, 30.0, 15.0, 30.0, 20.0, 29.0,
+                40.0, "High", "Low",
+                "Loam", 6.0, 8.0,
+                "Low", "Medium", "Medium",
+                10.0, 35.0, 5.0, 10,
                 "1.2-2.0 t/ha", "https://www.bhg.com/thmb/AFG80NSx7Vc0YRX9fTWU9ye9e6Y=/3500x0/filters:no_upscale():strip_icc()/grow-chickpeas-8655370-fea1e109fea143d1a09a862f0cbb17f1.jpg");
 
         upsertTranslation(guide, "en",
@@ -187,8 +202,13 @@ public class CropGuideSeedData implements CommandLineRunner {
     private void upsertPigeonpeas() {
         CropGuide guide = upsertBase(
                 "Pigeonpeas", "Güvercin Bezelyesi", "Cajanus cajan", "Fabaceae", "Shrub", "Perennial(usually annual cycle)",
-                20.0, 35.0, 130, "Sandy loam", 5.0, 7.0,
-                "Low", "Medium", "Medium", 25.0, 75.0, 5.0, 12,
+                20.0, 35.0, 130,
+                "Tropical/Semi-arid", "Very Sensitive", 6.0,
+                18.0, 35.0, 20.0, 35.0, 18.0, 32.0,
+                60.0, "High", "Medium",
+                "Sandy loam", 5.0, 7.0,
+                "Low", "Medium", "Medium",
+                25.0, 75.0, 5.0, 12,
                 "1.0-2.2 t/ha", "https://sustainableholly.com/wp-content/uploads/2025/06/pigeon-pea-green-pods-edited.jpg");
 
         upsertTranslation(guide, "en",
@@ -236,8 +256,13 @@ public class CropGuideSeedData implements CommandLineRunner {
     private void upsertMothbeans() {
         CropGuide guide = upsertBase(
                 "Mothbeans", "Mat Fasulyesi", "Vigna aconitifolia", "Fabaceae", "Creeping", "Annual",
-                24.0, 38.0, 85, "Light sandy loam", 6.0, 7.5,
-                "Low", "Low", "Medium", 8.0, 30.0, 3.0, 6,
+                24.0, 38.0, 85,
+                "Arid/Semi-arid", "Very Sensitive", 7.0,
+                20.0, 40.0, 22.0, 38.0, 18.0, 35.0,
+                30.0, "Very High", "Medium",
+                "Light sandy loam", 6.0, 7.5,
+                "Low", "Low", "Medium",
+                8.0, 30.0, 3.0, 6,
                 "0.8-1.5 t/ha", "https://www.feedipedia.org/sites/default/files/images/vigna_aconitifolia_leaves_siddarthmachado.jpg");
 
         upsertTranslation(guide, "en",
@@ -292,18 +317,36 @@ public class CropGuideSeedData implements CommandLineRunner {
             Double minTemp,
             Double maxTemp,
             int daysToMaturity,
+            // Climate/environment fields
+            String climateHardiness,
+            String frostTolerance,
+            Double sunlightHours,
+            // Temperature stage ranges
+            Double germinationTempMin,
+            Double germinationTempMax,
+            Double growthTempMin,
+            Double growthTempMax,
+            Double fruitingTempMin,
+            Double fruitingTempMax,
+            // Water
+            Double waterWeeklyMm,
+            String droughtTolerance,
+            String waterloggingSensitivity,
+            // Soil
             String soilType,
             Double phMin,
             Double phMax,
             String nRequirement,
             String pRequirement,
             String kRequirement,
+            // Planting
             Double spacingPlantCm,
             Double spacingRowCm,
             Double depthCm,
             Integer germinationDays,
             String expectedYield,
             String image) {
+
         CropGuide guide = cropGuideRepository.findAllByNameIgnoreCase(name).stream()
                 .findFirst()
                 .orElse(CropGuide.builder().name(name).build());
@@ -315,6 +358,18 @@ public class CropGuideSeedData implements CommandLineRunner {
         guide.setOptimalTemperatureMin(minTemp);
         guide.setOptimalTemperatureMax(maxTemp);
         guide.setDaysToMaturity(daysToMaturity);
+        guide.setClimateHardiness(climateHardiness);
+        guide.setFrostTolerance(frostTolerance);
+        guide.setSunlightHours(sunlightHours);
+        guide.setGerminationTempMin(germinationTempMin);
+        guide.setGerminationTempMax(germinationTempMax);
+        guide.setGrowthTempMin(growthTempMin);
+        guide.setGrowthTempMax(growthTempMax);
+        guide.setFruitingTempMin(fruitingTempMin);
+        guide.setFruitingTempMax(fruitingTempMax);
+        guide.setWaterWeeklyMm(waterWeeklyMm);
+        guide.setDroughtTolerance(droughtTolerance);
+        guide.setWaterloggingSensitivity(waterloggingSensitivity);
         guide.setSoilType(soilType);
         guide.setPhMin(phMin);
         guide.setPhMax(phMax);
@@ -436,75 +491,164 @@ public class CropGuideSeedData implements CommandLineRunner {
     private void upsertRemainingGuides() {
         List<GuideSeed> seeds = List.of(
                 new GuideSeed("Maize", "Mısır", "Zea mays", "Poaceae", "Grass", "Annual",
-                        18.0, 34.0, 110, "Well-drained loam", 5.8, 7.2,
+                        18.0, 34.0, 110,
+                        "Temperate/Tropical", "Frost Sensitive", 8.0,
+                        10.0, 32.0, 16.0, 34.0, 18.0, 33.0,
+                        50.0, "Medium", "Low",
+                        "Well-drained loam", 5.8, 7.2,
                         "High", "Medium", "High", 20.0, 70.0, 4.0, 7,
                         "6-10 t/ha", "https://gardenbetty.com/wp-content/uploads/2021/06/corn-vs-maize-01.jpg"),
+
                 new GuideSeed("Mungbean", "Maş fasulyesi", "Vigna radiata", "Fabaceae", "Bush", "Annual",
-                        22.0, 35.0, 75, "Sandy loam", 6.0, 7.5,
+                        22.0, 35.0, 75,
+                        "Tropical", "Very Sensitive", 6.0,
+                        18.0, 35.0, 20.0, 34.0, 20.0, 32.0,
+                        35.0, "Medium", "Medium",
+                        "Sandy loam", 6.0, 7.5,
                         "Low", "Medium", "Medium", 12.0, 40.0, 3.0, 5,
                         "0.9-1.8 t/ha", "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQkXnzsmGb4uunAZY5cGoQMnqKdyCUJ6vF1gA&s"),
+
                 new GuideSeed("Blackgram", "Kara maş fasulyesi / Urad", "Vigna mungo", "Fabaceae", "Bush", "Annual",
-                        24.0, 36.0, 85, "Loam", 6.0, 7.5,
+                        24.0, 36.0, 85,
+                        "Tropical", "Very Sensitive", 6.0,
+                        20.0, 36.0, 22.0, 35.0, 20.0, 32.0,
+                        40.0, "Medium", "Medium",
+                        "Loam", 6.0, 7.5,
                         "Low", "Medium", "Medium", 10.0, 35.0, 3.0, 5,
                         "0.8-1.4 t/ha", "https://tiimg.tistatic.com/fp/1/006/615/premium-organic-black-gram-895.jpg"),
+
                 new GuideSeed("Lentil", "Mercimek", "Lens culinaris", "Fabaceae", "Bush", "Annual",
-                        12.0, 28.0, 105, "Loam", 6.0, 8.0,
+                        12.0, 28.0, 105,
+                        "Temperate/Semi-arid", "Moderate", 7.0,
+                        7.0, 27.0, 10.0, 28.0, 14.0, 27.0,
+                        25.0, "Medium", "Low",
+                        "Loam", 6.0, 8.0,
                         "Low", "Medium", "Medium", 10.0, 30.0, 3.0, 8,
                         "1.0-1.8 t/ha", "https://heartbeetfarms.com/wp-content/uploads/2021/01/lentil-harvest-1600x899.jpg"),
+
                 new GuideSeed("Pomegranate", "Nar", "Punica granatum", "Lythraceae", "Shrub", "Perennial",
-                        15.0, 35.0, 220, "Loam", 5.5, 7.5,
+                        15.0, 35.0, 220,
+                        "Mediterranean/Semi-arid", "Moderate", 8.0,
+                        12.0, 35.0, 14.0, 35.0, 18.0, 32.0,
+                        30.0, "High", "High",
+                        "Loam", 5.5, 7.5,
                         "Medium", "Medium", "Medium", 300.0, 500.0, 5.0, 14,
                         "15-25 t/ha", "https://shegrowsveg.com/wp-content/uploads/bis-images/27529/Cover-Pomegranate-_DSF2437-copy-1-scaled-1-536x360-f50_50.jpg"),
+
                 new GuideSeed("Banana", "Muz", "Musa spp.", "Musaceae", "Herbaceous", "Perennial",
-                        20.0, 35.0, 300, "Rich loam", 5.5, 7.0,
+                        20.0, 35.0, 300,
+                        "Tropical", "Very Sensitive", 8.0,
+                        18.0, 35.0, 22.0, 35.0, 20.0, 35.0,
+                        100.0, "Low", "High",
+                        "Rich loam", 5.5, 7.0,
                         "High", "Medium", "High", 250.0, 300.0, 8.0, 12,
                         "30-60 t/ha", "https://thefinestexotics.co.uk/cdn/shop/files/Apple_Banana.jpg?v=1754235829&width=1946"),
+
                 new GuideSeed("Mango", "Mango", "Mangifera indica", "Anacardiaceae", "Tree", "Perennial",
-                        20.0, 35.0, 320, "Sandy loam", 5.5, 7.5,
+                        20.0, 35.0, 320,
+                        "Tropical/Subtropical", "Sensitive", 8.0,
+                        18.0, 35.0, 22.0, 34.0, 22.0, 33.0,
+                        50.0, "Medium", "Low",
+                        "Sandy loam", 5.5, 7.5,
                         "Medium", "Medium", "High", 800.0, 800.0, 10.0, 14,
                         "8-15 t/ha", "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDh6RmUj-ZuZw_77mK_iQzGxg1R46_hVjSxg&s"),
+
                 new GuideSeed("Grapes", "Üzüm", "Vitis vinifera", "Vitaceae", "Climber", "Perennial",
-                        15.0, 32.0, 180, "Well-drained loam", 5.5, 7.2,
+                        15.0, 32.0, 180,
+                        "Mediterranean/Temperate", "Moderate", 8.0,
+                        10.0, 32.0, 12.0, 30.0, 16.0, 30.0,
+                        35.0, "High", "Low",
+                        "Well-drained loam", 5.5, 7.2,
                         "Medium", "Medium", "High", 150.0, 250.0, 6.0, 12,
                         "10-25 t/ha", "https://www.seriouseats.com/thmb/XwtcUWlY3TDauWPbBiID1yZ-6Jw=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/GettyImages-1289843973-karandaev-hero-ca6df1eb21504ba0965e2319ef4c26e3.jpg"),
+
                 new GuideSeed("Watermelon", "Karpuz", "Citrullus lanatus", "Cucurbitaceae", "Creeping", "Annual",
-                        20.0, 35.0, 90, "Sandy loam", 6.0, 7.5,
+                        20.0, 35.0, 90,
+                        "Hot/Dry", "Very Sensitive", 8.0,
+                        18.0, 35.0, 20.0, 35.0, 22.0, 32.0,
+                        40.0, "Medium", "Low",
+                        "Sandy loam", 6.0, 7.5,
                         "Medium", "Medium", "High", 80.0, 200.0, 3.0, 7,
                         "20-40 t/ha", "https://hips.hearstapps.com/hmg-prod/images/fresh-ripe-watermelon-slices-on-wooden-table-royalty-free-image-1684966820.jpg?crop=0.88973xw:1xh;center,top&resize=1200:*"),
+
                 new GuideSeed("Muskmelon", "Kavun", "Cucumis melo", "Cucurbitaceae", "Creeping", "Annual",
-                        20.0, 34.0, 85, "Sandy loam", 6.0, 7.5,
+                        20.0, 34.0, 85,
+                        "Hot/Dry", "Very Sensitive", 8.0,
+                        18.0, 34.0, 20.0, 34.0, 22.0, 32.0,
+                        35.0, "Medium", "Low",
+                        "Sandy loam", 6.0, 7.5,
                         "Medium", "Medium", "High", 70.0, 180.0, 3.0, 6,
                         "15-25 t/ha", "https://c.ndtvimg.com/2023-05/t1tfkt5_muskmelon_625x300_02_May_23.jpg"),
+
                 new GuideSeed("Apple", "Elma", "Malus domestica", "Rosaceae", "Tree", "Perennial",
-                        10.0, 28.0, 220, "Loam", 5.5, 7.0,
+                        10.0, 28.0, 220,
+                        "Temperate", "High", 7.0,
+                        5.0, 28.0, 7.0, 27.0, 14.0, 27.0,
+                        40.0, "Low", "Low",
+                        "Loam", 5.5, 7.0,
                         "Medium", "Medium", "High", 300.0, 500.0, 8.0, 12,
                         "20-40 t/ha", "https://img.lb.wbmdstatic.com/vim/live/webmd/consumer_assets/site_images/articles/health_tools/healing_foods_slideshow/1800ss_getty_rf_apples.jpg?resize=750px:*&output-quality=75"),
+
                 new GuideSeed("Orange", "Portakal", "Citrus sinensis", "Rutaceae", "Tree", "Perennial",
-                        14.0, 32.0, 260, "Loam", 6.0, 7.5,
+                        14.0, 32.0, 260,
+                        "Subtropical/Mediterranean", "Sensitive", 8.0,
+                        12.0, 32.0, 13.0, 32.0, 16.0, 30.0,
+                        35.0, "Low", "Medium",
+                        "Loam", 6.0, 7.5,
                         "Medium", "Medium", "High", 300.0, 400.0, 7.0, 14,
                         "20-35 t/ha", "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWy2deoCitSxEOI52ZF-v5s0YK5B74oDSDIQ&s"),
+
                 new GuideSeed("Papaya", "Papaya", "Carica papaya", "Caricaceae", "Herbaceous", "Perennial",
-                        20.0, 35.0, 280, "Sandy loam", 6.0, 7.0,
+                        20.0, 35.0, 280,
+                        "Tropical", "Very Sensitive", 8.0,
+                        18.0, 35.0, 20.0, 35.0, 20.0, 33.0,
+                        75.0, "Low", "Low",
+                        "Sandy loam", 6.0, 7.0,
                         "High", "Medium", "High", 200.0, 250.0, 5.0, 10,
                         "30-50 t/ha", "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSZYT1tOS5o7hV4hje57tDhYLYd-f6WwZdDpg&s"),
+
                 new GuideSeed("Coconut", "Hindistan cevizi", "Cocos nucifera", "Arecaceae", "Tree", "Perennial",
-                        24.0, 34.0, 365, "Sandy loam", 5.0, 8.0,
+                        24.0, 34.0, 365,
+                        "Tropical Coastal", "Very Sensitive", 8.0,
+                        20.0, 34.0, 22.0, 34.0, 22.0, 33.0,
+                        75.0, "Low", "High",
+                        "Sandy loam", 5.0, 8.0,
                         "Medium", "Medium", "High", 700.0, 900.0, 10.0, 20,
                         "8-15 t/ha equivalent", "https://img.lb.wbmdstatic.com/vim/live/webmd/consumer_assets/site_images/article_thumbnails/BigBead/coconut_bigbead/1800x1200_getty_rf_coconut_bigbead.jpg?resize=750px:*&output-quality=75"),
+
                 new GuideSeed("Cotton", "Pamuk", "Gossypium hirsutum", "Malvaceae", "Shrub", "Annual",
-                        20.0, 35.0, 170, "Well-drained loam", 5.8, 8.0,
+                        20.0, 35.0, 170,
+                        "Subtropical/Semi-arid", "Frost Sensitive", 8.0,
+                        18.0, 35.0, 20.0, 35.0, 20.0, 34.0,
+                        55.0, "Medium", "Low",
+                        "Well-drained loam", 5.8, 8.0,
                         "High", "Medium", "High", 25.0, 75.0, 4.0, 7,
                         "2-4 t/ha seed cotton", "https://fadfay.com/cdn/shop/articles/cotton-plants-are-tall-and-green-with-a-branching--Xi2ktwlpS02wO48TO6CUsw-sqZ-RNRzS1GLIO91uGXvnA_4e161561-ae25-4e3c-9ffa-f94494a731b2.jpg?v=1772613814&width=1024"),
+
                 new GuideSeed("Jute", "Jüt", "Corchorus olitorius", "Malvaceae", "Herbaceous", "Annual",
-                        22.0, 35.0, 130, "Alluvial loam", 6.0, 7.5,
+                        22.0, 35.0, 130,
+                        "Tropical Humid", "Very Sensitive", 7.0,
+                        18.0, 35.0, 20.0, 35.0, 20.0, 33.0,
+                        90.0, "Low", "High",
+                        "Alluvial loam", 6.0, 7.5,
                         "Medium", "Medium", "Medium", 8.0, 25.0, 2.0, 4,
                         "2-3 t/ha fibre", "https://upload.wikimedia.org/wikipedia/commons/9/9e/Jute_Field_Bangladesh_%287749587518%29.jpg"),
+
                 new GuideSeed("Coffee", "Kahve", "Coffea arabica", "Rubiaceae", "Shrub", "Perennial",
-                        16.0, 30.0, 300, "Loam", 5.0, 6.5,
+                        16.0, 30.0, 300,
+                        "Subtropical Highland", "Sensitive", 6.0,
+                        14.0, 30.0, 16.0, 28.0, 16.0, 28.0,
+                        50.0, "Low", "Low",
+                        "Loam", 5.0, 6.5,
                         "Medium", "Medium", "Medium", 200.0, 250.0, 2.0, 30,
                         "0.8-2.0 t/ha green beans", "https://www.aboutcoffee.org/wp-content/uploads/2024/10/ripe-coffee-cherries-on-branch-of-coffee-tree-1024x576.jpg"),
+
                 new GuideSeed("Tomato", "Domates", "Solanum lycopersicum", "Solanaceae", "Bush", "Annual",
-                        18.0, 30.0, 95, "Loam", 6.0, 6.8,
+                        18.0, 30.0, 95,
+                        "Temperate/Warm", "Frost Sensitive", 8.0,
+                        10.0, 30.0, 18.0, 30.0, 18.0, 29.0,
+                        45.0, "Low", "Medium",
+                        "Loam", 6.0, 6.8,
                         "Medium", "Medium", "High", 40.0, 80.0, 1.5, 8,
                         "50-80 t/ha", "https://t4.ftcdn.net/jpg/04/73/73/37/360_F_473733756_rS9ps9Ko6RcIj2j7G5FVLei4NdL9717r.jpg"));
 
@@ -519,6 +663,18 @@ public class CropGuideSeedData implements CommandLineRunner {
                     seed.minTemp,
                     seed.maxTemp,
                     seed.daysToMaturity,
+                    seed.climateHardiness,
+                    seed.frostTolerance,
+                    seed.sunlightHours,
+                    seed.germinationTempMin,
+                    seed.germinationTempMax,
+                    seed.growthTempMin,
+                    seed.growthTempMax,
+                    seed.fruitingTempMin,
+                    seed.fruitingTempMax,
+                    seed.waterWeeklyMm,
+                    seed.droughtTolerance,
+                    seed.waterloggingSensitivity,
                     seed.soilType,
                     seed.phMin,
                     seed.phMax,
@@ -589,6 +745,18 @@ public class CropGuideSeedData implements CommandLineRunner {
         private final Double minTemp;
         private final Double maxTemp;
         private final int daysToMaturity;
+        private final String climateHardiness;
+        private final String frostTolerance;
+        private final Double sunlightHours;
+        private final Double germinationTempMin;
+        private final Double germinationTempMax;
+        private final Double growthTempMin;
+        private final Double growthTempMax;
+        private final Double fruitingTempMin;
+        private final Double fruitingTempMax;
+        private final Double waterWeeklyMm;
+        private final String droughtTolerance;
+        private final String waterloggingSensitivity;
         private final String soilType;
         private final Double phMin;
         private final Double phMax;
@@ -612,6 +780,18 @@ public class CropGuideSeedData implements CommandLineRunner {
                 Double minTemp,
                 Double maxTemp,
                 int daysToMaturity,
+                String climateHardiness,
+                String frostTolerance,
+                Double sunlightHours,
+                Double germinationTempMin,
+                Double germinationTempMax,
+                Double growthTempMin,
+                Double growthTempMax,
+                Double fruitingTempMin,
+                Double fruitingTempMax,
+                Double waterWeeklyMm,
+                String droughtTolerance,
+                String waterloggingSensitivity,
                 String soilType,
                 Double phMin,
                 Double phMax,
@@ -633,6 +813,18 @@ public class CropGuideSeedData implements CommandLineRunner {
             this.minTemp = minTemp;
             this.maxTemp = maxTemp;
             this.daysToMaturity = daysToMaturity;
+            this.climateHardiness = climateHardiness;
+            this.frostTolerance = frostTolerance;
+            this.sunlightHours = sunlightHours;
+            this.germinationTempMin = germinationTempMin;
+            this.germinationTempMax = germinationTempMax;
+            this.growthTempMin = growthTempMin;
+            this.growthTempMax = growthTempMax;
+            this.fruitingTempMin = fruitingTempMin;
+            this.fruitingTempMax = fruitingTempMax;
+            this.waterWeeklyMm = waterWeeklyMm;
+            this.droughtTolerance = droughtTolerance;
+            this.waterloggingSensitivity = waterloggingSensitivity;
             this.soilType = soilType;
             this.phMin = phMin;
             this.phMax = phMax;
@@ -648,4 +840,3 @@ public class CropGuideSeedData implements CommandLineRunner {
         }
     }
 }
-

@@ -317,13 +317,22 @@
     "save": "Save Guide",
     "placeholders": {
       "description": "Description",
+      "common_varieties": "Common varieties",
       "uses": "Uses",
+      "soil_preparation_steps": "Soil preparation steps",
       "planting_method": "Planting method",
+      "planting_timing": "Planting timing",
       "irrigation": "Irrigation",
       "fertilization": "Fertilization",
+      "weed_control": "Weed control",
+      "support_pruning": "Support & pruning",
+      "common_pests": "Common pests",
+      "common_diseases": "Common diseases",
       "management_strategies": "Management strategies",
+      "signs_of_readiness": "Signs of readiness",
       "harvesting_method": "Harvesting method",
       "storage_conditions": "Storage conditions",
+      "shelf_life": "Shelf life",
       "name": "Name",
       "severity": "Severity",
       "prevention": "Prevention",
@@ -344,10 +353,55 @@
       "scientific_name": "Scientific name",
       "family": "Family",
       "growth_habit": "Growth habit",
+      "lifespan": "Lifespan",
+      "common_names": "Common names",
       "soil_type": "Soil type",
       "expected_yield": "Expected yield",
       "days_to_maturity": "Days to maturity",
       "image_url": "Image URL"
+    },
+    "climate_title": "Climate & Environment",
+    "climate_desc": "Climate hardiness, water and light requirements.",
+    "temperature_title": "Temperature Requirements",
+    "temperature_desc": "Optimal, germination, growth and fruiting temperature ranges.",
+    "soil_nutrients_title": "Soil & Nutrients",
+    "soil_nutrients_desc": "pH range and N-P-K fertilization requirements.",
+    "planting_title": "Planting & Spacing",
+    "planting_desc": "Spacing, depth and germination data.",
+    "climate_fields": {
+      "climate_hardiness": "Climate Hardiness",
+      "frost_tolerance": "Frost Tolerance",
+      "sunlight_hours": "Daily Sunlight Hours",
+      "water_weekly_mm": "Weekly Water (mm)",
+      "drought_tolerance": "Drought Tolerance",
+      "waterlogging_sensitivity": "Waterlogging Sensitivity"
+    },
+    "temp_fields": {
+      "optimal_min": "Optimal Temp Min (°C)",
+      "optimal_max": "Optimal Temp Max (°C)",
+      "germination_min": "Germination Temp Min (°C)",
+      "germination_max": "Germination Temp Max (°C)",
+      "growth_min": "Growth Temp Min (°C)",
+      "growth_max": "Growth Temp Max (°C)",
+      "fruiting_min": "Fruiting Temp Min (°C)",
+      "fruiting_max": "Fruiting Temp Max (°C)"
+    },
+    "soil_fields": {
+      "ph_min": "pH Min",
+      "ph_max": "pH Max",
+      "n_requirement": "Nitrogen Requirement",
+      "p_requirement": "Phosphorus Requirement",
+      "k_requirement": "Potassium Requirement"
+    },
+    "planting_fields": {
+      "spacing_plant": "Plant Spacing (cm)",
+      "spacing_row": "Row Spacing (cm)",
+      "depth": "Planting Depth (cm)",
+      "germination_days": "Germination Days"
+    },
+    "validation": {
+      "max_gte_min": "Max must be ≥ Min",
+      "min_lte_max": "Min must be ≤ Max"
     }
   },
   "validation": {
