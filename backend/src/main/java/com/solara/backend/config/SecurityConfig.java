@@ -40,7 +40,8 @@ public class SecurityConfig {
                         "/swagger-ui.html",
                         "/api/v1/auth/**",
                         "/api/v1/crop-guides/get-all-guides",
-                        "/api/v1/crop-guides/get-guide/**"
+                        "/api/v1/crop-guides/get-guide/**",
+                        "/api/v1/crop-guides/names-and-ids"
                     ).permitAll()
 
                     .anyRequest().authenticated()

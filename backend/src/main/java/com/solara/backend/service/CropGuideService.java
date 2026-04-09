@@ -23,6 +23,7 @@ import com.solara.backend.dto.response.CropGuidePestDiseaseDTO;
 import com.solara.backend.dto.response.CropGuidePostHarvestDTO;
 import com.solara.backend.dto.response.CropGuideResponseDTO;
 import com.solara.backend.dto.response.CropGuideTranslationDTO;
+import com.solara.backend.dto.response.CropNameIdDTO;
 import com.solara.backend.repository.CropGuideRepository;
 import com.solara.backend.repository.CropGuidePestDiseaseRepository;
 import com.solara.backend.repository.CropGuidePostHarvestProfileRepository;
@@ -79,6 +80,12 @@ public class CropGuideService {
 
         return guides.stream()
                 .map(guide -> toLocalizedDTO(guide, localizedMap.get(guide.getId()), preferredLanguage))
+                .toList();
+    }
+
+    public List<CropNameIdDTO> getAllCropNamesAndIds() {
+        return cropRepo.findAll().stream()
+                .map(guide -> new CropNameIdDTO(guide.getId(), guide.getName()))
                 .toList();
     }
 

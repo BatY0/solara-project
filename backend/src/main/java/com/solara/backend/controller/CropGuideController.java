@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import com.solara.backend.dto.request.CropGuideAdminUpsertDTO;
 import com.solara.backend.dto.response.CropGuideResponseDTO;
 import com.solara.backend.dto.response.CropGuideAdminResponseDTO;
+import com.solara.backend.dto.response.CropNameIdDTO;
 import com.solara.backend.dto.response.ApiResponse;
 import com.solara.backend.entity.User;
 
@@ -110,6 +111,12 @@ public class CropGuideController {
         return ApiResponse.success(
             cropDTOs, HttpStatus.OK.value(), "All crop guides retrieved successfully."
         );
+    }
+    
+    @GetMapping("/names-and-ids")
+    public ApiResponse<List<CropNameIdDTO>> getAllCropNamesAndIds() {
+        List<CropNameIdDTO> result = cropGuideService.getAllCropNamesAndIds();
+        return ApiResponse.success(result, HttpStatus.OK.value(), "Crop names and IDs retrieved successfully.");
     }
     
     @GetMapping("/get-guide/{id}")
