@@ -82,6 +82,7 @@ export default {
         pairing: 'Pairing...',
         unpairing: 'Unpairing...',
         mac_in_use: 'MAC address is already in use by another field.',
+        device_not_found: "Device with serial number '{{serial}}' was not found in registry.",
         pair_success: 'Device paired successfully!',
         unpair_success: 'Device unpaired successfully!',
         weather: 'Live Weather',

@@ -1,8 +1,11 @@
+export type PreferredLanguage = 'en' | 'tr';
+
 export interface User {
     id?: string;
     email: string;
     name?: string;
     surname?: string;
+    preferredLanguage?: PreferredLanguage;
 }
 
 export interface LoginRequest {
@@ -15,6 +18,7 @@ export interface RegisterRequest {
     surname: string;
     email: string;
     password: string;
+    preferredLanguage?: PreferredLanguage;
 }
 
 export interface AuthResponse {

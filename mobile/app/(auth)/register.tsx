@@ -16,6 +16,10 @@ import { theme } from '../../src/theme/theme';
 import { User, Mail, Lock, Eye, EyeOff, CheckCircle, AlertCircle, ArrowLeft, Sprout } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import type { PreferredLanguage } from '../../src/types/auth';
+
+const normalizePreferredLanguage = (language: string): PreferredLanguage =>
+    language.toLowerCase().startsWith('tr') ? 'tr' : 'en';
 
 export default function RegisterScreen() {
     const [name, setName] = useState('');
@@ -29,7 +33,7 @@ export default function RegisterScreen() {
     const [isLoading, setIsLoading] = useState(false);
     const { register } = useAuth();
     const router = useRouter();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
 
     // Password Validation
     const [validations, setValidations] = useState({
@@ -69,7 +73,13 @@ export default function RegisterScreen() {
         setError('');
         setIsLoading(true);
         try {
-            await register({ name, surname, email, password });
+            await register({
+                name,
+                surname,
+                email,
+                password,
+                preferredLanguage: normalizePreferredLanguage(i18n.language),
+            });
             router.push({
                 pathname: '/(auth)/verify',
                 params: { email, mode: 'verify' }

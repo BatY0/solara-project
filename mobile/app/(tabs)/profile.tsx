@@ -23,6 +23,10 @@ import { useAuth } from '../../src/context/AuthContext';
 import { storeLanguage } from '../../src/i18n/i18n';
 import api from '../../src/api/api';
 import { useRouter } from 'expo-router';
+import type { PreferredLanguage } from '../../src/types/auth';
+
+const normalizePreferredLanguage = (language: string): PreferredLanguage =>
+    language.toLowerCase().startsWith('tr') ? 'tr' : 'en';
 
 export default function SettingsScreen() {
     const { t, i18n } = useTranslation();
@@ -35,6 +39,8 @@ export default function SettingsScreen() {
     const [profileSuccess, setProfileSuccess] = useState('');
     const [profileError, setProfileError] = useState('');
     const [isSavingProfile, setIsSavingProfile] = useState(false);
+    const [languageSuccess, setLanguageSuccess] = useState('');
+    const [languageError, setLanguageError] = useState('');
 
     // Sync form fields when user profile loads (e.g. after login or app init)
     useEffect(() => {
@@ -72,17 +78,52 @@ export default function SettingsScreen() {
     const [delError, setDelError] = useState('');
     const [delSuccess, setDelSuccess] = useState('');
 
-    const handleLanguageChange = async (lng: string) => {
+    const handleLanguageChange = async (lng: PreferredLanguage) => {
+        setLanguageError('');
+        setLanguageSuccess('');
         await i18n.changeLanguage(lng);
         await storeLanguage(lng);
+
+        try {
+            const payloadName = (user?.name ?? name).trim();
+            const payloadSurname = (user?.surname ?? surname).trim();
+
+            if (!payloadName || !payloadSurname) {
+                setLanguageError(t('settings.update_profile_error'));
+                return;
+            }
+
+            const { data } = await api.put('/users/me/profile', {
+                name: payloadName,
+                surname: payloadSurname,
+                preferredLanguage: lng,
+            });
+
+            updateLocalUser({
+                name: data.name ?? payloadName,
+                surname: data.surname ?? payloadSurname,
+                preferredLanguage: data.preferredLanguage ?? lng,
+            });
+
+            setLanguageSuccess(t('settings.update_profile_success'));
+            setTimeout(() => setLanguageSuccess(''), 3000);
+        } catch (error: any) {
+            setLanguageError(error.response?.data?.message || t('settings.update_profile_error'));
+            setTimeout(() => setLanguageError(''), 3000);
+        }
     };
 
     const handleUpdateProfile = async () => {
         setProfileError(''); setProfileSuccess('');
         setIsSavingProfile(true);
         try {
-            const { data } = await api.put('/users/me/profile', { name, surname });
-            updateLocalUser({ name: data.name ?? name, surname: data.surname ?? surname });
+            const preferredLanguage = normalizePreferredLanguage(i18n.language);
+            const { data } = await api.put('/users/me/profile', { name, surname, preferredLanguage });
+            updateLocalUser({
+                name: data.name ?? name,
+                surname: data.surname ?? surname,
+                preferredLanguage: data.preferredLanguage ?? preferredLanguage,
+            });
             setProfileSuccess(t('settings.update_profile_success'));
             setTimeout(() => setProfileSuccess(''), 3000);
         } catch (error: any) {
@@ -168,7 +209,7 @@ export default function SettingsScreen() {
         );
     };
 
-    const currentLang = i18n.language;
+    const currentLang = normalizePreferredLanguage(i18n.language);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -211,6 +252,8 @@ export default function SettingsScreen() {
                             <Text style={[styles.langBtnText, currentLang === 'en' && styles.langBtnTextActive]}>🇬🇧  English</Text>
                         </TouchableOpacity>
                     </View>
+                    {languageError ? <Text style={styles.errorText}>{languageError}</Text> : null}
+                    {languageSuccess ? <Text style={styles.successText}>{languageSuccess}</Text> : null}
                 </View>
 
                 {/* PROFILE SECTION */}

@@ -82,6 +82,7 @@ export default {
         pairing: 'Eşleştiriliyor...',
         unpairing: 'Bağlantı kesiliyor...',
         mac_in_use: 'Bu MAC adresi başka bir tarla tarafından kullanılmaktadır.',
+        device_not_found: "'{{serial}}' seri numarasına sahip cihaz kayıt sisteminde bulunamadı.",
         pair_success: 'Cihaz başarıyla eşleştirildi!',
         unpair_success: 'Cihaz başarıyla ayrıldı!',
         weather: 'Canlı Hava Durumu',
