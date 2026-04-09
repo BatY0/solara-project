@@ -63,16 +63,32 @@ public class DeviceMonitorService {
     }
 
     private void sendOfflineAlert(User user, Field field) {
-        String subject = "Solara - Device Offline Alert: " + field.getName();
-        String htmlBody = "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"
-                + "padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;'>"
-                + "<h2 style='color: #C53030;'> Device Offline Alert</h2>"
-                + "<p>Hello,</p>"
-                + "<p>Your device <strong>" + field.getEspDevice().getSerialNumber() + "</strong> paired to field "
-                + "<strong>" + field.getName() + "</strong> has not sent any data in the last 24 hours.</p>"
-                + "<p>Please check that your device is powered on and connected to WiFi.</p>"
-                + "<p>Thanks,<br/>The Solara Team</p>"
-                + "</div>";
+        String lang = user.getPreferredLanguage() != null ? user.getPreferredLanguage().toLowerCase() : "en";
+        String subject;
+        String htmlBody;
+
+        if (lang.startsWith("tr")) {
+            subject = "Solara - Cihaz Çevrimdışı Uyarısı: " + field.getName();
+            htmlBody = "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"
+                    + "padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;'>"
+                    + "<h2 style='color: #C53030;'> Cihaz Çevrimdışı Uyarısı</h2>"
+                    + "<p>Merhaba,</p>"
+                    + "<p><strong>" + field.getName() + "</strong> tarlası ile eşleşen <strong>" + field.getEspDevice().getSerialNumber() + "</strong> seri numaralı cihazınız son 24 saattir veri göndermedi.</p>"
+                    + "<p>Lütfen cihazınızın açık ve WiFi ağına bağlı olduğundan emin olun.</p>"
+                    + "<p>Teşekkürler,<br/>Solara Ekibi</p>"
+                    + "</div>";
+        } else {
+            subject = "Solara - Device Offline Alert: " + field.getName();
+            htmlBody = "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"
+                    + "padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;'>"
+                    + "<h2 style='color: #C53030;'> Device Offline Alert</h2>"
+                    + "<p>Hello,</p>"
+                    + "<p>Your device <strong>" + field.getEspDevice().getSerialNumber() + "</strong> paired to field "
+                    + "<strong>" + field.getName() + "</strong> has not sent any data in the last 24 hours.</p>"
+                    + "<p>Please check that your device is powered on and connected to WiFi.</p>"
+                    + "<p>Thanks,<br/>The Solara Team</p>"
+                    + "</div>";
+        }
 
         emailService.sendHtmlEmail(user.getEmail(), subject, htmlBody);
     }
