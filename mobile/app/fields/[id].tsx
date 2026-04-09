@@ -81,7 +81,17 @@ export default function FieldDetailsScreen() {
             setMacInput('');
             Alert.alert('Success', t('fields.pair_success'));
         } catch (err: any) {
-            if (axios.isAxiosError(err) && err.response?.status === 400) {
+            const backendMessage = axios.isAxiosError(err)
+                ? (err.response?.data as { message?: string } | undefined)?.message
+                : undefined;
+
+            if (backendMessage?.toLowerCase().includes('not found in registry')) {
+                const serialFromMessage = backendMessage.match(/'([^']+)'/)?.[1] ?? macInput.trim();
+                Alert.alert(
+                    t('common.error'),
+                    t('fields.device_not_found', { serial: serialFromMessage }),
+                );
+            } else if (axios.isAxiosError(err) && err.response?.status === 400) {
                 Alert.alert('Error', t('fields.mac_in_use'));
             } else {
                 Alert.alert('Error', t('common.error'));
