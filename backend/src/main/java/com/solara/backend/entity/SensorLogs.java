@@ -42,8 +42,6 @@ public class SensorLogs {
     private Double ambientTemp;
     @Column(name = "ambient_humidity")
     private Double ambientHumidity;
-    @Column(name = "barometric_pressure")
-    private Double pressure;
 
     @CreationTimestamp
     @Column(name = "timestamp", nullable = false)

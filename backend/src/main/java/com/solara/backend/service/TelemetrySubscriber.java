@@ -49,9 +49,10 @@ public class TelemetrySubscriber {
 
             String deviceId     = json.get("device_id").asText();
             double ambientTemp  = json.has("ambient_temperature") ? json.get("ambient_temperature").asDouble() : 0;
+            double ambientHumid = json.has("ambient_humidity") ? json.get("ambient_humidity").asDouble() : 0;
             double soilHumidity = json.has("soil_humidity") ? json.get("soil_humidity").asDouble() : 0;
             double soilTemp     = json.has("soil_temperature") ? json.get("soil_temperature").asDouble() : 0;
-            double pressure     = json.has("barometric_pressure") ? json.get("barometric_pressure").asDouble() : 0;
+
             // TODO: Read battery_pct when battery hardware is added
             // double batteryPct = json.has("battery_pct") ? json.get("battery_pct").asDouble() : -1;
 
@@ -68,9 +69,9 @@ public class TelemetrySubscriber {
                     .fieldId(fieldId)
                     .deviceId(deviceId)
                     .ambientTemp(ambientTemp)
+                    .ambientHumidity(ambientHumid)
                     .soilHumidity(soilHumidity)
                     .soilTemp(soilTemp)
-                    .pressure(pressure)
                     .build();
 
             sensorLogsRepository.save(log_entry);
