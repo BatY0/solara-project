@@ -122,7 +122,9 @@ export const FieldCard = ({ field, onDetailsClick }: FieldCardProps) => {
                             <Text fontSize="xs" color="gray.500" mb={1}>{t('dashboard.moisture')}</Text>
                             <Flex align="center" justify="center" gap={1.5}>
                                 <Droplets size={16} color="#3b82f6" />
-                                <Text fontWeight="bold" color="gray.700">{telemetry?.soilHumidity ?? "--"}%</Text>
+                                <Text fontWeight="bold" color="gray.700">
+                                    {typeof telemetry?.soilHumidity === 'number' ? telemetry.soilHumidity.toFixed(2) : (telemetry?.soilHumidity ?? "--")}%
+                                </Text>
                             </Flex>
                         </Flex>
 
@@ -130,7 +132,9 @@ export const FieldCard = ({ field, onDetailsClick }: FieldCardProps) => {
                             <Text fontSize="xs" color="gray.500" mb={1}>{t('dashboard.temperature')}</Text>
                             <Flex align="center" justify="center" gap={1.5}>
                                 <Thermometer size={16} color="#f97316" />
-                                <Text fontWeight="bold" color="gray.700">{telemetry?.soilTemp ?? "--"}°C</Text>
+                                <Text fontWeight="bold" color="gray.700">
+                                    {typeof telemetry?.soilTemp === 'number' ? telemetry.soilTemp.toFixed(2) : (telemetry?.soilTemp ?? "--")}°C
+                                </Text>
                             </Flex>
                         </Flex>
 
@@ -138,7 +142,9 @@ export const FieldCard = ({ field, onDetailsClick }: FieldCardProps) => {
                             <Text fontSize="xs" color="gray.500" mb={1}>{t('dashboard.air_temp') || 'Air Temp'}</Text>
                             <Flex align="center" justify="center" gap={1.5}>
                                 <Thermometer size={16} color="#0ea5e9" />
-                                <Text fontWeight="bold" color="gray.700">{telemetry?.ambientTemp ?? "--"}°C</Text>
+                                <Text fontWeight="bold" color="gray.700">
+                                    {typeof telemetry?.ambientTemp === 'number' ? telemetry.ambientTemp.toFixed(2) : (telemetry?.ambientTemp ?? "--")}°C
+                                </Text>
                             </Flex>
                         </Flex>
                     </>

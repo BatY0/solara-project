@@ -60,6 +60,9 @@ public class Field {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "last_offline_alert_sent_at")
+    private LocalDateTime lastOfflineAlertSentAt;
+
 
     public Polygon getLocation() {
         return location;

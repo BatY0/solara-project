@@ -50,12 +50,25 @@ public class DeviceMonitorService {
                     .existsByFieldIdAndTimestampAfter(field.getId(), threshold);
 
             if (!hasRecentData) {
-                log.warn("[DeviceMonitor] Field '{}' (device='{}') has been OFFLINE for 24h. Sending alert.",
-                        field.getName(), field.getEspDevice().getSerialNumber());
+                // Only send alert if we haven't already sent one for this specific offline event
+                if (field.getLastOfflineAlertSentAt() == null) {
+                    log.warn("[DeviceMonitor] Field '{}' (device='{}') has been OFFLINE for 24h. Sending alert.",
+                            field.getName(), field.getEspDevice().getSerialNumber());
 
-                // Send alert to the field owner
-                userRepository.findById(field.getUserId()).ifPresent(user ->
-                        sendOfflineAlert(user, field));
+                    // Send alert to the field owner
+                    userRepository.findById(field.getUserId()).ifPresent(user -> {
+                        sendOfflineAlert(user, field);
+                        field.setLastOfflineAlertSentAt(LocalDateTime.now());
+                        fieldRepository.save(field);
+                    });
+                }
+            } else {
+                // Device is online. If we had previously sent an alert, reset the tracker
+                if (field.getLastOfflineAlertSentAt() != null) {
+                    log.info("[DeviceMonitor] Field '{}' is back online. Resetting alert tracker.", field.getName());
+                    field.setLastOfflineAlertSentAt(null);
+                    fieldRepository.save(field);
+                }
             }
         }
 
