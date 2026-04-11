@@ -2,6 +2,7 @@ import { useState, useEffect, type ReactNode, useCallback } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import api from '../../lib/axios';
 import type { LoginRequest, RegisterRequest, User, AuthResponse } from '../../types/auth';
+import i18n from '../../i18n';
 import { AuthContext } from './AuthContextDefinition';
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -40,6 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               setUser(response.data);
               if (response.data?.preferredLanguage) {
                 localStorage.setItem('i18nextLng', response.data.preferredLanguage);
+                i18n.changeLanguage(response.data.preferredLanguage);
               }
             } catch (err) {
               console.error('Failed to fetch user profile, falling back to token sub', err);
@@ -80,6 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(profile.data);
       if (profile.data?.preferredLanguage) {
         localStorage.setItem('i18nextLng', profile.data.preferredLanguage);
+        i18n.changeLanguage(profile.data.preferredLanguage);
       }
     } catch {
       setUser({ email: response.data.email || data.email });
@@ -90,6 +93,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await api.post('/auth/register', data);
     // After registration, redirect to login (handled by Register.tsx)
   };
+
+  const updateLocalUser = useCallback((updatedUser: User) => {
+    setUser(updatedUser);
+    if (updatedUser.preferredLanguage) {
+      localStorage.setItem('i18nextLng', updatedUser.preferredLanguage);
+      i18n.changeLanguage(updatedUser.preferredLanguage);
+    }
+  }, []);
 
   const mockLogin = async () => {
     const fakeToken = "mock-jwt-token-dev-mode";
@@ -102,12 +113,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     localStorage.setItem('token', fakeToken);
     setToken(fakeToken);
-    setUser(fakeUser);
+    updateLocalUser(fakeUser);
   };
-
-  const updateLocalUser = useCallback((updatedUser: User) => {
-    setUser(updatedUser);
-  }, []);
 
   return (
     <AuthContext.Provider value={{ user, token, isLoading, login, register, logout, mockLogin, updateLocalUser }}>
