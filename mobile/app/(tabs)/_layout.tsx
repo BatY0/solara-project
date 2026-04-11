@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { theme } from '../../src/theme/theme';
-import { Home, Settings } from 'lucide-react-native';
+import { BookOpen, Home, Settings } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
 export default function TabsLayout() {
@@ -23,6 +23,13 @@ export default function TabsLayout() {
                 options={{
                     title: t('sidebar.dashboard'),
                     tabBarIcon: ({ color }) => <Home color={color} size={24} />,
+                }}
+            />
+            <Tabs.Screen
+                name="guides"
+                options={{
+                    title: t('crop_guide.title'),
+                    tabBarIcon: ({ color }) => <BookOpen color={color} size={24} />,
                 }}
             />
             <Tabs.Screen
