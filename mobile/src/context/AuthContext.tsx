@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import { DeviceEventEmitter } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { jwtDecode } from 'jwt-decode';
 import api from '../api/api';
@@ -42,7 +43,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             try {
                 const response = await api.get<User>('/users/me');
                 setUser(response.data);
-            } catch (err) {
+            } catch (err: any) {
+                if (err?.response?.status === 401 || err?.response?.status === 403) {
+                    console.error('Token rejected by server, logging out', err);
+                    logout();
+                    return;
+                }
                 console.error('Failed to fetch user profile, falling back to token sub', err);
                 setUser({ email: payload.sub });
             }
@@ -68,7 +74,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
 
         initAuth();
-    }, [fetchAndSetUser]);
+
+        const subscription = DeviceEventEmitter.addListener('auth:logout', () => {
+            logout();
+        });
+
+        return () => subscription.remove();
+    }, [fetchAndSetUser, logout]);
 
     const login = async (data: LoginRequest) => {
         const response = await api.post<AuthResponse>('/auth/login', data);

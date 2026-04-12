@@ -3,12 +3,12 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Thermometer, Droplet, Wind, CloudRain, Cpu, Link, Unlink, Wifi, Map as MapIcon, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, Thermometer, Droplet, Wind, CloudRain, Cpu, Link, Unlink, Wifi, Map as MapIcon, Trash2, BrainCircuit, Leaf } from 'lucide-react-native';
 import MapView, { Polygon, PROVIDER_GOOGLE, type Region } from 'react-native-maps';
 
 import { theme } from '../../src/theme/theme';
 import { fieldsService } from '../../src/services/fieldsService';
-import type { Field, SensorData, WeatherData } from '../../src/types/fields';
+import type { Field, SensorData, WeatherData, AnalysisResult } from '../../src/types/fields';
 import MapSelector from '../../src/components/MapSelector';
 import axios from 'axios';
 
@@ -20,6 +20,7 @@ export default function FieldDetailsScreen() {
     const [field, setField] = useState<Field | null>(null);
     const [telemetry, setTelemetry] = useState<SensorData | null>(null);
     const [weather, setWeather] = useState<WeatherData | null>(null);
+    const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     const [macInput, setMacInput] = useState('');
@@ -40,12 +41,14 @@ export default function FieldDetailsScreen() {
             try {
                 const f = await fieldsService.getFieldById(id);
                 setField(f);
-                const [tel, wea] = await Promise.all([
+                const [tel, wea, analysisRes] = await Promise.all([
                     fieldsService.getMostRecentTelemetry(id).catch(() => null),
-                    fieldsService.getLiveWeather(id).catch(() => null)
+                    fieldsService.getLiveWeather(id).catch(() => null),
+                    fieldsService.getLastAnalysis(id).catch(() => null)
                 ]);
                 setTelemetry(tel);
                 setWeather(wea);
+                setAnalysis(analysisRes);
             } catch (err) {
                 console.error('Failed to fetch field details', err);
             } finally {
@@ -357,6 +360,54 @@ export default function FieldDetailsScreen() {
                         </View>
                     </View>
                 )}
+
+                {/* AI RECOMMENDATIONS SECTION */}
+                {analysis && (
+                    <View style={[styles.card, { marginTop: 16 }]}>
+                        <View style={styles.cardHeader}>
+                            <BrainCircuit color="#10b981" size={20} />
+                            <Text style={styles.cardTitle}>{t('fields.ai_recommendations', 'AI Crop Recommendations')}</Text>
+                        </View>
+                        
+                        {analysis.recommendations.length === 0 ? (
+                            <Text style={styles.emptyText}>{t('fields.no_recommendations', 'No recommendations found.')}</Text>
+                        ) : (
+                            <View style={{ gap: 12 }}>
+                                {analysis.recommendations.map((rec, idx) => {
+                                    const probability = rec.probability;
+                                    let barColor = '#9ca3af';
+                                    let bgBox = '#f3f4f6';
+                                    let borderColor = '#e5e7eb';
+                                    if (probability >= 70) { barColor = '#10b981'; bgBox = '#ecfdf5'; borderColor = '#a7f3d0'; }
+                                    else if (probability >= 40) { barColor = '#f59e0b'; bgBox = '#fffbeb'; borderColor = '#fde68a'; }
+                                    
+                                    return (
+                                        <TouchableOpacity 
+                                            key={rec.crop} 
+                                            style={[styles.recBox, { backgroundColor: bgBox, borderColor }]}
+                                            onPress={() => router.push(`/guides/${rec.crop.toLowerCase().replace(/\\s+/g, '-')}`)}
+                                        >
+                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                                    <Leaf size={16} color={idx === 0 ? '#10b981' : '#6b7280'} />
+                                                    <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827', textTransform: 'capitalize' }}>
+                                                        {t(`crop_names.${rec.crop}`, rec.crop)}
+                                                    </Text>
+                                                </View>
+                                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: barColor }}>
+                                                    {probability.toFixed(1)}%
+                                                </Text>
+                                            </View>
+                                            <View style={{ height: 6, backgroundColor: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
+                                                <View style={{ height: '100%', backgroundColor: barColor, width: `${Math.min(probability, 100)}%` }} />
+                                            </View>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+                        )}
+                    </View>
+                )}
             </ScrollView>
         </SafeAreaView>
     );
@@ -431,4 +482,5 @@ const styles = StyleSheet.create({
     cancelBtnText: { color: '#374151', fontWeight: 'bold', fontSize: 13 },
     saveBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 6, backgroundColor: '#059669', flexDirection: 'row', alignItems: 'center' },
     saveBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
+    recBox: { padding: 12, borderRadius: 12, borderWidth: 1 },
 });

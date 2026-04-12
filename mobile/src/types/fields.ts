@@ -75,3 +75,16 @@ export interface UpdateFieldPropertiesRequest {
     potassium: number | null;
     ph: number | null;
 }
+
+export interface MlCropRecommendation {
+    crop: string;
+    probability: number;
+}
+
+export interface AnalysisResult {
+    fieldId: string;
+    scenario: 'RANGE' | 'FUTURE' | 'WHAT_IF';
+    weatherSource: 'IOT' | 'WEATHER_LOG' | 'CLIMATOLOGY';
+    timestamp: string;
+    recommendations: MlCropRecommendation[];
+}
