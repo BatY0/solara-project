@@ -76,6 +76,21 @@ export interface UpdateFieldPropertiesRequest {
     ph: number | null;
 }
 
+export interface AnalysisRequest {
+    fieldId: string;
+    isFuturePrediction: boolean;
+    startDate?: string;
+    endDate?: string;
+    targetMonthStart?: number;
+    targetMonthEnd?: number;
+    topN?: number;
+    overrides?: {
+        temperature?: number;
+        humidity?: number;
+        rainfall?: number;
+    };
+}
+
 export interface MlCropRecommendation {
     crop: string;
     probability: number;
