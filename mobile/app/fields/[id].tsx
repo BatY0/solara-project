@@ -1,26 +1,43 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, TextInput, Alert, Modal, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Slider from '@react-native-community/slider';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Thermometer, Droplet, Wind, CloudRain, Cpu, Link, Unlink, Wifi, Map as MapIcon, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, Thermometer, Droplet, Wind, CloudRain, Cpu, Link, Unlink, Wifi, Map as MapIcon, Trash2, BrainCircuit, Leaf, Settings, Activity } from 'lucide-react-native';
 import MapView, { Polygon, PROVIDER_GOOGLE, type Region } from 'react-native-maps';
+import { LineChart } from 'react-native-chart-kit';
+import { Dimensions } from 'react-native';
 
 import { theme } from '../../src/theme/theme';
 import { fieldsService } from '../../src/services/fieldsService';
-import type { Field, SensorData, WeatherData } from '../../src/types/fields';
+import type { Field, SensorData, WeatherData, AnalysisResult, HistoricalSensorData } from '../../src/types/fields';
 import MapSelector from '../../src/components/MapSelector';
 import axios from 'axios';
 
 export default function FieldDetailsScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
 
     const [field, setField] = useState<Field | null>(null);
     const [telemetry, setTelemetry] = useState<SensorData | null>(null);
     const [weather, setWeather] = useState<WeatherData | null>(null);
+    const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+
+    // Historical Telemetry State
+    const [history, setHistory] = useState<HistoricalSensorData[]>([]);
+    const [timeframe, setTimeframe] = useState<'today' | 7 | 30>(7);
+    const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+    const [visibleMetrics, setVisibleMetrics] = useState({
+        soilTemp: true,
+        soilHumidity: true,
+        ambientTemp: false,
+        ambientHumidity: false
+    });
+
+    const screenWidth = Dimensions.get('window').width;
 
     const [macInput, setMacInput] = useState('');
     const [isPairing, setIsPairing] = useState(false);
@@ -34,18 +51,35 @@ export default function FieldDetailsScreen() {
     const [editedAreaHa, setEditedAreaHa] = useState<number | null>(null);
     const [isSavingMap, setIsSavingMap] = useState(false);
 
+    // AI Analysis State
+    const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [activeScenario, setActiveScenario] = useState<'RANGE' | 'FUTURE' | 'WHAT_IF'>('RANGE');
+    const [rangeStart, setRangeStart] = useState('2026-01-01');
+    const [rangeEnd, setRangeEnd] = useState('2026-04-01');
+    const [monthStart, setMonthStart] = useState('6');
+    const [monthEnd, setMonthEnd] = useState('9');
+    const [overrideTemp, setOverrideTemp] = useState(25);
+    const [useOverrideTemp, setUseOverrideTemp] = useState(false);
+    const [overrideHum, setOverrideHum] = useState(60);
+    const [useOverrideHum, setUseOverrideHum] = useState(false);
+    const [overrideRain, setOverrideRain] = useState(400);
+    const [useOverrideRain, setUseOverrideRain] = useState(false);
+
     useEffect(() => {
         if (!id) return;
         const fetchData = async () => {
             try {
                 const f = await fieldsService.getFieldById(id);
                 setField(f);
-                const [tel, wea] = await Promise.all([
+                const [tel, wea, analysisRes] = await Promise.all([
                     fieldsService.getMostRecentTelemetry(id).catch(() => null),
-                    fieldsService.getLiveWeather(id).catch(() => null)
+                    fieldsService.getLiveWeather(id).catch(() => null),
+                    fieldsService.getLastAnalysis(id).catch(() => null)
                 ]);
                 setTelemetry(tel);
                 setWeather(wea);
+                setAnalysis(analysisRes);
             } catch (err) {
                 console.error('Failed to fetch field details', err);
             } finally {
@@ -57,6 +91,38 @@ export default function FieldDetailsScreen() {
         const intervalId = setInterval(fetchData, 30000);
         return () => clearInterval(intervalId);
     }, [id]);
+
+    // Fetch historical data whenever timeframe changes
+    useEffect(() => {
+        if (!id) return;
+        const fetchHistory = async () => {
+            setIsHistoryLoading(true);
+            try {
+                const end = new Date().toISOString();
+                let start = '';
+                let interval = 'DAILY';
+
+                if (timeframe === 'today') {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    start = today.toISOString();
+                    interval = 'RAW';
+                } else {
+                    const startDate = new Date(Date.now() - timeframe * 24 * 60 * 60 * 1000);
+                    start = startDate.toISOString();
+                }
+
+                const data = await fieldsService.getHistoricalTelemetry(id as string, interval, start, end);
+                setHistory(data || []);
+            } catch (err) {
+                console.error('Failed to fetch historical telemetry', err);
+                setHistory([]);
+            } finally {
+                setIsHistoryLoading(false);
+            }
+        };
+        fetchHistory();
+    }, [id, timeframe]);
 
     // Fit the read-only map to the polygon whenever field data changes.
     // MUST be before any early returns to satisfy Rules of Hooks.
@@ -173,6 +239,42 @@ export default function FieldDetailsScreen() {
         );
     };
 
+    const handleRunAnalysis = async () => {
+        if (!id) return;
+        setIsAnalyzing(true);
+        try {
+            let result;
+            if (activeScenario === 'RANGE') {
+                result = await fieldsService.runAnalysis({ fieldId: id as string, isFuturePrediction: false, startDate: rangeStart, endDate: rangeEnd, topN: 5 });
+            } else if (activeScenario === 'FUTURE') {
+                result = await fieldsService.runAnalysis({ fieldId: id as string, isFuturePrediction: true, targetMonthStart: Number(monthStart), targetMonthEnd: Number(monthEnd), topN: 5 });
+            } else {
+                const overrides: any = {};
+                if (useOverrideTemp) overrides.temperature = overrideTemp;
+                if (useOverrideHum) overrides.humidity = overrideHum;
+                if (useOverrideRain) overrides.rainfall = overrideRain;
+
+                result = await fieldsService.runAnalysis({ 
+                    fieldId: id as string, 
+                    isFuturePrediction: true, 
+                    targetMonthStart: Number(monthStart), 
+                    targetMonthEnd: Number(monthEnd), 
+                    topN: 5, 
+                    overrides: Object.keys(overrides).length > 0 ? overrides : undefined 
+                });
+            }
+            setAnalysis(result);
+            setIsAnalysisModalOpen(false);
+            Alert.alert(t('common.success', 'Success'), t('fields.analysis_success', 'Analysis completed successfully.'));
+        } catch (err: any) {
+            console.error(err);
+            const backendMessage = axios.isAxiosError(err) ? (err.response?.data as any)?.message : '';
+            Alert.alert(t('common.error', 'Error'), backendMessage || t('fields.analysis_failed', 'Failed to run analysis.'));
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
     if (isLoading) {
         return (
             <SafeAreaView style={styles.center}>
@@ -230,7 +332,7 @@ export default function FieldDetailsScreen() {
             </View>
 
             <ScrollView contentContainerStyle={styles.content}>
-                
+
                 {/* MAP SECTION */}
                 <View style={[styles.card, { marginBottom: 16, padding: isEditingMap ? 16 : 0, overflow: 'hidden' }]}>
                     {isEditingMap ? (
@@ -288,7 +390,7 @@ export default function FieldDetailsScreen() {
                         <Cpu color={theme.colors.brand[600]} size={20} />
                         <Text style={styles.cardTitle}>{t('fields.device_pairing')}</Text>
                     </View>
-                    
+
                     {isPaired ? (
                         <View style={styles.pairedContainer}>
                             <View style={styles.pairedInfo}>
@@ -312,8 +414,8 @@ export default function FieldDetailsScreen() {
                                     onChangeText={setMacInput}
                                     autoCapitalize="characters"
                                 />
-                                <TouchableOpacity 
-                                    style={[styles.pairBtn, !macInput.trim() && styles.pairBtnDisabled]} 
+                                <TouchableOpacity
+                                    style={[styles.pairBtn, !macInput.trim() && styles.pairBtnDisabled]}
                                     onPress={handlePair}
                                     disabled={!macInput.trim() || isPairing}
                                 >
@@ -331,7 +433,7 @@ export default function FieldDetailsScreen() {
                         <Wifi color="#059669" size={20} />
                         <Text style={styles.cardTitle}>{t('fields.telemetry')}</Text>
                     </View>
-                    
+
                     {!telemetry ? (
                         <Text style={styles.emptyText}>{t('fields.no_telemetry')}</Text>
                     ) : (
@@ -344,6 +446,129 @@ export default function FieldDetailsScreen() {
                     )}
                 </View>
 
+                {/* HISTORICAL DATA SECTION */}
+                <View style={[styles.card, { marginTop: 16 }]}>
+                    <View style={styles.cardHeader}>
+                        <Activity color="#0c4a6e" size={20} />
+                        <Text style={styles.cardTitle}>{t('fields.historical_data', 'Historical Data')}</Text>
+                    </View>
+                    
+                    <View style={styles.tabContainer}>
+                        <TouchableOpacity style={[styles.tabBtn, timeframe === 'today' && styles.tabBtnActive]} onPress={() => setTimeframe('today')}>
+                            <Text style={[styles.tabText, timeframe === 'today' && styles.tabTextActive]}>{t('common.today', 'Today')}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={[styles.tabBtn, timeframe === 7 && styles.tabBtnActive]} onPress={() => setTimeframe(7)}>
+                            <Text style={[styles.tabText, timeframe === 7 && styles.tabTextActive]}>{t('fields.timeframe_7', '7 Days')}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={[styles.tabBtn, timeframe === 30 && styles.tabBtnActive]} onPress={() => setTimeframe(30)}>
+                            <Text style={[styles.tabText, timeframe === 30 && styles.tabTextActive]}>{t('fields.timeframe_30', '30 Days')}</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Metric Toggles */}
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+                        <View style={{ flexDirection: 'row', gap: 6, paddingVertical: 4 }}>
+                            <TouchableOpacity style={[styles.metricFilterBtn, visibleMetrics.soilTemp && { backgroundColor: '#ea580c', borderColor: '#ea580c' }]} onPress={() => setVisibleMetrics(s => ({ ...s, soilTemp: !s.soilTemp }))}>
+                                <Text style={[styles.metricFilterText, visibleMetrics.soilTemp && { color: '#fff' }]}>{t('fields.soil_temp', 'Soil Temp')}</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.metricFilterBtn, visibleMetrics.soilHumidity && { backgroundColor: '#2563eb', borderColor: '#2563eb' }]} onPress={() => setVisibleMetrics(s => ({ ...s, soilHumidity: !s.soilHumidity }))}>
+                                <Text style={[styles.metricFilterText, visibleMetrics.soilHumidity && { color: '#fff' }]}>{t('fields.soil_moisture', 'Soil Moist')}</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.metricFilterBtn, visibleMetrics.ambientTemp && { backgroundColor: '#16a34a', borderColor: '#16a34a' }]} onPress={() => setVisibleMetrics(s => ({ ...s, ambientTemp: !s.ambientTemp }))}>
+                                <Text style={[styles.metricFilterText, visibleMetrics.ambientTemp && { color: '#fff' }]}>{t('fields.ambient_temp', 'Amb Temp')}</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.metricFilterBtn, visibleMetrics.ambientHumidity && { backgroundColor: '#9333ea', borderColor: '#9333ea' }]} onPress={() => setVisibleMetrics(s => ({ ...s, ambientHumidity: !s.ambientHumidity }))}>
+                                <Text style={[styles.metricFilterText, visibleMetrics.ambientHumidity && { color: '#fff' }]}>{t('fields.ambient_humidity', 'Amb Hum')}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </ScrollView>
+
+                    {isHistoryLoading ? (
+                        <ActivityIndicator style={{ paddingVertical: 20 }} color={theme.colors.brand[500]} />
+                    ) : history.length === 0 ? (
+                        <Text style={styles.emptyText}>{t('fields.no_history', 'No historical data found.')}</Text>
+                    ) : (() => {
+                        const chartLabels = history.map(item => {
+                            const dateObj = new Date(item.period);
+                            return timeframe === 'today' 
+                                ? dateObj.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit', hour12: false })
+                                : dateObj.toLocaleDateString(i18n.language, { month: '2-digit', day: '2-digit' });
+                        });
+                        const step = Math.max(1, Math.floor(chartLabels.length / 5));
+                        const filteredLabels = chartLabels.map((l, i) => i % step === 0 ? l : '');
+
+                        const datasets = [];
+                        if (visibleMetrics.soilTemp) datasets.push({ data: history.map(h => h.avgSoilTemp ?? 0), color: (opacity = 1) => `rgba(234, 88, 12, ${opacity})`, strokeWidth: 2 });
+                        if (visibleMetrics.soilHumidity) datasets.push({ data: history.map(h => h.avgSoilHumidity ?? 0), color: (opacity = 1) => `rgba(37, 99, 235, ${opacity})`, strokeWidth: 2 });
+                        if (visibleMetrics.ambientTemp) datasets.push({ data: history.map(h => h.avgAmbientTemp ?? 0), color: (opacity = 1) => `rgba(22, 163, 74, ${opacity})`, strokeWidth: 2 });
+                        if (visibleMetrics.ambientHumidity) datasets.push({ data: history.map(h => h.avgAmbientHumidity ?? 0), color: (opacity = 1) => `rgba(147, 51, 234, ${opacity})`, strokeWidth: 2 });
+
+                        if (datasets.length === 0) {
+                            return <Text style={[styles.emptyText, { marginTop: 10 }]}>{t('fields.select_metric_prompt', 'Select at least one metric to display the graph.')}</Text>;
+                        }
+
+                        return (
+                            <View>
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                    <View style={{ marginTop: 10, paddingRight: 16 }}>
+                                        <LineChart
+                                            data={{ labels: filteredLabels, datasets }}
+                                            width={Math.max(screenWidth - 32, history.length * 35)}
+                                            height={220}
+                                            yAxisSuffix=""
+                                            yAxisInterval={1}
+                                            withDots={timeframe === 'today' || history.length < 15}
+                                            chartConfig={{
+                                                backgroundColor: "#ffffff",
+                                                backgroundGradientFrom: "#ffffff",
+                                                backgroundGradientTo: "#ffffff",
+                                                decimalPlaces: 0,
+                                                color: (opacity = 1) => `rgba(203, 213, 225, ${opacity})`, // grid
+                                                labelColor: (opacity = 1) => `rgba(100, 116, 139, ${opacity})`, // text
+                                                fillShadowGradientOpacity: 0.1,
+                                                style: { borderRadius: 16 },
+                                                propsForDots: { r: "3", strokeWidth: "1", stroke: "#cbd5e1" }
+                                            }}
+                                            bezier
+                                            style={{ marginVertical: 8, borderRadius: 16 }}
+                                        />
+                                    </View>
+                                </ScrollView>
+
+                                <View style={{ marginTop: 24 }}>
+                                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                        <View>
+                                            <View style={styles.tableRowHeader}>
+                                                <Text style={[styles.tableCellHeader, { width: 100 }]}>{t('common.date', 'Date')}</Text>
+                                                <Text style={[styles.tableCellHeader, { width: 75 }]}>{t('fields.soil_temp', 'Soil Temp')}</Text>
+                                                <Text style={[styles.tableCellHeader, { width: 75 }]}>{t('fields.soil_moisture', 'Soil Moist')}</Text>
+                                                <Text style={[styles.tableCellHeader, { width: 75 }]}>{t('fields.ambient_temp', 'Amb Temp')}</Text>
+                                                <Text style={[styles.tableCellHeader, { width: 75 }]}>{t('fields.ambient_humidity', 'Amb Hum')}</Text>
+                                            </View>
+                                            {history.map((item, index) => {
+                                                const dateObj = new Date(item.period);
+                                                const dateStr = timeframe === 'today' 
+                                                    ? dateObj.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit', hour12: false })
+                                                    : dateObj.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' });
+                                                    
+                                                return (
+                                                    <View key={index} style={[styles.tableRow, index % 2 === 0 ? styles.tableRowEven : styles.tableRowOdd]}>
+                                                        <Text style={[styles.tableCell, { width: 100, fontWeight: 'bold' }]}>{dateStr}</Text>
+                                                        <Text style={[styles.tableCell, { width: 75 }]}>{item.avgSoilTemp != null ? item.avgSoilTemp.toFixed(1) + '°C' : '--'}</Text>
+                                                        <Text style={[styles.tableCell, { width: 75 }]}>{item.avgSoilHumidity != null ? item.avgSoilHumidity.toFixed(1) + '%' : '--'}</Text>
+                                                        <Text style={[styles.tableCell, { width: 75 }]}>{item.avgAmbientTemp != null ? item.avgAmbientTemp.toFixed(1) + '°C' : '--'}</Text>
+                                                        <Text style={[styles.tableCell, { width: 75 }]}>{item.avgAmbientHumidity != null ? item.avgAmbientHumidity.toFixed(1) + '%' : '--'}</Text>
+                                                    </View>
+                                                );
+                                            })}
+                                        </View>
+                                    </ScrollView>
+                                </View>
+                            </View>
+                        );
+                    })()}
+                </View>
+
                 {/* WEATHER SECTION */}
                 {weather && (
                     <View style={[styles.card, { marginTop: 16 }]}>
@@ -352,12 +577,181 @@ export default function FieldDetailsScreen() {
                             <Text style={styles.cardTitle}>{t('fields.weather')}</Text>
                         </View>
                         <View style={styles.grid}>
-                            <Box label={t('dashboard.temperature')} value={weather.temperature.toFixed(1)} unit="°C" />
-                            <Box label={t('fields.precipitation')} value={weather.precipitation.toFixed(1)} unit="mm" />
+                            <Box label={t('dashboard.temperature')} value={weather.temperature.toFixed(1)} unit="°C" icon={<Thermometer color="#f59e0b" size={24} />} />
+                            <Box label={t('fields.ambient_humidity')} value={weather.humidity.toFixed(0)} unit="%" icon={<CloudRain color="#6366f1" size={24} />} />
+                            <Box label={t('fields.precipitation')} value={weather.precipitation.toFixed(1)} unit="mm" icon={<Droplet color="#3b82f6" size={24} />} />
                         </View>
                     </View>
                 )}
+
+                {/* AI RECOMMENDATIONS SECTION */}
+                <View style={[styles.card, { marginTop: 16 }]}>
+                    <View style={[styles.cardHeader, { justifyContent: 'space-between' }]}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <BrainCircuit color="#10b981" size={20} />
+                            <Text style={styles.cardTitle}>{t('fields.ai_recommendations', 'AI Crop Recommendations')}</Text>
+                        </View>
+                        <TouchableOpacity onPress={() => setIsAnalysisModalOpen(true)} style={{ padding: 4 }}>
+                            <Settings color="#6b7280" size={20} />
+                        </TouchableOpacity>
+                    </View>
+
+                    {!analysis || analysis.recommendations.length === 0 ? (
+                        <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                            <Text style={styles.emptyText}>{t('fields.no_recommendations', 'No recommendations found.')}</Text>
+                            <TouchableOpacity onPress={() => setIsAnalysisModalOpen(true)} style={{ marginTop: 12, backgroundColor: '#10b981', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 }}>
+                                <Text style={{ color: '#fff', fontWeight: 'bold' }}>{t('fields.run_analysis', 'Run Analysis')}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <View style={{ gap: 12 }}>
+                            {analysis.recommendations.map((rec, idx) => {
+                                const probability = rec.probability;
+                                let barColor = '#9ca3af';
+                                let bgBox = '#f3f4f6';
+                                let borderColor = '#e5e7eb';
+                                if (probability >= 70) { barColor = '#10b981'; bgBox = '#ecfdf5'; borderColor = '#a7f3d0'; }
+                                else if (probability >= 40) { barColor = '#f59e0b'; bgBox = '#fffbeb'; borderColor = '#fde68a'; }
+
+                                return (
+                                    <TouchableOpacity
+                                        key={rec.crop}
+                                        style={[styles.recBox, { backgroundColor: bgBox, borderColor }]}
+                                        onPress={() => router.push(`/guides/${rec.crop.toLowerCase().replace(/\\s+/g, '-')}`)}
+                                    >
+                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                                <Leaf size={16} color={idx === 0 ? '#10b981' : '#6b7280'} />
+                                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827', textTransform: 'capitalize' }}>
+                                                    {t(`crop_names.${rec.crop}`, rec.crop)}
+                                                </Text>
+                                            </View>
+                                            <Text style={{ fontSize: 16, fontWeight: 'bold', color: barColor }}>
+                                                {probability.toFixed(1)}%
+                                            </Text>
+                                        </View>
+                                        <View style={{ height: 6, backgroundColor: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
+                                            <View style={{ height: '100%', backgroundColor: barColor, width: `${Math.min(probability, 100)}%` }} />
+                                        </View>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    )}
+                </View>
             </ScrollView>
+
+            {/* AI Analysis Settings Modal */}
+            <Modal visible={isAnalysisModalOpen} transparent animationType="slide" onRequestClose={() => setIsAnalysisModalOpen(false)}>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>{t('fields.ai_settings_title', 'AI Analysis Settings')}</Text>
+                            <TouchableOpacity onPress={() => setIsAnalysisModalOpen(false)}><Text style={{ fontSize: 24, color: '#6b7280' }}>×</Text></TouchableOpacity>
+                        </View>
+                        <ScrollView style={{ maxHeight: 500 }}>
+                            <View style={styles.tabContainer}>
+                                <TouchableOpacity style={[styles.tabBtn, activeScenario === 'RANGE' && styles.tabBtnActive]} onPress={() => setActiveScenario('RANGE')}>
+                                    <Text style={[styles.tabText, activeScenario === 'RANGE' && styles.tabTextActive]}>{t('fields.ai_tab_range', 'Range')}</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={[styles.tabBtn, activeScenario === 'FUTURE' && styles.tabBtnActive]} onPress={() => setActiveScenario('FUTURE')}>
+                                    <Text style={[styles.tabText, activeScenario === 'FUTURE' && styles.tabTextActive]}>{t('fields.ai_tab_future', 'Future')}</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={[styles.tabBtn, activeScenario === 'WHAT_IF' && styles.tabBtnActive]} onPress={() => setActiveScenario('WHAT_IF')}>
+                                    <Text style={[styles.tabText, activeScenario === 'WHAT_IF' && styles.tabTextActive]}>{t('fields.ai_tab_whatif', 'What-If')}</Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            {activeScenario === 'RANGE' && (
+                                <View style={{ gap: 12 }}>
+                                    <Text style={styles.inputLabel}>{t('fields.ai_start_date', 'Start Date (YYYY-MM-DD)')}</Text>
+                                    <TextInput style={styles.input} value={rangeStart} onChangeText={setRangeStart} placeholder="2023-01-01" />
+                                    <Text style={styles.inputLabel}>{t('fields.ai_end_date', 'End Date (YYYY-MM-DD)')}</Text>
+                                    <TextInput style={styles.input} value={rangeEnd} onChangeText={setRangeEnd} placeholder="2023-12-31" />
+                                </View>
+                            )}
+
+                            {(activeScenario === 'FUTURE' || activeScenario === 'WHAT_IF') && (
+                                <View style={{ gap: 12 }}>
+                                    <Text style={styles.inputLabel}>{t('fields.ai_season_start', 'Target Season Start (Month 1-12)')}</Text>
+                                    <TextInput style={styles.input} keyboardType="numeric" value={monthStart} onChangeText={setMonthStart} placeholder="6" />
+                                    <Text style={styles.inputLabel}>{t('fields.ai_season_end', 'Target Season End (Month 1-12)')}</Text>
+                                    <TextInput style={styles.input} keyboardType="numeric" value={monthEnd} onChangeText={setMonthEnd} placeholder="9" />
+                                </View>
+                            )}
+
+                            {activeScenario === 'WHAT_IF' && (
+                                <View style={{ gap: 16, marginTop: 12 }}>
+                                    <View>
+                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Text style={[styles.inputLabel, { color: useOverrideTemp ? '#111827' : '#9ca3af' }]}>{t('fields.ai_override_temp', 'Override Temp (°C):')} {overrideTemp.toFixed(1)}</Text>
+                                            <Switch value={useOverrideTemp} onValueChange={setUseOverrideTemp} trackColor={{ true: '#10b981' }} />
+                                        </View>
+                                        <Slider
+                                            style={{ width: '100%', height: 40, opacity: useOverrideTemp ? 1 : 0.5 }}
+                                            minimumValue={-10}
+                                            maximumValue={50}
+                                            step={0.5}
+                                            value={overrideTemp}
+                                            onValueChange={setOverrideTemp}
+                                            disabled={!useOverrideTemp}
+                                            minimumTrackTintColor="#10b981"
+                                            maximumTrackTintColor="#d1d5db"
+                                            thumbTintColor={useOverrideTemp ? "#10b981" : "#d1d5db"}
+                                        />
+                                    </View>
+                                    
+                                    <View>
+                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Text style={[styles.inputLabel, { color: useOverrideHum ? '#111827' : '#9ca3af' }]}>{t('fields.ai_override_hum', 'Override Humidity (%):')} {overrideHum.toFixed(0)}</Text>
+                                            <Switch value={useOverrideHum} onValueChange={setUseOverrideHum} trackColor={{ true: '#3b82f6' }} />
+                                        </View>
+                                        <Slider
+                                            style={{ width: '100%', height: 40, opacity: useOverrideHum ? 1 : 0.5 }}
+                                            minimumValue={0}
+                                            maximumValue={100}
+                                            step={1}
+                                            value={overrideHum}
+                                            onValueChange={setOverrideHum}
+                                            disabled={!useOverrideHum}
+                                            minimumTrackTintColor="#3b82f6"
+                                            maximumTrackTintColor="#d1d5db"
+                                            thumbTintColor={useOverrideHum ? "#3b82f6" : "#d1d5db"}
+                                        />
+                                    </View>
+                                    
+                                    <View>
+                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Text style={[styles.inputLabel, { color: useOverrideRain ? '#111827' : '#9ca3af' }]}>{t('fields.ai_override_rain', 'Override Rain (mm):')} {overrideRain.toFixed(0)}</Text>
+                                            <Switch value={useOverrideRain} onValueChange={setUseOverrideRain} trackColor={{ true: '#0ea5e9' }} />
+                                        </View>
+                                        <Slider
+                                            style={{ width: '100%', height: 40, opacity: useOverrideRain ? 1 : 0.5 }}
+                                            minimumValue={0}
+                                            maximumValue={1000}
+                                            step={10}
+                                            value={overrideRain}
+                                            onValueChange={setOverrideRain}
+                                            disabled={!useOverrideRain}
+                                            minimumTrackTintColor="#0ea5e9"
+                                            maximumTrackTintColor="#d1d5db"
+                                            thumbTintColor={useOverrideRain ? "#0ea5e9" : "#d1d5db"}
+                                        />
+                                    </View>
+                                </View>
+                            )}
+                        </ScrollView>
+                        <View style={{ marginTop: 20, flexDirection: 'row', justifyContent: 'flex-end', gap: 12 }}>
+                            <TouchableOpacity onPress={() => setIsAnalysisModalOpen(false)} style={styles.cancelBtn}>
+                                <Text style={styles.cancelBtnText}>{t('common.cancel', 'Cancel')}</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={handleRunAnalysis} style={[styles.saveBtn, { opacity: isAnalyzing ? 0.7 : 1 }]} disabled={isAnalyzing}>
+                                {isAnalyzing ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveBtnText}>{t('fields.ai_analyze', 'Analyze')}</Text>}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -431,4 +825,24 @@ const styles = StyleSheet.create({
     cancelBtnText: { color: '#374151', fontWeight: 'bold', fontSize: 13 },
     saveBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 6, backgroundColor: '#059669', flexDirection: 'row', alignItems: 'center' },
     saveBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
+    recBox: { padding: 12, borderRadius: 12, borderWidth: 1 },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
+    modalContent: { backgroundColor: '#fff', borderRadius: 16, padding: 20, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+    modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#111827' },
+    tabContainer: { flexDirection: 'row', marginBottom: 16, borderRadius: 8, backgroundColor: '#f3f4f6', padding: 4 },
+    tabBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 6 },
+    tabBtnActive: { backgroundColor: '#fff', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
+    tabText: { fontSize: 13, fontWeight: '600', color: '#6b7280' },
+    tabTextActive: { color: '#059669' },
+    inputLabel: { fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 },
+    metricFilterBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#e5e7eb', backgroundColor: '#f9fafb' },
+    metricFilterText: { fontSize: 12, fontWeight: '600', color: '#6b7280' },
+    // Table
+    tableRowHeader: { flexDirection: 'row', paddingVertical: 10, borderBottomWidth: 2, borderBottomColor: '#e5e7eb', marginBottom: 4 },
+    tableCellHeader: { fontSize: 12, fontWeight: '700', color: '#4b5563', paddingHorizontal: 4 },
+    tableRow: { flexDirection: 'row', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+    tableRowEven: { backgroundColor: '#ffffff' },
+    tableRowOdd: { backgroundColor: '#f9fafb' },
+    tableCell: { fontSize: 13, color: '#1f2937', paddingHorizontal: 4 }
 });

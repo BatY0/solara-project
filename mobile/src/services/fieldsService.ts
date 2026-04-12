@@ -10,6 +10,8 @@ import type {
     SensorData,
     HistoricalSensorData,
     WeatherData,
+    AnalysisResult,
+    AnalysisRequest
 } from '../types/fields';
 
 export const fieldsService = {
@@ -95,5 +97,20 @@ export const fieldsService = {
             iconUrl: '',
             recordedAt: body?.current?.time ?? ''
         };
+    },
+
+    runAnalysis: async (request: AnalysisRequest): Promise<AnalysisResult> => {
+        const response = await api.post('/analysis/range', request);
+        return response.data.data;
+    },
+
+    getLastAnalysis: async (fieldId: string): Promise<AnalysisResult | null> => {
+        try {
+            const response = await api.get(`/analysis/field/${fieldId}/last`);
+            return response.data.data;
+        } catch (err: any) {
+            if (err.response?.status === 404) return null;
+            throw err;
+        }
     }
 };
