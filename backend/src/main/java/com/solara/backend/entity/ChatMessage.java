@@ -1,7 +1,6 @@
 package com.solara.backend.entity;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -33,8 +32,8 @@ public class ChatMessage {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String text;
 
-    @Column(name = "crop_ids", columnDefinition = "UUID[]")
-    private List<UUID> cropIds;
+    @Column(name = "crop_id", columnDefinition = "UUID")
+    private UUID cropId;
 
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

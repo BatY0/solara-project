@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -18,15 +19,22 @@ import com.solara.backend.entity.ChatThread;
 import com.solara.backend.repository.ChatMessageRepository;
 import com.solara.backend.repository.ChatThreadRepository;
 
-import lombok.RequiredArgsConstructor;
-
 @Service
-@RequiredArgsConstructor
 public class ChatService {
+
 
     private final ChatMessageRepository chatMessageRepository;
     private final ChatThreadRepository chatThreadRepository;
     private final RestTemplate restTemplate;
+
+    // Explicit constructor to hook up the chatbotRestTemplate
+    public ChatService(ChatMessageRepository chatMessageRepository,
+                       ChatThreadRepository chatThreadRepository,
+                       @Qualifier("chatbotRestTemplate") RestTemplate restTemplate) {
+        this.chatMessageRepository = chatMessageRepository;
+        this.chatThreadRepository = chatThreadRepository;
+        this.restTemplate = restTemplate;
+    }
 
     @Value("${chatbot.engine.url:http://localhost:8001/api/v1/chat}")
     private String chatbotUrl;
@@ -54,7 +62,7 @@ public class ChatService {
         userMessage.setThreadId(thread.getId());
         userMessage.setRole(ChatMessage.ChatRole.user);
         userMessage.setText(request.getPrompt());
-        userMessage.setCropIds(request.getCropIds());
+        userMessage.setCropId(request.getCropId());
         chatMessageRepository.save(userMessage);
 
         // 3. Fetch Chat History restricted to this specific thread
@@ -67,8 +75,8 @@ public class ChatService {
                 .map(msg -> {
                     // Python expects "model" instead of "chatbot"
                     String mappedRole = msg.getRole() == ChatMessage.ChatRole.chatbot ? "model" : "user";
-                    String activeCropId = (msg.getCropIds() != null && !msg.getCropIds().isEmpty()) 
-                            ? msg.getCropIds().get(0).toString() 
+                    String activeCropId = (msg.getCropId() != null) 
+                            ? msg.getCropId().toString() 
                             : null;
                     return new ChatbotServiceMessage(mappedRole, msg.getText(), activeCropId);
                 })
@@ -78,8 +86,8 @@ public class ChatService {
         botRequest.setMessage(request.getPrompt()); // Pass the actual new message here
         botRequest.setConversation_history(historyForPython);
         botRequest.setCrop_id(
-            (request.getCropIds() != null && !request.getCropIds().isEmpty()) 
-                ? request.getCropIds().get(0).toString() 
+            (request.getCropId() != null) 
+                ? request.getCropId().toString() 
                 : null
         );
 
@@ -94,7 +102,7 @@ public class ChatService {
         botMessage.setThreadId(thread.getId());
         botMessage.setRole(ChatMessage.ChatRole.chatbot);
         botMessage.setText(botReplyText);
-        botMessage.setCropIds(request.getCropIds());
+        botMessage.setCropId(request.getCropId());
         chatMessageRepository.save(botMessage);
 
         // 7. Return response (the frontend can extract botMessage.getThreadId() to use for the next request)
