@@ -76,7 +76,7 @@ public class TelemetrySubscriber {
 
             UUID fieldId = field.getId();
 
-            SensorLogs log_entry = SensorLogs.builder()
+            SensorLogs logEntry = SensorLogs.builder()
                     .fieldId(fieldId)
                     .deviceId(deviceId)
                     .ambientTemp(ambientTemp)
@@ -85,7 +85,7 @@ public class TelemetrySubscriber {
                     .soilTemp(soilTemp)
                     .build();
 
-            sensorLogsRepository.save(log_entry);
+            sensorLogsRepository.save(logEntry);
             
             // Update the lastSeenAt for the device
             EspDevice espDevice = field.getEspDevice();

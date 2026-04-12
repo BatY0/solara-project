@@ -84,8 +84,8 @@ public class ChatService {
 
         ChatbotServiceRequest botRequest = new ChatbotServiceRequest();
         botRequest.setMessage(request.getPrompt()); // Pass the actual new message here
-        botRequest.setConversation_history(historyForPython);
-        botRequest.setCrop_id(
+        botRequest.setConversationHistory(historyForPython);
+        botRequest.setCropId(
             (request.getCropId() != null) 
                 ? request.getCropId().toString() 
                 : null

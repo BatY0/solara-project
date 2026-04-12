@@ -1,5 +1,6 @@
 package com.solara.backend.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -8,5 +9,7 @@ import lombok.Data;
 public class ChatbotServiceMessage {
     private String role; // "user" or "chatbot" (or "assistant" depending on your python bot)
     private String content; // The text prompt or response
-    private String crop_id;
+
+    @JsonProperty("crop_id")
+    private String cropId;
 }
