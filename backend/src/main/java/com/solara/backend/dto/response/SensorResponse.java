@@ -17,7 +17,6 @@ public class SensorResponse {
     private UUID fieldId;
     private Double ambientTemp;
     private Double ambientHumidity;
-    private Double barometricPressure;
     private Double soilTemp;
     private Double soilHumidity;
 
@@ -25,7 +24,6 @@ public class SensorResponse {
         this.fieldId = sensorLogs.getFieldId();
         this.ambientTemp = sensorLogs.getAmbientTemp();
         this.ambientHumidity = sensorLogs.getAmbientHumidity();
-        this.barometricPressure = sensorLogs.getPressure();
         this.soilTemp = sensorLogs.getSoilTemp();
         this.soilHumidity = sensorLogs.getSoilHumidity();
     }
@@ -35,7 +33,6 @@ public class SensorResponse {
                 .fieldId(this.fieldId)
                 .ambientTemp(this.ambientTemp)
                 .ambientHumidity(this.ambientHumidity)
-                .pressure(this.barometricPressure)
                 .soilTemp(this.soilTemp)
                 .soilHumidity(this.soilHumidity)
                 .build();

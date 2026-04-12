@@ -28,7 +28,7 @@ public class SensorLogsService {
     }
 
     public enum Intervals {
-        HOURLY, DAILY
+        RAW, HOURLY, DAILY
     }
 
     @Data
@@ -72,6 +72,19 @@ public class SensorLogsService {
 
         List<SensorLogs> logs = sensorRepo.findByFieldIdAndTimestampBetween(fieldId, start, end);
 
+        if (interval == Intervals.RAW) {
+            return logs.stream().map(log -> 
+                new AggregateLog(
+                    log.getTimestamp(), 
+                    log.getAmbientTemp(), 
+                    log.getSoilTemp(), 
+                    log.getAmbientHumidity(), 
+                    log.getSoilHumidity()
+                )
+            ).sorted(Comparator.comparing(AggregateLog::getPeriod))
+            .collect(Collectors.toList());
+        }
+
         // Determine the truncation unit based on interval
         ChronoUnit unit = (interval == Intervals.HOURLY) ? ChronoUnit.HOURS : ChronoUnit.DAYS;
 
@@ -85,22 +98,22 @@ public class SensorLogsService {
 
                 // Calculate averages, filtering nulls to avoid NullPointerException
                 // (sensor may omit individual fields in some readings)
-                double avgAmbTemp = periodLogs.stream()
+                Double avgAmbTemp = periodLogs.stream()
                         .filter(l -> l.getAmbientTemp() != null)
                         .mapToDouble(SensorLogs::getAmbientTemp)
-                        .average().orElse(0.0);
-                double avgSoilTemp = periodLogs.stream()
+                        .average().stream().boxed().findFirst().orElse(null);
+                Double avgSoilTemp = periodLogs.stream()
                         .filter(l -> l.getSoilTemp() != null)
                         .mapToDouble(SensorLogs::getSoilTemp)
-                        .average().orElse(0.0);
-                double avgAmbHum = periodLogs.stream()
+                        .average().stream().boxed().findFirst().orElse(null);
+                Double avgAmbHum = periodLogs.stream()
                         .filter(l -> l.getAmbientHumidity() != null)
                         .mapToDouble(SensorLogs::getAmbientHumidity)
-                        .average().orElse(0.0);
-                double avgSoilHum = periodLogs.stream()
+                        .average().stream().boxed().findFirst().orElse(null);
+                Double avgSoilHum = periodLogs.stream()
                         .filter(l -> l.getSoilHumidity() != null)
                         .mapToDouble(SensorLogs::getSoilHumidity)
-                        .average().orElse(0.0);
+                        .average().stream().boxed().findFirst().orElse(null);
 
                 return new AggregateLog(period, avgAmbTemp, avgSoilTemp, avgAmbHum, avgSoilHum);
             })

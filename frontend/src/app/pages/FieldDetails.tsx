@@ -31,7 +31,7 @@ import { getDeviceStatus } from "../../utils/deviceStatus"
 const ESRI_SATELLITE = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 const ESRI_LABELS = 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
 
-function formatDate(d: Date): string { return d.toISOString().slice(0, 10); }
+function formatDate(d: Date): string { return toLocalISO(d).slice(0, 10); }
 
 function scenarioBadgeColor(scenario: string): string {
     if (scenario === 'RANGE') return '#2f855a';
@@ -61,6 +61,11 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+const toLocalISO = (d: Date): string => {
+    const tzOffset = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - tzOffset).toISOString().slice(0, -1);
+};
+
 /* ── Styled range slider ─────────────────────────────────────────────────── */
 interface RangeSliderProps { value: number; min: number; max: number; step: number; accentColor: string; onChange: (v: number) => void; }
 const RangeSlider = ({ value, min, max, step, accentColor, onChange }: RangeSliderProps) => {
@@ -83,7 +88,9 @@ const MonthSelect = ({ value, onChange, labels }: { value: number; onChange: (v:
 
 /* ── Telemetry metric card ─────────────────────────────────────────────────── */
 function MetricCard({ label, value, unit, icon, accent }: { label: string; value: string | number | null | undefined; unit: string; icon: React.ReactNode; accent: string }) {
-    const display = value != null ? String(value) : '--';
+    const display = value != null 
+        ? (typeof value === 'number' ? value.toFixed(2) : String(value)) 
+        : '--';
     return (
         <Box
             flex="1" minW="140px" p={5} borderRadius="2xl" border="1px solid"
@@ -133,7 +140,15 @@ export const FieldDetails = () => {
     const [telemetry, setTelemetry] = useState<SensorData | null>(null)
     const [weather, setWeather] = useState<WeatherData | null>(null)
     const [history, setHistory] = useState<HistoricalSensorData[]>([])
-    const [timeframe, setTimeframe] = useState<7 | 14 | 30>(7)
+    const [timeframe, setTimeframe] = useState<'today' | 7 | 14 | 30>(7)
+
+    /* ── Graph Toggles ── */
+    const [visibleMetrics, setVisibleMetrics] = useState({
+        soilTemp: true,
+        soilHumidity: true,
+        ambientTemp: false,
+        ambientHumidity: false
+    })
 
     /* ── Inline edit ── */
     const [isEditing, setIsEditing] = useState(false)
@@ -170,11 +185,23 @@ export const FieldDetails = () => {
     const [overrideRain, setOverrideRain] = useState(400)
 
     /* ── Fetch core data ── */
-    const loadHistory = useCallback(async (days: number) => {
+    const loadHistory = useCallback(async (tf: 'today' | 7 | 14 | 30) => {
         if (!id) return;
-        const end = new Date().toISOString();
-        const start = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
-        const data = await fieldsService.getHistoricalTelemetry(id, 'DAILY', start, end).catch(() => []);
+        const end = toLocalISO(new Date());
+        let start: string;
+        let interval: 'RAW' | 'HOURLY' | 'DAILY' = 'DAILY';
+
+        if (tf === 'today') {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            start = toLocalISO(today);
+            interval = 'RAW';
+        } else {
+            const startDate = new Date(Date.now() - tf * 24 * 60 * 60 * 1000);
+            start = toLocalISO(startDate);
+        }
+
+        const data = await fieldsService.getHistoricalTelemetry(id, interval, start, end).catch(() => []);
         setHistory(data);
     }, [id]);
 
@@ -195,7 +222,7 @@ export const FieldDetails = () => {
                 const [telData, weatherData, histData, analysisData] = await Promise.all([
                     fieldsService.getMostRecentTelemetry(id).catch(() => null),
                     fieldsService.getLiveWeather(id).catch(() => null),
-                    fieldsService.getHistoricalTelemetry(id, 'DAILY', new Date(Date.now() - 7 * 86400000).toISOString(), new Date().toISOString()).catch(() => []),
+                    fieldsService.getHistoricalTelemetry(id, 'DAILY', toLocalISO(new Date(Date.now() - 7 * 86400000)), toLocalISO(new Date())).catch(() => []),
                     fieldsService.getLastAnalysis(id).catch(() => null),
                 ]);
                 if (!isMounted) return;
@@ -355,12 +382,22 @@ export const FieldDetails = () => {
                 <stop offset="5%" stopColor="#DD6B20" stopOpacity={0.25} />
                 <stop offset="95%" stopColor="#DD6B20" stopOpacity={0.02} />
             </linearGradient>
+            <linearGradient id="gradAmbTemp" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#38A169" stopOpacity={0.25} />
+                <stop offset="95%" stopColor="#38A169" stopOpacity={0.02} />
+            </linearGradient>
+            <linearGradient id="gradAmbHum" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#805AD5" stopOpacity={0.25} />
+                <stop offset="95%" stopColor="#805AD5" stopOpacity={0.02} />
+            </linearGradient>
         </defs>
     );
 
     const chartData = history.map(d => ({
         ...d,
-        day: new Date(d.period).toLocaleDateString(i18n.language === 'tr' ? 'tr-TR' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+        label: timeframe === 'today'
+            ? new Date(d.period).toLocaleTimeString(i18n.language === 'tr' ? 'tr-TR' : 'en-US', { hour: '2-digit', minute: '2-digit' })
+            : new Date(d.period).toLocaleDateString(i18n.language === 'tr' ? 'tr-TR' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
     }));
 
     if (isLoading || !field) {
@@ -722,21 +759,32 @@ export const FieldDetails = () => {
                 <Box bg="white" p={6} borderRadius="2xl" border="1px solid" borderColor="gray.200" mb={6} style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
                     <Flex align="center" justify="space-between" mb={5} wrap="wrap" gap={3}>
                         <Text fontSize="lg" fontWeight="bold" color="gray.800">{t('field_details.historical_trends')}</Text>
-                        {/* Timeframe pills */}
-                        <Flex gap={2}>
-                            {([7, 14, 30] as const).map(d => (
-                                <Button
-                                    key={d}
-                                    size="xs"
-                                    borderRadius="full"
-                                    variant={timeframe === d ? 'solid' : 'outline'}
-                                    colorPalette={timeframe === d ? 'brand' : 'gray'}
-                                    onClick={() => setTimeframe(d)}
-                                    px={4}
-                                >
-                                    {t(`field_details.timeframe_${d}`)}
-                                </Button>
-                            ))}
+                        
+                        <Flex gap={3} wrap="wrap">
+                            {/* Metric Toggle Pills */}
+                            <Flex bg="gray.50" p={1} borderRadius="lg" border="1px solid" borderColor="gray.200" gap={1}>
+                                <Button size="xs" variant={visibleMetrics.soilTemp ? 'solid' : 'ghost'} colorPalette="orange" onClick={() => setVisibleMetrics(s => ({ ...s, soilTemp: !s.soilTemp }))}>{t('field_details.soil_temp')}</Button>
+                                <Button size="xs" variant={visibleMetrics.soilHumidity ? 'solid' : 'ghost'} colorPalette="blue" onClick={() => setVisibleMetrics(s => ({ ...s, soilHumidity: !s.soilHumidity }))}>{t('field_details.soil_moisture')}</Button>
+                                <Button size="xs" variant={visibleMetrics.ambientTemp ? 'solid' : 'ghost'} colorPalette="green" onClick={() => setVisibleMetrics(s => ({ ...s, ambientTemp: !s.ambientTemp }))}>{t('field_details.ambient_temp')}</Button>
+                                <Button size="xs" variant={visibleMetrics.ambientHumidity ? 'solid' : 'ghost'} colorPalette="purple" onClick={() => setVisibleMetrics(s => ({ ...s, ambientHumidity: !s.ambientHumidity }))}>{t('field_details.ambient_humidity')}</Button>
+                            </Flex>
+
+                            {/* Timeframe pills */}
+                            <Flex gap={2}>
+                                {(['today', 7, 14, 30] as const).map(d => (
+                                    <Button
+                                        key={String(d)}
+                                        size="xs"
+                                        borderRadius="full"
+                                        variant={timeframe === d ? 'solid' : 'outline'}
+                                        colorPalette={timeframe === d ? 'brand' : 'gray'}
+                                        onClick={() => setTimeframe(d)}
+                                        px={4}
+                                    >
+                                        {d === 'today' ? t('field_details.timeframe_today', 'Today') : t(`field_details.timeframe_${d}`)}
+                                    </Button>
+                                ))}
+                            </Flex>
                         </Flex>
                     </Flex>
 
@@ -745,17 +793,24 @@ export const FieldDetails = () => {
                             <RechartsAreaChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                                 <ChartGradients />
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 11 }} />
+                                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 11 }} />
                                 <YAxis yAxisId="moisture" axisLine={false} tickLine={false} tick={{ fill: '#3182CE', fontSize: 11 }} domain={[0, 100]} unit="%" width={52} />
                                 <YAxis yAxisId="temp" orientation="right" axisLine={false} tickLine={false} tick={{ fill: '#DD6B20', fontSize: 11 }} unit="°" width={32} />
                                 <Tooltip
                                     contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', fontSize: '13px' }}
                                     labelStyle={{ fontWeight: 700, color: '#374151' }}
-                                    formatter={(value) => [typeof value === 'number' ? value.toFixed(2) : value, undefined]}
+                                    formatter={(value, name) => {
+                                        const valStr = typeof value === 'number' ? value.toFixed(2) : value;
+                                        const n = String(name);
+                                        const suffix = (n.includes('%') || n.toLowerCase().includes('humid') || n.toLowerCase().includes('nem')) ? '%' : '°C';
+                                        return [valStr + suffix, undefined];
+                                    }}
                                 />
                                 <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '12px' }} />
-                                <Area yAxisId="moisture" type="monotone" dataKey="avgSoilHumidity" name={t('field_details.moisture_pct')} stroke="#3182CE" strokeWidth={2.5} fill="url(#gradMoisture)" dot={false} activeDot={{ r: 5 }} />
-                                <Area yAxisId="temp" type="monotone" dataKey="avgSoilTemp" name={t('field_details.temp_c')} stroke="#DD6B20" strokeWidth={2.5} fill="url(#gradTemp)" dot={false} activeDot={{ r: 5 }} />
+                                {visibleMetrics.soilHumidity && <Area yAxisId="moisture" connectNulls type="monotone" dataKey="avgSoilHumidity" name={t('field_details.moisture_pct')} stroke="#3182CE" strokeWidth={2.5} fill="url(#gradMoisture)" dot={false} activeDot={{ r: 5 }} />}
+                                {visibleMetrics.ambientHumidity && <Area yAxisId="moisture" connectNulls type="monotone" dataKey="avgAmbientHumidity" name={t('field_details.ambient_humidity')} stroke="#805AD5" strokeWidth={2.5} fill="url(#gradAmbHum)" dot={false} activeDot={{ r: 5 }} />}
+                                {visibleMetrics.soilTemp && <Area yAxisId="temp" connectNulls type="monotone" dataKey="avgSoilTemp" name={t('field_details.temp_c')} stroke="#DD6B20" strokeWidth={2.5} fill="url(#gradTemp)" dot={false} activeDot={{ r: 5 }} />}
+                                {visibleMetrics.ambientTemp && <Area yAxisId="temp" connectNulls type="monotone" dataKey="avgAmbientTemp" name={t('field_details.ambient_temp')} stroke="#38A169" strokeWidth={2.5} fill="url(#gradAmbTemp)" dot={false} activeDot={{ r: 5 }} />}
                             </RechartsAreaChart>
                         </ResponsiveContainer>
                     ) : (
