@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Leaf } from 'lucide-react-native';
+import { ArrowLeft, Leaf, MessageCircle } from 'lucide-react-native';
 
 import { theme } from '../../src/theme/theme';
 import { cropGuidesService } from '../../src/services/cropGuidesService';
@@ -168,6 +168,15 @@ export default function GuideDetailScreen() {
             : [];
 
     const guideName = localizedGuideName() || guide.name;
+    const handleAskAiAboutCrop = () => {
+        router.push({
+            pathname: '/chatbot',
+            params: {
+                cropId: guide.id,
+                cropName: guideName,
+            },
+        });
+    };
 
     // ── Sections data ───────────────────────────────────────────────────────────
     const sections = [
@@ -317,6 +326,11 @@ export default function GuideDetailScreen() {
                                 </View>
                             ) : null}
                         </View>
+
+                        <TouchableOpacity style={styles.askAiButton} onPress={handleAskAiAboutCrop}>
+                            <MessageCircle color="#fff" size={16} />
+                            <Text style={styles.askAiButtonText}>{t('crop_guide.ask_ai_about_crop')}</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
 
@@ -417,6 +431,18 @@ const styles = StyleSheet.create({
     chipPurple: { backgroundColor: '#F5F3FF' },
     chipLabel: { fontSize: 11, color: '#c2410c', marginBottom: 2 },
     chipValue: { fontSize: 14, fontWeight: '600', color: '#7c2d12' },
+    askAiButton: {
+        marginTop: 14,
+        backgroundColor: theme.colors.brand[600],
+        borderRadius: 12,
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+    },
+    askAiButtonText: { color: '#fff', fontSize: 13, fontWeight: '700' },
 
     section: {
         backgroundColor: '#fff', borderRadius: 16, padding: 16,

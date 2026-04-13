@@ -4,16 +4,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Slider from '@react-native-community/slider';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Thermometer, Droplet, Wind, CloudRain, Cpu, Link, Unlink, Wifi, Map as MapIcon, Trash2, BrainCircuit, Leaf, Settings, Activity } from 'lucide-react-native';
+import { ArrowLeft, Thermometer, Droplet, Wind, CloudRain, Cpu, Link, Unlink, Wifi, Map as MapIcon, Trash2, BrainCircuit, Leaf, Settings, Activity, MessageCircle } from 'lucide-react-native';
 import MapView, { Polygon, PROVIDER_GOOGLE, type Region } from 'react-native-maps';
 import { LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 
 import { theme } from '../../src/theme/theme';
 import { fieldsService } from '../../src/services/fieldsService';
+import { cropGuidesService } from '../../src/services/cropGuidesService';
 import type { Field, SensorData, WeatherData, AnalysisResult, HistoricalSensorData } from '../../src/types/fields';
 import MapSelector from '../../src/components/MapSelector';
 import axios from 'axios';
+import { normalizeCropName } from '../../src/utils/normalizeCropName';
 
 export default function FieldDetailsScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -272,6 +274,43 @@ export default function FieldDetailsScreen() {
             Alert.alert(t('common.error', 'Error'), backendMessage || t('fields.analysis_failed', 'Failed to run analysis.'));
         } finally {
             setIsAnalyzing(false);
+        }
+    };
+
+    const handleAskAiForField = async () => {
+        const firstRecommendation = analysis?.recommendations?.[0]?.crop;
+        const translatedCropName = firstRecommendation ? t(`crop_names.${firstRecommendation}`, firstRecommendation) : field?.name;
+
+        if (!firstRecommendation) {
+            router.push({
+                pathname: '/chatbot',
+                params: { cropName: translatedCropName },
+            });
+            return;
+        }
+
+        try {
+            const guides = await cropGuidesService.getAllGuides();
+            const normalizedRecommendation = normalizeCropName(firstRecommendation);
+            const matchedGuide = guides.find((guide) => {
+                const normalizedSlug = guide.slug ? normalizeCropName(guide.slug) : '';
+                const normalizedName = normalizeCropName(guide.name);
+                return normalizedSlug === normalizedRecommendation || normalizedName === normalizedRecommendation;
+            });
+
+            router.push({
+                pathname: '/chatbot',
+                params: {
+                    cropId: matchedGuide?.id,
+                    cropName: matchedGuide?.name ?? translatedCropName,
+                },
+            });
+        } catch (error) {
+            console.error('Failed to resolve crop context for chatbot:', error);
+            router.push({
+                pathname: '/chatbot',
+                params: { cropName: translatedCropName },
+            });
         }
     };
 
@@ -596,6 +635,11 @@ export default function FieldDetailsScreen() {
                         </TouchableOpacity>
                     </View>
 
+                    <TouchableOpacity style={styles.askAiButton} onPress={handleAskAiForField}>
+                        <MessageCircle color="#fff" size={16} />
+                        <Text style={styles.askAiButtonText}>{t('fields.ask_ai_about_field')}</Text>
+                    </TouchableOpacity>
+
                     {!analysis || analysis.recommendations.length === 0 ? (
                         <View style={{ paddingVertical: 20, alignItems: 'center' }}>
                             <Text style={styles.emptyText}>{t('fields.no_recommendations', 'No recommendations found.')}</Text>
@@ -826,6 +870,18 @@ const styles = StyleSheet.create({
     saveBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 6, backgroundColor: '#059669', flexDirection: 'row', alignItems: 'center' },
     saveBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
     recBox: { padding: 12, borderRadius: 12, borderWidth: 1 },
+    askAiButton: {
+        backgroundColor: theme.colors.brand[600],
+        borderRadius: 10,
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        marginBottom: 12,
+    },
+    askAiButtonText: { color: '#fff', fontSize: 13, fontWeight: '700' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
     modalContent: { backgroundColor: '#fff', borderRadius: 16, padding: 20, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },

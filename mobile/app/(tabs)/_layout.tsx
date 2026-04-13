@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { theme } from '../../src/theme/theme';
-import { BookOpen, Home, Settings } from 'lucide-react-native';
+import { BookOpen, Home, MessageCircle, Settings } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
 export default function TabsLayout() {
@@ -30,6 +30,13 @@ export default function TabsLayout() {
                 options={{
                     title: t('crop_guide.title'),
                     tabBarIcon: ({ color }) => <BookOpen color={color} size={24} />,
+                }}
+            />
+            <Tabs.Screen
+                name="chatbot"
+                options={{
+                    title: t('chatbot.tab'),
+                    tabBarIcon: ({ color }) => <MessageCircle color={color} size={24} />,
                 }}
             />
             <Tabs.Screen
