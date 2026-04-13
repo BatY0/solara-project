@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     gemini_api_key: str
     groq_api_key: str
     groq_model: str = "llama-3.1-8b-instant"
+    crop_identifier_debug: bool = False
     backend_base_url: str = "http://localhost:8080"
     # Cache TTL in seconds for the crop name list
     crop_cache_ttl: int = 300

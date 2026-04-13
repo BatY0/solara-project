@@ -16,7 +16,7 @@ from src.config import settings
 
 logger = logging.getLogger(__name__)
 
-MODEL_NAME = "gemini-2.5-flash"
+MODEL_NAME = "gemini-2.5-flash-lite"
 
 # Configure once at module load
 genai.configure(api_key=settings.gemini_api_key)

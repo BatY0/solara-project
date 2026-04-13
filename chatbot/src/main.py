@@ -1,7 +1,13 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.routers.chat import router as chat_router
+
+# Ensure app-level INFO logs are visible in uvicorn output.
+logging.basicConfig(level=logging.INFO)
+logging.getLogger("src").setLevel(logging.INFO)
 
 app = FastAPI(
     title="Solara Crop Chatbot",

@@ -8,7 +8,7 @@ referring to — in any language.
 Context is supplied to Groq as a tiny "hint" list extracted from the history
 rather than the full conversation text, keeping token usage minimal.
 
-Gracefully falls back to the active_crop_id if Groq is unavailable.
+Returns None when no specific crop can be confidently identified.
 """
 
 import re
@@ -33,9 +33,11 @@ _SYSTEM_PROMPT = (
     "You are a crop name detector. "
     "Your only job is to identify which crop from a given list a user message refers to. "
     "You must reply with EXACTLY one of the following — nothing else:\n"
-    "  • The crop's UUID if the user is asking about a crop DIFFERENT from the active one\n"
-    "  • SAME   — if the user is still referring to the active crop (or their message is about it)\n"
+    "  • The crop's UUID if the user is asking about any specific crop in the list\n"
     "  • NONE   — if the user is not asking about any specific crop in the list\n"
+    "If an active crop exists and the user message is a vague follow-up "
+    "(for example: 'how to plant this', 'and irrigation?', 'what about fertilizer?'), "
+    "treat it as referring to the active crop and return the active crop UUID, not NONE.\n"
     "Use the 'Previously discussed' list to resolve vague references like "
     "'the first one', 'the other crop', 'that one', etc.\n"
     "Do not explain. Do not add punctuation. Output one token only."
@@ -128,14 +130,14 @@ async def identify(
         conversation_history: List of prior turns, each with an optional
                               'crop_id' key stamped by the chat endpoint.
         active_crop_id:       The crop the calling app considers currently
-                              active (used as the SAME baseline).
+                              active (used only as disambiguation context).
 
     Returns:
         A resolved crop UUID string, or None if no specific crop was identified.
     """
     if not crop_index:
         logger.warning("Crop index is empty; skipping identification.")
-        return active_crop_id  # Graceful fallback
+        return None
 
     user_prompt = _build_user_prompt(
         message=message,
@@ -143,6 +145,8 @@ async def identify(
         conversation_history=conversation_history,
         active_crop_id=active_crop_id,
     )
+    if settings.crop_identifier_debug:
+        logger.info("Crop identifier prompt:\n%s", user_prompt)
 
     try:
         response = await _client.chat.completions.create(
@@ -155,14 +159,21 @@ async def identify(
             max_tokens=50,     # UUID is 36 chars; "SAME"/"NONE" even shorter
         )
         raw = response.choices[0].message.content.strip()
-        logger.debug("Crop identifier raw response: %r", raw)
+        if settings.crop_identifier_debug:
+            logger.info("Crop identifier raw response: %r", raw)
+        else:
+            logger.debug("Crop identifier raw response: %r", raw)
     except Exception as exc:
-        logger.warning("Groq crop identifier failed: %s — falling back to active crop.", exc)
-        return active_crop_id  # Graceful degradation
+        logger.warning("Groq crop identifier failed: %s — returning NONE.", exc)
+        return None
 
-    if raw == "SAME":
-        return active_crop_id
     if raw == "NONE":
+        if active_crop_id:
+            logger.info(
+                "Groq returned NONE despite active crop %s; using active crop as conversational fallback.",
+                active_crop_id,
+            )
+            return active_crop_id
         return None
     if _UUID_RE.match(raw):
         # Validate the UUID actually exists in our index to prevent hallucination
@@ -170,7 +181,7 @@ async def identify(
         if raw in known_ids:
             return raw
         logger.warning("Groq returned an unknown crop id %r — discarding.", raw)
-        return active_crop_id
+        return None
 
     logger.warning("Groq returned unexpected response %r — discarding.", raw)
-    return active_crop_id
+    return None
