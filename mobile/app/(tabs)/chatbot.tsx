@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
+    Animated,
     FlatList,
     KeyboardAvoidingView,
     Platform,
@@ -23,6 +24,44 @@ const firstParam = (value: string | string[] | undefined): string | undefined =>
     if (!value) return undefined;
     return Array.isArray(value) ? value[0] : value;
 };
+
+function ThinkingBubble() {
+    const dot1 = React.useRef(new Animated.Value(0.35)).current;
+    const dot2 = React.useRef(new Animated.Value(0.35)).current;
+    const dot3 = React.useRef(new Animated.Value(0.35)).current;
+
+    useEffect(() => {
+        const createDotAnimation = (dot: Animated.Value, delay: number) =>
+            Animated.loop(
+                Animated.sequence([
+                    Animated.delay(delay),
+                    Animated.timing(dot, { toValue: 1, duration: 260, useNativeDriver: true }),
+                    Animated.timing(dot, { toValue: 0.35, duration: 260, useNativeDriver: true }),
+                ])
+            );
+
+        const animation = Animated.parallel([
+            createDotAnimation(dot1, 0),
+            createDotAnimation(dot2, 180),
+            createDotAnimation(dot3, 360),
+        ]);
+
+        animation.start();
+        return () => animation.stop();
+    }, [dot1, dot2, dot3]);
+
+    return (
+        <View style={[styles.bubbleRow, styles.rowLeft]}>
+            <View style={[styles.bubble, styles.botBubble]}>
+                <View style={styles.thinkingDots}>
+                    <Animated.View style={[styles.thinkingDot, { opacity: dot1 }]} />
+                    <Animated.View style={[styles.thinkingDot, { opacity: dot2 }]} />
+                    <Animated.View style={[styles.thinkingDot, { opacity: dot3 }]} />
+                </View>
+            </View>
+        </View>
+    );
+}
 
 export default function ChatbotScreen() {
     const params = useLocalSearchParams<{ cropId?: string | string[]; cropName?: string | string[] }>();
@@ -136,6 +175,7 @@ export default function ChatbotScreen() {
                     data={listData}
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={styles.messagesContent}
+                    ListFooterComponent={isSending ? <ThinkingBubble /> : null}
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
                             <Text style={styles.emptyTitle}>{t('chatbot.empty_title')}</Text>
@@ -240,6 +280,18 @@ const styles = StyleSheet.create({
     bubbleText: { fontSize: 14, lineHeight: 20 },
     userText: { color: '#fff' },
     botText: { color: theme.colors.neutral.dark },
+    thinkingDots: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingVertical: 4,
+    },
+    thinkingDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: theme.colors.neutral.subtext,
+    },
     inputWrap: {
         borderTopWidth: 1,
         borderTopColor: theme.colors.neutral.border,
