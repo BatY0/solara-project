@@ -5,9 +5,9 @@ import {
     Dialog, Portal, CloseButton, Input, Field as ChakraField, Circle,
     Tabs, Slider,
 } from "@chakra-ui/react"
-import { Sprout, Trash2, BrainCircuit, Leaf, Pencil, X, Save, AlertTriangle, Thermometer, Droplets, Wind, CloudRain, Battery } from "lucide-react"
+import { Sprout, Trash2, BrainCircuit, Leaf, Pencil, X, Save, AlertTriangle, Thermometer, Droplets, Wind, CloudRain, Battery, LocateFixed } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { MapContainer, TileLayer, Polygon } from 'react-leaflet'
+import { MapContainer, TileLayer, Polygon, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import {
     CartesianGrid, XAxis, YAxis, Tooltip, Area, ResponsiveContainer,
@@ -110,6 +110,29 @@ interface EditState {
     ph: string;
 }
 
+  /* ── Map Recenter Control ── */
+const RecenterControl = ({ bounds }: { bounds: number[][] }) => {
+    const map = useMap();
+    if (!bounds || bounds.length === 0) return null;
+    return (
+        <IconButton
+            aria-label="Return to Field" title="Return to Field"
+            position="absolute" bottom={4} right={4} zIndex={400}
+            variant="solid" bg="white" color="green.600" size="sm" borderRadius="md"
+            boxShadow="0 2px 6px rgba(0,0,0,0.2)" border="1px solid" borderColor="gray.200"
+            _hover={{ bg: "gray.50" }}
+            onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                map.fitBounds(bounds.map(c => [c[1], c[0]]) as [number, number][]);
+            }}
+        >
+            <LocateFixed size={18} />
+        </IconButton>
+    );
+};
+
+/* ── Override Slider Component ── */
 const OverrideSlider = ({
     label,
     themeColor,
@@ -866,6 +889,7 @@ export const FieldDetails = () => {
                                         positions={field.location.map((c: number[]) => [c[1], c[0]])}
                                         pathOptions={{ color: '#059669', fillColor: '#059669', fillOpacity: 0.2, weight: 2 }}
                                     />
+                                    <RecenterControl bounds={field.location} />
                                 </MapContainer>
                             </Box>
                         )}
