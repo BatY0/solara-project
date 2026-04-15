@@ -43,6 +43,21 @@ public class SensorLogs {
     @Column(name = "ambient_humidity")
     private Double ambientHumidity;
 
+    @Column(name = "battery_voltage")
+    private Double batteryVoltage;
+    @Column(name = "battery_percentage")
+    private Integer batteryPercentage;
+
+    @Column(name = "location_latitude")
+    private Double locationLatitude;
+    @Column(name = "location_longitude")
+    private Double locationLongitude;
+    @Column(name = "location_accuracy")
+    private Double locationAccuracy;
+
+    @Column(name = "errors")
+    private String errors;
+
     @CreationTimestamp
     @Column(name = "timestamp", nullable = false)
     private LocalDateTime timestamp;

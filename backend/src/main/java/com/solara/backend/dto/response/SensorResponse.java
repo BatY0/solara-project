@@ -19,6 +19,12 @@ public class SensorResponse {
     private Double ambientHumidity;
     private Double soilTemp;
     private Double soilHumidity;
+    private Double batteryVoltage;
+    private Integer batteryPercentage;
+    private Double locationLatitude;
+    private Double locationLongitude;
+    private Double locationAccuracy;
+    private String errors;
 
     public SensorResponse(SensorLogs sensorLogs) {
         this.fieldId = sensorLogs.getFieldId();
@@ -26,6 +32,12 @@ public class SensorResponse {
         this.ambientHumidity = sensorLogs.getAmbientHumidity();
         this.soilTemp = sensorLogs.getSoilTemp();
         this.soilHumidity = sensorLogs.getSoilHumidity();
+        this.batteryVoltage = sensorLogs.getBatteryVoltage();
+        this.batteryPercentage = sensorLogs.getBatteryPercentage();
+        this.locationLatitude = sensorLogs.getLocationLatitude();
+        this.locationLongitude = sensorLogs.getLocationLongitude();
+        this.locationAccuracy = sensorLogs.getLocationAccuracy();
+        this.errors = sensorLogs.getErrors();
     }
 
     public SensorLogs toEntity() {
@@ -35,6 +47,12 @@ public class SensorResponse {
                 .ambientHumidity(this.ambientHumidity)
                 .soilTemp(this.soilTemp)
                 .soilHumidity(this.soilHumidity)
+                .batteryVoltage(this.batteryVoltage)
+                .batteryPercentage(this.batteryPercentage)
+                .locationLatitude(this.locationLatitude)
+                .locationLongitude(this.locationLongitude)
+                .locationAccuracy(this.locationAccuracy)
+                .errors(this.errors)
                 .build();
     }
 
