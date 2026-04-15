@@ -200,7 +200,8 @@ export const FieldDetails = () => {
     useEffect(() => {
         if (!id) return;
         let isMounted = true;
-        const fetchAll = async () => {
+        
+        const fetchCritical = async () => {
             setIsLoading(true);
             try {
                 const [fieldData, propsData] = await Promise.all([
@@ -210,7 +211,15 @@ export const FieldDetails = () => {
                 if (!isMounted) return;
                 setField(fieldData);
                 setFieldProps(propsData);
+            } catch (err) {
+                console.error('Error fetching field details:', err);
+            } finally {
+                if (isMounted) setIsLoading(false);
+            }
+        };
 
+        const fetchBackground = async () => {
+            try {
                 const [telData, weatherData, histData, analysisData] = await Promise.all([
                     fieldsService.getMostRecentTelemetry(id).catch(() => null),
                     fieldsService.getLiveWeather(id).catch(() => null),
@@ -223,12 +232,14 @@ export const FieldDetails = () => {
                 if (histData) setHistory(histData);
                 if (analysisData) setLastAnalysis(analysisData);
             } catch (err) {
-                console.error('Error fetching field details:', err);
-            } finally {
-                if (isMounted) setIsLoading(false);
+                console.error('Error fetching background data:', err);
             }
         };
-        fetchAll();
+
+        fetchCritical().then(() => {
+            if (isMounted) fetchBackground();
+        });
+
         return () => { isMounted = false; };
     }, [id]);
 
