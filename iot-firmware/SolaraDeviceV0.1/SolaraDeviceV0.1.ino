@@ -200,7 +200,7 @@ void loop() {
   moisturePercent = constrain(moisturePercent, 0, 100);
 
   // 2. CONSTRUCT JSON PAYLOAD
-  JsonDocument doc; 
+  StaticJsonDocument<768> doc;
   doc["device_id"]           = deviceId;
   doc["ambient_temperature"] = airTemp;
   doc["ambient_humidity"]    = airHumid;
