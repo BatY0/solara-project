@@ -110,6 +110,85 @@ interface EditState {
     ph: string;
 }
 
+const OverrideSlider = ({
+    label,
+    themeColor,
+    min,
+    max,
+    step,
+    defaultValue,
+    unit,
+    precision = 0,
+    onValueChangeEnd,
+    isChecked,
+    onToggle,
+    accentHex
+}: {
+    label: string,
+    themeColor: string,
+    min: number,
+    max: number,
+    step: number,
+    defaultValue: number,
+    unit: string,
+    precision?: number,
+    onValueChangeEnd: (val: number) => void,
+    isChecked: boolean,
+    onToggle: (checked: boolean) => void,
+    accentHex: string
+}) => {
+    const [liveVal, setLiveVal] = useState<number | string>(defaultValue);
+
+    const handleInputBlur = () => {
+        let v = typeof liveVal === 'string' ? parseFloat(liveVal) : liveVal;
+        if (isNaN(v)) v = min;
+        v = Math.min(max, Math.max(min, v));
+        setLiveVal(v);
+        onValueChangeEnd(v);
+    };
+
+    const formatVal = (v: number) => `${v.toFixed(precision)} ${unit}`;
+    const parsedVal = typeof liveVal === 'string' ? parseFloat(liveVal) : liveVal;
+    const sliderVal = isNaN(parsedVal) ? min : parsedVal;
+
+    return (
+        <Slider.Root 
+            min={min} max={max} step={step} 
+            value={[sliderVal]} 
+            colorPalette={themeColor} 
+            onValueChange={e => { setLiveVal(e.value[0]); }}
+            onValueChangeEnd={e => onValueChangeEnd(e.value[0])}
+        >
+            <Flex justify="space-between" align="center" mb={3}>
+                <Flex align="center" gap={2}>
+                    <input type="checkbox" checked={isChecked} onChange={e => onToggle(e.target.checked)} style={{ width: 16, height: 16, accentColor: accentHex, cursor: 'pointer' }} />
+                    <Slider.Label fontSize="sm" fontWeight="medium" color="gray.800">{label}</Slider.Label>
+                </Flex>
+                <Flex align="center" gap={1}>
+                    <Input 
+                        type="number" min={min} max={max} step={step}
+                        value={liveVal}
+                        onChange={e => setLiveVal(e.target.value)}
+                        onBlur={handleInputBlur}
+                        onKeyDown={e => e.key === 'Enter' && handleInputBlur()}
+                        size="sm" width="50px" textAlign="right" fontWeight="bold" 
+                        color={`${themeColor}.600`} bg="transparent" 
+                        border="none" borderBottom="2px solid" borderColor={`${themeColor}.300`} 
+                        borderRadius="0" px={0} py={0}
+                        _focus={{ outline: 'none', borderColor: `${themeColor}.600` }}
+                    />
+                    <Text fontSize="sm" fontWeight="bold" color={`${themeColor}.600`}>{unit}</Text>
+                </Flex>
+            </Flex>
+            <Slider.Control><Slider.Track><Slider.Range /></Slider.Track><Slider.Thumbs /></Slider.Control>
+            <Flex justify="space-between" mt={1}>
+                <Text fontSize="xs" color="gray.400">{formatVal(min)}</Text>
+                <Text fontSize="xs" color="gray.400">{formatVal(max)}</Text>
+            </Flex>
+        </Slider.Root>
+    );
+};
+
 export const FieldDetails = () => {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
@@ -533,17 +612,15 @@ export const FieldDetails = () => {
                                                     <Text fontSize="sm" fontWeight="medium" color="gray.400" cursor="pointer" onClick={() => setUseOverrideTemp(true)}>{t('field_details.ai.temp_override')}</Text>
                                                 </Flex>
                                             ) : (
-                                                <Slider.Root min={0} max={50} step={0.5} defaultValue={[overrideTemp]} colorPalette="orange" onValueChangeEnd={e => setOverrideTemp(e.value[0])}>
-                                                    <Flex justify="space-between" align="center" mb={3}>
-                                                        <Flex align="center" gap={2}>
-                                                            <input id="toggle-temp" type="checkbox" checked={true} onChange={e => setUseOverrideTemp(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#DD6B20', cursor: 'pointer' }} />
-                                                            <Slider.Label fontSize="sm" fontWeight="medium" color="gray.800">{t('field_details.ai.temp_override')}</Slider.Label>
-                                                        </Flex>
-                                                        <Slider.ValueText fontSize="sm" fontWeight="bold" color="orange.600" formatValue={v => `${v % 1 === 0 ? v : Number(v).toFixed(1)} °C`} />
-                                                    </Flex>
-                                                    <Slider.Control><Slider.Track><Slider.Range /></Slider.Track><Slider.Thumbs /></Slider.Control>
-                                                    <Flex justify="space-between" mt={1}><Text fontSize="xs" color="gray.400">0 °C</Text><Text fontSize="xs" color="gray.400">50 °C</Text></Flex>
-                                                </Slider.Root>
+                                                <OverrideSlider
+                                                    label={t('field_details.ai.temp_override')}
+                                                    themeColor="orange" accentHex="#DD6B20"
+                                                    min={0} max={50} step={0.5}
+                                                    defaultValue={overrideTemp}
+                                                    unit="°C" precision={1}
+                                                    onValueChangeEnd={setOverrideTemp}
+                                                    isChecked={true} onToggle={setUseOverrideTemp}
+                                                />
                                             )}
                                         </Box>
                                         {/* ─ Humidity Override ─ */}
@@ -554,17 +631,15 @@ export const FieldDetails = () => {
                                                     <Text fontSize="sm" fontWeight="medium" color="gray.400" cursor="pointer" onClick={() => setUseOverrideHum(true)}>{t('field_details.ai.hum_override')}</Text>
                                                 </Flex>
                                             ) : (
-                                                <Slider.Root min={0} max={100} step={1} defaultValue={[overrideHum]} colorPalette="blue" onValueChangeEnd={e => setOverrideHum(e.value[0])}>
-                                                    <Flex justify="space-between" align="center" mb={3}>
-                                                        <Flex align="center" gap={2}>
-                                                            <input id="toggle-hum" type="checkbox" checked={true} onChange={e => setUseOverrideHum(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#3182CE', cursor: 'pointer' }} />
-                                                            <Slider.Label fontSize="sm" fontWeight="medium" color="gray.800">{t('field_details.ai.hum_override')}</Slider.Label>
-                                                        </Flex>
-                                                        <Slider.ValueText fontSize="sm" fontWeight="bold" color="blue.600" formatValue={v => `${Math.round(Number(v))} %`} />
-                                                    </Flex>
-                                                    <Slider.Control><Slider.Track><Slider.Range /></Slider.Track><Slider.Thumbs /></Slider.Control>
-                                                    <Flex justify="space-between" mt={1}><Text fontSize="xs" color="gray.400">0 %</Text><Text fontSize="xs" color="gray.400">100 %</Text></Flex>
-                                                </Slider.Root>
+                                                <OverrideSlider
+                                                    label={t('field_details.ai.hum_override')}
+                                                    themeColor="blue" accentHex="#3182CE"
+                                                    min={0} max={100} step={1}
+                                                    defaultValue={overrideHum}
+                                                    unit="%" precision={0}
+                                                    onValueChangeEnd={setOverrideHum}
+                                                    isChecked={true} onToggle={setUseOverrideHum}
+                                                />
                                             )}
                                         </Box>
                                         {/* ─ Rainfall Override ─ */}
@@ -575,17 +650,15 @@ export const FieldDetails = () => {
                                                     <Text fontSize="sm" fontWeight="medium" color="gray.400" cursor="pointer" onClick={() => setUseOverrideRain(true)}>{t('field_details.ai.rain_override')}</Text>
                                                 </Flex>
                                             ) : (
-                                                <Slider.Root min={0} max={1000} step={5} defaultValue={[overrideRain]} colorPalette="teal" onValueChangeEnd={e => setOverrideRain(e.value[0])}>
-                                                    <Flex justify="space-between" align="center" mb={3}>
-                                                        <Flex align="center" gap={2}>
-                                                            <input id="toggle-rain" type="checkbox" checked={true} onChange={e => setUseOverrideRain(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#319795', cursor: 'pointer' }} />
-                                                            <Slider.Label fontSize="sm" fontWeight="medium" color="gray.800">{t('field_details.ai.rain_override')}</Slider.Label>
-                                                        </Flex>
-                                                        <Slider.ValueText fontSize="sm" fontWeight="bold" color="teal.600" formatValue={v => `${Math.round(Number(v))} mm`} />
-                                                    </Flex>
-                                                    <Slider.Control><Slider.Track><Slider.Range /></Slider.Track><Slider.Thumbs /></Slider.Control>
-                                                    <Flex justify="space-between" mt={1}><Text fontSize="xs" color="gray.400">0 mm</Text><Text fontSize="xs" color="gray.400">1000 mm</Text></Flex>
-                                                </Slider.Root>
+                                                <OverrideSlider
+                                                    label={t('field_details.ai.rain_override')}
+                                                    themeColor="teal" accentHex="#319795"
+                                                    min={0} max={1000} step={5}
+                                                    defaultValue={overrideRain}
+                                                    unit="mm" precision={0}
+                                                    onValueChangeEnd={setOverrideRain}
+                                                    isChecked={true} onToggle={setUseOverrideRain}
+                                                />
                                             )}
                                         </Box>
                                     </Flex>
