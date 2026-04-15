@@ -4,6 +4,8 @@ export interface SensorData {
     soilHumidity: number | null;
     ambientTemp: number | null;
     ambientHumidity: number | null;
+    batteryVoltage?: number | null;
+    batteryPercentage?: number | null;
     recordedAt: string;
 }
 

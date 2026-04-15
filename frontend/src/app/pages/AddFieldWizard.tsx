@@ -63,7 +63,7 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
                 name: formData.name,
                 location: formData.location || [[30.7133, 36.8969], [30.7143, 36.8969], [30.7143, 36.8979], [30.7133, 36.8979], [30.7133, 36.8969]],
                 areaHa: parseFloat(formData.areaHa) || 0.0,
-                soilType: formData.soilType || 'clay',
+                soilType: formData.soilType || 'loam',
             });
 
             await fieldsService.updateFieldProperties(createRes.id, {
@@ -225,11 +225,13 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
                                             }}
                                         >
                                             <option value="">{t('add_field.soil_type_ph')}</option>
-                                            <option value="clay">{t('add_field.clay')}</option>
+                                            <option value="alluvial_loam">{t('add_field.alluvial_loam')}</option>
+                                            <option value="clay_loam">{t('add_field.clay_loam')}</option>
+                                            <option value="light_sandy_loam">{t('add_field.light_sandy_loam')}</option>
                                             <option value="loam">{t('add_field.loam')}</option>
-                                            <option value="sand">{t('add_field.sand')}</option>
-                                            <option value="chalk">{t('add_field.chalk')}</option>
-                                            <option value="peat">Peat</option>
+                                            <option value="rich_loam">{t('add_field.rich_loam')}</option>
+                                            <option value="sandy_loam">{t('add_field.sandy_loam')}</option>
+                                            <option value="well_drained_loam">{t('add_field.well_drained_loam')}</option>
                                         </chakra.select>
                                         {errors.soilType && <Text fontSize="xs" color="red.500" mt={1} fontWeight="medium">⚠ {errors.soilType}</Text>}
                                     </Box>

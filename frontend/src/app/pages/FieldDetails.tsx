@@ -3,11 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom'
 import {
     Box, Flex, Text, Spinner, Button, IconButton,
     Dialog, Portal, CloseButton, Input, Field as ChakraField, Circle,
-    Tabs,
+    Tabs, Slider,
 } from "@chakra-ui/react"
-import { Sprout, Trash2, BrainCircuit, Leaf, Pencil, X, Save, AlertTriangle, Thermometer, Droplets, Wind, CloudRain } from "lucide-react"
+import { Sprout, Trash2, BrainCircuit, Leaf, Pencil, X, Save, AlertTriangle, Thermometer, Droplets, Wind, CloudRain, Battery, LocateFixed } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { MapContainer, TileLayer, Polygon } from 'react-leaflet'
+import { MapContainer, TileLayer, Polygon, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import {
     CartesianGrid, XAxis, YAxis, Tooltip, Area, ResponsiveContainer,
@@ -66,18 +66,7 @@ const toLocalISO = (d: Date): string => {
     return new Date(d.getTime() - tzOffset).toISOString().slice(0, -1);
 };
 
-/* ── Styled range slider ─────────────────────────────────────────────────── */
-interface RangeSliderProps { value: number; min: number; max: number; step: number; accentColor: string; onChange: (v: number) => void; }
-const RangeSlider = ({ value, min, max, step, accentColor, onChange }: RangeSliderProps) => {
-    const pct = ((value - min) / (max - min)) * 100;
-    return (
-        <Box position="relative" py={1}>
-            <input type="range" min={min} max={max} step={step} value={value} onChange={e => onChange(Number(e.target.value))}
-                style={{ width: '100%', height: '6px', borderRadius: '3px', appearance: 'none', WebkitAppearance: 'none', outline: 'none', cursor: 'pointer', background: `linear-gradient(to right, ${accentColor} 0%, ${accentColor} ${pct}%, #E2E8F0 ${pct}%, #E2E8F0 100%)` }} />
-            <style>{`input[type='range']::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; border-radius:50%; background:white; border:2.5px solid ${accentColor}; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.18); } input[type='range']::-moz-range-thumb { width:18px; height:18px; border-radius:50%; background:white; border:2.5px solid ${accentColor}; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.18); }`}</style>
-        </Box>
-    );
-};
+
 
 const MonthSelect = ({ value, onChange, labels }: { value: number; onChange: (v: number) => void; labels: string[] }) => (
     <select value={value} onChange={e => onChange(Number(e.currentTarget.value))}
@@ -120,6 +109,108 @@ interface EditState {
     potassium: string;
     ph: string;
 }
+
+  /* ── Map Recenter Control ── */
+const RecenterControl = ({ bounds }: { bounds: number[][] }) => {
+    const map = useMap();
+    if (!bounds || bounds.length === 0) return null;
+    return (
+        <IconButton
+            aria-label="Return to Field" title="Return to Field"
+            position="absolute" bottom={4} right={4} zIndex={400}
+            variant="solid" bg="white" color="green.600" size="sm" borderRadius="md"
+            boxShadow="0 2px 6px rgba(0,0,0,0.2)" border="1px solid" borderColor="gray.200"
+            _hover={{ bg: "gray.50" }}
+            onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                map.fitBounds(bounds.map(c => [c[1], c[0]]) as [number, number][]);
+            }}
+        >
+            <LocateFixed size={18} />
+        </IconButton>
+    );
+};
+
+/* ── Override Slider Component ── */
+const OverrideSlider = ({
+    label,
+    themeColor,
+    min,
+    max,
+    step,
+    defaultValue,
+    unit,
+    precision = 0,
+    onValueChangeEnd,
+    isChecked,
+    onToggle,
+    accentHex
+}: {
+    label: string,
+    themeColor: string,
+    min: number,
+    max: number,
+    step: number,
+    defaultValue: number,
+    unit: string,
+    precision?: number,
+    onValueChangeEnd: (val: number) => void,
+    isChecked: boolean,
+    onToggle: (checked: boolean) => void,
+    accentHex: string
+}) => {
+    const [liveVal, setLiveVal] = useState<number | string>(defaultValue);
+
+    const handleInputBlur = () => {
+        let v = typeof liveVal === 'string' ? parseFloat(liveVal) : liveVal;
+        if (isNaN(v)) v = min;
+        v = Math.min(max, Math.max(min, v));
+        setLiveVal(v);
+        onValueChangeEnd(v);
+    };
+
+    const formatVal = (v: number) => `${v.toFixed(precision)} ${unit}`;
+    const parsedVal = typeof liveVal === 'string' ? parseFloat(liveVal) : liveVal;
+    const sliderVal = isNaN(parsedVal) ? min : parsedVal;
+
+    return (
+        <Slider.Root 
+            min={min} max={max} step={step} 
+            value={[sliderVal]} 
+            colorPalette={themeColor} 
+            onValueChange={e => { setLiveVal(e.value[0]); }}
+            onValueChangeEnd={e => onValueChangeEnd(e.value[0])}
+        >
+            <Flex justify="space-between" align="center" mb={3}>
+                <Flex align="center" gap={2}>
+                    <input type="checkbox" checked={isChecked} onChange={e => onToggle(e.target.checked)} style={{ width: 16, height: 16, accentColor: accentHex, cursor: 'pointer' }} />
+                    <Slider.Label fontSize="sm" fontWeight="medium" color="gray.800">{label}</Slider.Label>
+                </Flex>
+                <Flex align="center" gap={1}>
+                    <Input 
+                        type="number" min={min} max={max} step={step}
+                        value={liveVal}
+                        onChange={e => setLiveVal(e.target.value)}
+                        onBlur={handleInputBlur}
+                        onKeyDown={e => e.key === 'Enter' && handleInputBlur()}
+                        size="sm" width="50px" textAlign="right" fontWeight="bold" 
+                        color={`${themeColor}.600`} bg="transparent" 
+                        border="none" borderBottom="2px solid" borderColor={`${themeColor}.300`} 
+                        borderRadius="0" px={0} py={0}
+                        _focus={{ outline: 'none', borderColor: `${themeColor}.600` }}
+                    />
+                    <Text fontSize="sm" fontWeight="bold" color={`${themeColor}.600`}>{unit}</Text>
+                </Flex>
+            </Flex>
+            <Slider.Control><Slider.Track><Slider.Range /></Slider.Track><Slider.Thumbs /></Slider.Control>
+            <Flex justify="space-between" mt={1}>
+                <Text fontSize="xs" color="gray.400">{formatVal(min)}</Text>
+                <Text fontSize="xs" color="gray.400">{formatVal(max)}</Text>
+            </Flex>
+        </Slider.Root>
+    );
+};
 
 export const FieldDetails = () => {
     const { id } = useParams<{ id: string }>()
@@ -181,8 +272,11 @@ export const FieldDetails = () => {
     const [monthStart, setMonthStart] = useState(6)
     const [monthEnd, setMonthEnd] = useState(9)
     const [overrideTemp, setOverrideTemp] = useState(25)
+    const [useOverrideTemp, setUseOverrideTemp] = useState(false)
     const [overrideHum, setOverrideHum] = useState(60)
+    const [useOverrideHum, setUseOverrideHum] = useState(false)
     const [overrideRain, setOverrideRain] = useState(400)
+    const [useOverrideRain, setUseOverrideRain] = useState(false)
 
     /* ── Fetch core data ── */
     const loadHistory = useCallback(async (tf: 'today' | 7 | 14 | 30) => {
@@ -208,7 +302,8 @@ export const FieldDetails = () => {
     useEffect(() => {
         if (!id) return;
         let isMounted = true;
-        const fetchAll = async () => {
+        
+        const fetchCritical = async () => {
             setIsLoading(true);
             try {
                 const [fieldData, propsData] = await Promise.all([
@@ -218,7 +313,15 @@ export const FieldDetails = () => {
                 if (!isMounted) return;
                 setField(fieldData);
                 setFieldProps(propsData);
+            } catch (err) {
+                console.error('Error fetching field details:', err);
+            } finally {
+                if (isMounted) setIsLoading(false);
+            }
+        };
 
+        const fetchBackground = async () => {
+            try {
                 const [telData, weatherData, histData, analysisData] = await Promise.all([
                     fieldsService.getMostRecentTelemetry(id).catch(() => null),
                     fieldsService.getLiveWeather(id).catch(() => null),
@@ -231,12 +334,14 @@ export const FieldDetails = () => {
                 if (histData) setHistory(histData);
                 if (analysisData) setLastAnalysis(analysisData);
             } catch (err) {
-                console.error('Error fetching field details:', err);
-            } finally {
-                if (isMounted) setIsLoading(false);
+                console.error('Error fetching background data:', err);
             }
         };
-        fetchAll();
+
+        fetchCritical().then(() => {
+            if (isMounted) fetchBackground();
+        });
+
         return () => { isMounted = false; };
     }, [id]);
 
@@ -350,7 +455,18 @@ export const FieldDetails = () => {
             } else if (activeScenario === 'future') {
                 result = await fieldsService.runAnalysis({ fieldId: id, isFuturePrediction: true, targetMonthStart: monthStart, targetMonthEnd: monthEnd, topN: 5 });
             } else {
-                result = await fieldsService.runAnalysis({ fieldId: id, isFuturePrediction: true, targetMonthStart: monthStart, targetMonthEnd: monthEnd, topN: 5, overrides: { temperature: overrideTemp, humidity: overrideHum, rainfall: overrideRain } });
+                const overrides: { temperature?: number; humidity?: number; rainfall?: number } = {};
+                if (useOverrideTemp) overrides.temperature = overrideTemp;
+                if (useOverrideHum) overrides.humidity = overrideHum;
+                if (useOverrideRain) overrides.rainfall = overrideRain;
+                result = await fieldsService.runAnalysis({
+                    fieldId: id,
+                    isFuturePrediction: true,
+                    targetMonthStart: monthStart,
+                    targetMonthEnd: monthEnd,
+                    topN: 5,
+                    overrides: Object.keys(overrides).length > 0 ? overrides : undefined,
+                });
             }
             setLastAnalysis(result); setIsAnalysisModalOpen(false);
         } catch (err: any) {
@@ -511,9 +627,63 @@ export const FieldDetails = () => {
                                             <ChakraField.Root flex={1}><ChakraField.Label>{t('field_details.ai.season_start')}</ChakraField.Label><MonthSelect value={monthStart} onChange={setMonthStart} labels={monthLabels} /></ChakraField.Root>
                                             <ChakraField.Root flex={1}><ChakraField.Label>{t('field_details.ai.season_end')}</ChakraField.Label><MonthSelect value={monthEnd} onChange={setMonthEnd} labels={monthLabels} /></ChakraField.Root>
                                         </Flex>
-                                        <Box><Flex justify="space-between" align="center" mb={2}><Text fontSize="sm" fontWeight="medium">{t('field_details.ai.temp_override')}</Text><Text fontSize="sm" fontWeight="bold" color="orange.600">{overrideTemp} °C</Text></Flex><RangeSlider value={overrideTemp} min={0} max={50} step={0.5} accentColor="#DD6B20" onChange={setOverrideTemp} /><Flex justify="space-between" mt={1}><Text fontSize="xs" color="gray.400">0 °C</Text><Text fontSize="xs" color="gray.400">50 °C</Text></Flex></Box>
-                                        <Box><Flex justify="space-between" align="center" mb={2}><Text fontSize="sm" fontWeight="medium">{t('field_details.ai.hum_override')}</Text><Text fontSize="sm" fontWeight="bold" color="blue.600">{overrideHum} %</Text></Flex><RangeSlider value={overrideHum} min={0} max={100} step={1} accentColor="#3182CE" onChange={setOverrideHum} /><Flex justify="space-between" mt={1}><Text fontSize="xs" color="gray.400">0 %</Text><Text fontSize="xs" color="gray.400">100 %</Text></Flex></Box>
-                                        <Box><Flex justify="space-between" align="center" mb={2}><Text fontSize="sm" fontWeight="medium">{t('field_details.ai.rain_override')}</Text><Text fontSize="sm" fontWeight="bold" color="teal.600">{overrideRain} mm</Text></Flex><RangeSlider value={overrideRain} min={0} max={1000} step={5} accentColor="#319795" onChange={setOverrideRain} /><Flex justify="space-between" mt={1}><Text fontSize="xs" color="gray.400">0 mm</Text><Text fontSize="xs" color="gray.400">1000 mm</Text></Flex></Box>
+                                        {/* ─ Temperature Override ─ */}
+                                        <Box p={3} borderRadius="lg" border="1px solid" borderColor={useOverrideTemp ? 'orange.200' : 'gray.100'} bg={useOverrideTemp ? 'orange.50' : 'gray.50'} transition="all 0.2s">
+                                            {!useOverrideTemp ? (
+                                                <Flex align="center" gap={2}>
+                                                    <input id="toggle-temp" type="checkbox" checked={false} onChange={e => setUseOverrideTemp(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#DD6B20', cursor: 'pointer' }} />
+                                                    <Text fontSize="sm" fontWeight="medium" color="gray.400" cursor="pointer" onClick={() => setUseOverrideTemp(true)}>{t('field_details.ai.temp_override')}</Text>
+                                                </Flex>
+                                            ) : (
+                                                <OverrideSlider
+                                                    label={t('field_details.ai.temp_override')}
+                                                    themeColor="orange" accentHex="#DD6B20"
+                                                    min={0} max={50} step={0.5}
+                                                    defaultValue={overrideTemp}
+                                                    unit="°C" precision={1}
+                                                    onValueChangeEnd={setOverrideTemp}
+                                                    isChecked={true} onToggle={setUseOverrideTemp}
+                                                />
+                                            )}
+                                        </Box>
+                                        {/* ─ Humidity Override ─ */}
+                                        <Box p={3} borderRadius="lg" border="1px solid" borderColor={useOverrideHum ? 'blue.200' : 'gray.100'} bg={useOverrideHum ? 'blue.50' : 'gray.50'} transition="all 0.2s">
+                                            {!useOverrideHum ? (
+                                                <Flex align="center" gap={2}>
+                                                    <input id="toggle-hum" type="checkbox" checked={false} onChange={e => setUseOverrideHum(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#3182CE', cursor: 'pointer' }} />
+                                                    <Text fontSize="sm" fontWeight="medium" color="gray.400" cursor="pointer" onClick={() => setUseOverrideHum(true)}>{t('field_details.ai.hum_override')}</Text>
+                                                </Flex>
+                                            ) : (
+                                                <OverrideSlider
+                                                    label={t('field_details.ai.hum_override')}
+                                                    themeColor="blue" accentHex="#3182CE"
+                                                    min={0} max={100} step={1}
+                                                    defaultValue={overrideHum}
+                                                    unit="%" precision={0}
+                                                    onValueChangeEnd={setOverrideHum}
+                                                    isChecked={true} onToggle={setUseOverrideHum}
+                                                />
+                                            )}
+                                        </Box>
+                                        {/* ─ Rainfall Override ─ */}
+                                        <Box p={3} borderRadius="lg" border="1px solid" borderColor={useOverrideRain ? 'teal.200' : 'gray.100'} bg={useOverrideRain ? 'teal.50' : 'gray.50'} transition="all 0.2s">
+                                            {!useOverrideRain ? (
+                                                <Flex align="center" gap={2}>
+                                                    <input id="toggle-rain" type="checkbox" checked={false} onChange={e => setUseOverrideRain(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#319795', cursor: 'pointer' }} />
+                                                    <Text fontSize="sm" fontWeight="medium" color="gray.400" cursor="pointer" onClick={() => setUseOverrideRain(true)}>{t('field_details.ai.rain_override')}</Text>
+                                                </Flex>
+                                            ) : (
+                                                <OverrideSlider
+                                                    label={t('field_details.ai.rain_override')}
+                                                    themeColor="teal" accentHex="#319795"
+                                                    min={0} max={1000} step={5}
+                                                    defaultValue={overrideRain}
+                                                    unit="mm" precision={0}
+                                                    onValueChangeEnd={setOverrideRain}
+                                                    isChecked={true} onToggle={setUseOverrideRain}
+                                                />
+                                            )}
+                                        </Box>
                                     </Flex>
                                 </Tabs.Content>
                             </Tabs.Root>
@@ -567,11 +737,13 @@ export const FieldDetails = () => {
                                                     onChange={e => setEditState(s => s ? { ...s, soilType: e.target.value } : s)}
                                                     style={{ width: '100%', padding: '6px 10px', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '14px', background: 'white' }}
                                                 >
-                                                    <option value="clay">{t('add_field.clay')}</option>
+                                                    <option value="alluvial_loam">{t('add_field.alluvial_loam')}</option>
+                                                    <option value="clay_loam">{t('add_field.clay_loam')}</option>
+                                                    <option value="light_sandy_loam">{t('add_field.light_sandy_loam')}</option>
                                                     <option value="loam">{t('add_field.loam')}</option>
-                                                    <option value="sand">{t('add_field.sand')}</option>
-                                                    <option value="chalk">{t('add_field.chalk')}</option>
-                                                    <option value="peat">Peat</option>
+                                                    <option value="rich_loam">{t('add_field.rich_loam')}</option>
+                                                    <option value="sandy_loam">{t('add_field.sandy_loam')}</option>
+                                                    <option value="well_drained_loam">{t('add_field.well_drained_loam')}</option>
                                                 </select>
                                             </Box>
                                         </Flex>
@@ -717,6 +889,7 @@ export const FieldDetails = () => {
                                         positions={field.location.map((c: number[]) => [c[1], c[0]])}
                                         pathOptions={{ color: '#059669', fillColor: '#059669', fillOpacity: 0.2, weight: 2 }}
                                     />
+                                    <RecenterControl bounds={field.location} />
                                 </MapContainer>
                             </Box>
                         )}
@@ -752,6 +925,9 @@ export const FieldDetails = () => {
                         <MetricCard label={t('field_details.soil_moisture')} value={telemetry?.soilHumidity} unit="%" icon={<Droplets size={18} />} accent="blue" />
                         <MetricCard label={t('field_details.ambient_temp')} value={telemetry?.ambientTemp} unit="°C" icon={<Wind size={18} />} accent="teal" />
                         <MetricCard label={t('field_details.ambient_humidity')} value={telemetry?.ambientHumidity} unit="%" icon={<CloudRain size={18} />} accent="cyan" />
+                        {field.deviceId && (
+                            <MetricCard label={t('dashboard.battery')} value={telemetry?.batteryPercentage} unit="%" icon={<Battery size={18} />} accent="green" />
+                        )}
                     </Flex>
                 </Box>
 

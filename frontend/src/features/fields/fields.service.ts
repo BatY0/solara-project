@@ -114,7 +114,7 @@ export const fieldsService = {
 
     // Get live weather from WeatherAPIController (uses caching)
     getLiveWeather: async (fieldId: string): Promise<WeatherData> => {
-        const response = await api.get(`/weather-api/live/${fieldId}`);
+        const response = await api.get(`/weather-api/live/${fieldId}`, { timeout: 3000 });
         const raw = response.data.data;
 
         if (!raw || !raw.current) {

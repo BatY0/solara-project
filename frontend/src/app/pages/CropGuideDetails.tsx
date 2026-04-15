@@ -8,6 +8,7 @@ import { DashboardLayout } from "../../components/layout/DashboardLayout";
 import { cropGuidesService } from "../../features/crop-guides/cropGuides.service";
 import { normalizeCropName } from "../../features/crop-guides/normalizeCropName";
 import type { CropGuide } from "../../features/crop-guides/types";
+import { CropChatbot } from "../../features/chat/CropChatbot";
 
 export const CropGuideDetails = () => {
     const { slug } = useParams<{ slug: string }>();
@@ -341,6 +342,7 @@ export const CropGuideDetails = () => {
                         ].filter(Boolean) as string[]}
                     />
                 </SimpleGrid>
+                <CropChatbot cropId={guide.id} cropName={localizedGuideName() || guide.name} />
             </Flex>
         </DashboardLayout>
     );
