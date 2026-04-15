@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import {
     Box, Flex, Text, Spinner, Button, IconButton,
     Dialog, Portal, CloseButton, Input, Field as ChakraField, Circle,
-    Tabs,
+    Tabs, Slider,
 } from "@chakra-ui/react"
 import { Sprout, Trash2, BrainCircuit, Leaf, Pencil, X, Save, AlertTriangle, Thermometer, Droplets, Wind, CloudRain, Battery } from "lucide-react"
 import { useTranslation } from "react-i18next"
@@ -66,18 +66,7 @@ const toLocalISO = (d: Date): string => {
     return new Date(d.getTime() - tzOffset).toISOString().slice(0, -1);
 };
 
-/* ── Styled range slider ─────────────────────────────────────────────────── */
-interface RangeSliderProps { value: number; min: number; max: number; step: number; accentColor: string; onChange: (v: number) => void; }
-const RangeSlider = ({ value, min, max, step, accentColor, onChange }: RangeSliderProps) => {
-    const pct = ((value - min) / (max - min)) * 100;
-    return (
-        <Box position="relative" py={1}>
-            <input type="range" min={min} max={max} step={step} value={value} onChange={e => onChange(Number(e.target.value))}
-                style={{ width: '100%', height: '6px', borderRadius: '3px', appearance: 'none', WebkitAppearance: 'none', outline: 'none', cursor: 'pointer', background: `linear-gradient(to right, ${accentColor} 0%, ${accentColor} ${pct}%, #E2E8F0 ${pct}%, #E2E8F0 100%)` }} />
-            <style>{`input[type='range']::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; border-radius:50%; background:white; border:2.5px solid ${accentColor}; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.18); } input[type='range']::-moz-range-thumb { width:18px; height:18px; border-radius:50%; background:white; border:2.5px solid ${accentColor}; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.18); }`}</style>
-        </Box>
-    );
-};
+
 
 const MonthSelect = ({ value, onChange, labels }: { value: number; onChange: (v: number) => void; labels: string[] }) => (
     <select value={value} onChange={e => onChange(Number(e.currentTarget.value))}
@@ -181,8 +170,11 @@ export const FieldDetails = () => {
     const [monthStart, setMonthStart] = useState(6)
     const [monthEnd, setMonthEnd] = useState(9)
     const [overrideTemp, setOverrideTemp] = useState(25)
+    const [useOverrideTemp, setUseOverrideTemp] = useState(false)
     const [overrideHum, setOverrideHum] = useState(60)
+    const [useOverrideHum, setUseOverrideHum] = useState(false)
     const [overrideRain, setOverrideRain] = useState(400)
+    const [useOverrideRain, setUseOverrideRain] = useState(false)
 
     /* ── Fetch core data ── */
     const loadHistory = useCallback(async (tf: 'today' | 7 | 14 | 30) => {
@@ -350,7 +342,18 @@ export const FieldDetails = () => {
             } else if (activeScenario === 'future') {
                 result = await fieldsService.runAnalysis({ fieldId: id, isFuturePrediction: true, targetMonthStart: monthStart, targetMonthEnd: monthEnd, topN: 5 });
             } else {
-                result = await fieldsService.runAnalysis({ fieldId: id, isFuturePrediction: true, targetMonthStart: monthStart, targetMonthEnd: monthEnd, topN: 5, overrides: { temperature: overrideTemp, humidity: overrideHum, rainfall: overrideRain } });
+                const overrides: { temperature?: number; humidity?: number; rainfall?: number } = {};
+                if (useOverrideTemp) overrides.temperature = overrideTemp;
+                if (useOverrideHum) overrides.humidity = overrideHum;
+                if (useOverrideRain) overrides.rainfall = overrideRain;
+                result = await fieldsService.runAnalysis({
+                    fieldId: id,
+                    isFuturePrediction: true,
+                    targetMonthStart: monthStart,
+                    targetMonthEnd: monthEnd,
+                    topN: 5,
+                    overrides: Object.keys(overrides).length > 0 ? overrides : undefined,
+                });
             }
             setLastAnalysis(result); setIsAnalysisModalOpen(false);
         } catch (err: any) {
@@ -511,9 +514,69 @@ export const FieldDetails = () => {
                                             <ChakraField.Root flex={1}><ChakraField.Label>{t('field_details.ai.season_start')}</ChakraField.Label><MonthSelect value={monthStart} onChange={setMonthStart} labels={monthLabels} /></ChakraField.Root>
                                             <ChakraField.Root flex={1}><ChakraField.Label>{t('field_details.ai.season_end')}</ChakraField.Label><MonthSelect value={monthEnd} onChange={setMonthEnd} labels={monthLabels} /></ChakraField.Root>
                                         </Flex>
-                                        <Box><Flex justify="space-between" align="center" mb={2}><Text fontSize="sm" fontWeight="medium">{t('field_details.ai.temp_override')}</Text><Text fontSize="sm" fontWeight="bold" color="orange.600">{overrideTemp} °C</Text></Flex><RangeSlider value={overrideTemp} min={0} max={50} step={0.5} accentColor="#DD6B20" onChange={setOverrideTemp} /><Flex justify="space-between" mt={1}><Text fontSize="xs" color="gray.400">0 °C</Text><Text fontSize="xs" color="gray.400">50 °C</Text></Flex></Box>
-                                        <Box><Flex justify="space-between" align="center" mb={2}><Text fontSize="sm" fontWeight="medium">{t('field_details.ai.hum_override')}</Text><Text fontSize="sm" fontWeight="bold" color="blue.600">{overrideHum} %</Text></Flex><RangeSlider value={overrideHum} min={0} max={100} step={1} accentColor="#3182CE" onChange={setOverrideHum} /><Flex justify="space-between" mt={1}><Text fontSize="xs" color="gray.400">0 %</Text><Text fontSize="xs" color="gray.400">100 %</Text></Flex></Box>
-                                        <Box><Flex justify="space-between" align="center" mb={2}><Text fontSize="sm" fontWeight="medium">{t('field_details.ai.rain_override')}</Text><Text fontSize="sm" fontWeight="bold" color="teal.600">{overrideRain} mm</Text></Flex><RangeSlider value={overrideRain} min={0} max={1000} step={5} accentColor="#319795" onChange={setOverrideRain} /><Flex justify="space-between" mt={1}><Text fontSize="xs" color="gray.400">0 mm</Text><Text fontSize="xs" color="gray.400">1000 mm</Text></Flex></Box>
+                                        {/* ─ Temperature Override ─ */}
+                                        <Box p={3} borderRadius="lg" border="1px solid" borderColor={useOverrideTemp ? 'orange.200' : 'gray.100'} bg={useOverrideTemp ? 'orange.50' : 'gray.50'} transition="all 0.2s">
+                                            {!useOverrideTemp ? (
+                                                <Flex align="center" gap={2}>
+                                                    <input id="toggle-temp" type="checkbox" checked={false} onChange={e => setUseOverrideTemp(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#DD6B20', cursor: 'pointer' }} />
+                                                    <Text fontSize="sm" fontWeight="medium" color="gray.400" cursor="pointer" onClick={() => setUseOverrideTemp(true)}>{t('field_details.ai.temp_override')}</Text>
+                                                </Flex>
+                                            ) : (
+                                                <Slider.Root min={0} max={50} step={0.5} defaultValue={[overrideTemp]} colorPalette="orange" onValueChangeEnd={e => setOverrideTemp(e.value[0])}>
+                                                    <Flex justify="space-between" align="center" mb={3}>
+                                                        <Flex align="center" gap={2}>
+                                                            <input id="toggle-temp" type="checkbox" checked={true} onChange={e => setUseOverrideTemp(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#DD6B20', cursor: 'pointer' }} />
+                                                            <Slider.Label fontSize="sm" fontWeight="medium" color="gray.800">{t('field_details.ai.temp_override')}</Slider.Label>
+                                                        </Flex>
+                                                        <Slider.ValueText fontSize="sm" fontWeight="bold" color="orange.600" formatValue={v => `${v % 1 === 0 ? v : Number(v).toFixed(1)} °C`} />
+                                                    </Flex>
+                                                    <Slider.Control><Slider.Track><Slider.Range /></Slider.Track><Slider.Thumbs /></Slider.Control>
+                                                    <Flex justify="space-between" mt={1}><Text fontSize="xs" color="gray.400">0 °C</Text><Text fontSize="xs" color="gray.400">50 °C</Text></Flex>
+                                                </Slider.Root>
+                                            )}
+                                        </Box>
+                                        {/* ─ Humidity Override ─ */}
+                                        <Box p={3} borderRadius="lg" border="1px solid" borderColor={useOverrideHum ? 'blue.200' : 'gray.100'} bg={useOverrideHum ? 'blue.50' : 'gray.50'} transition="all 0.2s">
+                                            {!useOverrideHum ? (
+                                                <Flex align="center" gap={2}>
+                                                    <input id="toggle-hum" type="checkbox" checked={false} onChange={e => setUseOverrideHum(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#3182CE', cursor: 'pointer' }} />
+                                                    <Text fontSize="sm" fontWeight="medium" color="gray.400" cursor="pointer" onClick={() => setUseOverrideHum(true)}>{t('field_details.ai.hum_override')}</Text>
+                                                </Flex>
+                                            ) : (
+                                                <Slider.Root min={0} max={100} step={1} defaultValue={[overrideHum]} colorPalette="blue" onValueChangeEnd={e => setOverrideHum(e.value[0])}>
+                                                    <Flex justify="space-between" align="center" mb={3}>
+                                                        <Flex align="center" gap={2}>
+                                                            <input id="toggle-hum" type="checkbox" checked={true} onChange={e => setUseOverrideHum(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#3182CE', cursor: 'pointer' }} />
+                                                            <Slider.Label fontSize="sm" fontWeight="medium" color="gray.800">{t('field_details.ai.hum_override')}</Slider.Label>
+                                                        </Flex>
+                                                        <Slider.ValueText fontSize="sm" fontWeight="bold" color="blue.600" formatValue={v => `${Math.round(Number(v))} %`} />
+                                                    </Flex>
+                                                    <Slider.Control><Slider.Track><Slider.Range /></Slider.Track><Slider.Thumbs /></Slider.Control>
+                                                    <Flex justify="space-between" mt={1}><Text fontSize="xs" color="gray.400">0 %</Text><Text fontSize="xs" color="gray.400">100 %</Text></Flex>
+                                                </Slider.Root>
+                                            )}
+                                        </Box>
+                                        {/* ─ Rainfall Override ─ */}
+                                        <Box p={3} borderRadius="lg" border="1px solid" borderColor={useOverrideRain ? 'teal.200' : 'gray.100'} bg={useOverrideRain ? 'teal.50' : 'gray.50'} transition="all 0.2s">
+                                            {!useOverrideRain ? (
+                                                <Flex align="center" gap={2}>
+                                                    <input id="toggle-rain" type="checkbox" checked={false} onChange={e => setUseOverrideRain(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#319795', cursor: 'pointer' }} />
+                                                    <Text fontSize="sm" fontWeight="medium" color="gray.400" cursor="pointer" onClick={() => setUseOverrideRain(true)}>{t('field_details.ai.rain_override')}</Text>
+                                                </Flex>
+                                            ) : (
+                                                <Slider.Root min={0} max={1000} step={5} defaultValue={[overrideRain]} colorPalette="teal" onValueChangeEnd={e => setOverrideRain(e.value[0])}>
+                                                    <Flex justify="space-between" align="center" mb={3}>
+                                                        <Flex align="center" gap={2}>
+                                                            <input id="toggle-rain" type="checkbox" checked={true} onChange={e => setUseOverrideRain(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#319795', cursor: 'pointer' }} />
+                                                            <Slider.Label fontSize="sm" fontWeight="medium" color="gray.800">{t('field_details.ai.rain_override')}</Slider.Label>
+                                                        </Flex>
+                                                        <Slider.ValueText fontSize="sm" fontWeight="bold" color="teal.600" formatValue={v => `${Math.round(Number(v))} mm`} />
+                                                    </Flex>
+                                                    <Slider.Control><Slider.Track><Slider.Range /></Slider.Track><Slider.Thumbs /></Slider.Control>
+                                                    <Flex justify="space-between" mt={1}><Text fontSize="xs" color="gray.400">0 mm</Text><Text fontSize="xs" color="gray.400">1000 mm</Text></Flex>
+                                                </Slider.Root>
+                                            )}
+                                        </Box>
                                     </Flex>
                                 </Tabs.Content>
                             </Tabs.Root>
