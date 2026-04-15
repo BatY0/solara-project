@@ -5,7 +5,7 @@ import {
     Dialog, Portal, CloseButton, Input, Field as ChakraField, Circle,
     Tabs,
 } from "@chakra-ui/react"
-import { Sprout, Trash2, BrainCircuit, Leaf, Pencil, X, Save, AlertTriangle, Thermometer, Droplets, Wind, CloudRain } from "lucide-react"
+import { Sprout, Trash2, BrainCircuit, Leaf, Pencil, X, Save, AlertTriangle, Thermometer, Droplets, Wind, CloudRain, Battery } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { MapContainer, TileLayer, Polygon } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -567,11 +567,13 @@ export const FieldDetails = () => {
                                                     onChange={e => setEditState(s => s ? { ...s, soilType: e.target.value } : s)}
                                                     style={{ width: '100%', padding: '6px 10px', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '14px', background: 'white' }}
                                                 >
-                                                    <option value="clay">{t('add_field.clay')}</option>
+                                                    <option value="alluvial_loam">{t('add_field.alluvial_loam')}</option>
+                                                    <option value="clay_loam">{t('add_field.clay_loam')}</option>
+                                                    <option value="light_sandy_loam">{t('add_field.light_sandy_loam')}</option>
                                                     <option value="loam">{t('add_field.loam')}</option>
-                                                    <option value="sand">{t('add_field.sand')}</option>
-                                                    <option value="chalk">{t('add_field.chalk')}</option>
-                                                    <option value="peat">Peat</option>
+                                                    <option value="rich_loam">{t('add_field.rich_loam')}</option>
+                                                    <option value="sandy_loam">{t('add_field.sandy_loam')}</option>
+                                                    <option value="well_drained_loam">{t('add_field.well_drained_loam')}</option>
                                                 </select>
                                             </Box>
                                         </Flex>
@@ -752,6 +754,9 @@ export const FieldDetails = () => {
                         <MetricCard label={t('field_details.soil_moisture')} value={telemetry?.soilHumidity} unit="%" icon={<Droplets size={18} />} accent="blue" />
                         <MetricCard label={t('field_details.ambient_temp')} value={telemetry?.ambientTemp} unit="°C" icon={<Wind size={18} />} accent="teal" />
                         <MetricCard label={t('field_details.ambient_humidity')} value={telemetry?.ambientHumidity} unit="%" icon={<CloudRain size={18} />} accent="cyan" />
+                        {field.deviceId && (
+                            <MetricCard label={t('dashboard.battery')} value={telemetry?.batteryPercentage} unit="%" icon={<Battery size={18} />} accent="green" />
+                        )}
                     </Flex>
                 </Box>
 

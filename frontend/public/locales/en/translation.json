@@ -194,10 +194,13 @@
     "area_ha_ph": "e.g. 2.5",
     "soil_type": "Soil Type",
     "soil_type_ph": "Select...",
-    "clay": "Clay Soil",
-    "loam": "Loam Soil",
-    "sand": "Sandy Soil",
-    "chalk": "Chalky Soil",
+    "alluvial_loam": "Alluvial loam",
+    "clay_loam": "Clay loam",
+    "light_sandy_loam": "Light sandy loam",
+    "loam": "Loam",
+    "rich_loam": "Rich loam",
+    "sandy_loam": "Sandy loam",
+    "well_drained_loam": "Well-drained loam",
     "draw_boundaries": "Draw Boundaries (Polygon)",
     "map_hint": "Click to define corner points",
     "map_info": "Polygon data will be the basis for satellite and SoilGrids analysis.",
@@ -588,10 +591,12 @@
         "bush_climber": "Bush/Climber"
       },
       "soil_type": {
+        "alluvial_loam": "Alluvial loam",
         "clay_loam": "Clay loam",
-        "loam": "Loam",
-        "sandy_loam": "Sandy loam",
         "light_sandy_loam": "Light sandy loam",
+        "loam": "Loam",
+        "rich_loam": "Rich loam",
+        "sandy_loam": "Sandy loam",
         "well_drained_loam": "Well-drained loam"
       }
     }
