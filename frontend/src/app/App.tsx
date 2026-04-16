@@ -9,6 +9,7 @@ import { FieldDetails } from './pages/FieldDetails'
 import { AllFields } from './pages/AllFields'
 import { VerifyEmail } from './pages/VerifyEmail'
 import { Settings } from './pages/Settings'
+import { Alerts } from './pages/Alerts'
 import { CropGuideList } from './pages/CropGuideList'
 import { CropGuideDetails } from './pages/CropGuideDetails'
 import { CropGuideAdminList } from './pages/admin/CropGuideAdminList'
@@ -47,6 +48,7 @@ function App() {
             <Route path="/fields/:id" element={<FieldDetails />} />
             <Route path="/guide" element={<CropGuideList />} />
             <Route path="/guide/:slug" element={<CropGuideDetails />} />
+            <Route path="/alerts" element={<Alerts />} />
             <Route path="/admin/crop-guides" element={<CropGuideAdminList />} />
             <Route path="/admin/devices" element={<EspDeviceAdminList />} />
             <Route path="/admin/crop-guides/new" element={<CropGuideAdminEditor />} />

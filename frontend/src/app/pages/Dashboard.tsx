@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Box, Flex, Text, Spinner, Button } from "@chakra-ui/react"
 import { useTranslation } from "react-i18next"
-import { MapPin, Zap, Plus } from "lucide-react"
+import { MapPin, Zap, Plus, CheckCircle } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
 import { DashboardLayout } from "../../components/layout/DashboardLayout"
@@ -11,7 +11,9 @@ import { FieldCard } from "../../components/dashboard/FieldCard"
 import { AddNewFieldCard } from "../../components/dashboard/AddNewFieldCard"
 import { AddFieldWizard } from "./AddFieldWizard"
 import { fieldsService } from "../../features/fields/fields.service"
+import { alertsService } from "../../features/alerts/alerts.service"
 import type { Field } from "../../features/fields/types"
+import type { AlertEvent } from "../../features/alerts/types"
 import { getDeviceStatus } from "../../utils/deviceStatus"
 
 export const Dashboard = () => {
@@ -19,35 +21,41 @@ export const Dashboard = () => {
   const navigate = useNavigate()
 
   const [fields, setFields] = useState<Field[]>([])
+  const [unreadAlerts, setUnreadAlerts] = useState<AlertEvent[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isWizardOpen, setIsWizardOpen] = useState(false)
 
-  const fetchFields = useCallback(async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
-      const data = await fieldsService.getUserFields()
+      const [fieldsData, alertsData] = await Promise.all([
+        fieldsService.getUserFields(),
+        alertsService.getUnreadNotifications()
+      ])
+      
       // Sort: paired (online-capable) fields first
-      const sorted = [...data].sort((a, b) => {
+      const sorted = [...fieldsData].sort((a, b) => {
         const statusOrder = { online: 2, inactive: 1, offline: 0 }
         const aStatus = statusOrder[getDeviceStatus(a, t).status]
         const bStatus = statusOrder[getDeviceStatus(b, t).status]
         return bStatus - aStatus
       })
       setFields(sorted)
+      setUnreadAlerts(alertsData)
     } catch (error) {
-      console.error("Error fetching fields:", error)
+      console.error("Error fetching dashboard data:", error)
     } finally {
       setIsLoading(false)
     }
   }, [t])
 
   useEffect(() => {
-    fetchFields()
-  }, [fetchFields])
+    fetchDashboardData()
+  }, [fetchDashboardData])
 
   const handleAddNewField = () => setIsWizardOpen(true)
 
   const handleWizardSuccess = () => {
-    fetchFields()
+    fetchDashboardData()
   }
 
   const handleViewFieldDetails = (id: string) => {
@@ -66,6 +74,39 @@ export const Dashboard = () => {
   }
 
   const onlineFieldsCount = fields.filter(f => getDeviceStatus(f, t).status === 'online').length;
+  
+  // Decide what to show in AlertCard
+  const hasAlerts = unreadAlerts.length > 0;
+  const latestAlert = hasAlerts ? unreadAlerts[0] : null;
+
+  const alertTitle = hasAlerts 
+    ? t(unreadAlerts.length > 1 ? 'alerts.dashboard_active_title_plural' : 'alerts.dashboard_active_title', { count: unreadAlerts.length })
+    : t('alerts.dashboard_normal_title');
+
+  let alertMessage = t('alerts.dashboard_normal_msg');
+  if (hasAlerts && latestAlert) {
+      const metricI18n = t(`alerts.metrics.${latestAlert.metric}`, latestAlert.metric);
+      alertMessage = t('dashboard.active_alert_msg', {
+          fieldName: latestAlert.fieldName,
+          ruleName: latestAlert.ruleName,
+          metric: metricI18n,
+          value: latestAlert.lastValue
+      });
+  }
+
+  const alertCta = hasAlerts ? t('dashboard.view_details') : t('alerts.dashboard_view_history');
+
+  const handleDismissAlert = async () => {
+    if (latestAlert) {
+      try {
+        await alertsService.markAsRead(latestAlert.id);
+        window.dispatchEvent(new Event('notificationsRead'));
+        fetchDashboardData();
+      } catch (error) {
+        console.error("Failed to dismiss alert", error);
+      }
+    }
+  }
 
   return (
     <>
@@ -115,12 +156,48 @@ export const Dashboard = () => {
               iconBgColor="blue.50"
               iconColor="blue.500"
             />
-            <AlertCard
-              title={t('dashboard.system_alert')}
-              message={t('dashboard.alert_msg', "Low moisture in Antalya Greenhouse. Irrigation recommended.")}
-              ctaText={t('dashboard.view_details')}
-              onAction={() => console.log('Uyarı detay...')}
-            />
+            {hasAlerts ? (
+                <AlertCard
+                  title={alertTitle}
+                  message={alertMessage}
+                  ctaText={alertCta}
+                  onAction={() => navigate('/alerts')}
+                  onDismiss={handleDismissAlert}
+                />
+            ) : (
+                <Flex
+                    direction="column"
+                    bg="white"
+                    borderRadius="2xl"
+                    p={6}
+                    shadow="sm"
+                    border="1px solid"
+                    borderColor="neutral.border"
+                    h="full"
+                >
+                    <Flex align="center" gap={3} mb={2}>
+                        <Flex w={10} h={10} borderRadius="full" align="center" justify="center" bg="green.50" color="green.500">
+                            <CheckCircle size={20} />
+                        </Flex>
+                        <Text fontSize="lg" fontWeight="bold" color="neutral.dark">
+                            {alertTitle}
+                        </Text>
+                    </Flex>
+                    <Text fontSize="sm" color="neutral.subtext" mb={4} flex={1}>
+                        {alertMessage}
+                    </Text>
+                    <Text
+                        fontSize="sm"
+                        fontWeight="bold"
+                        color="brand.500"
+                        cursor="pointer"
+                        _hover={{ color: "brand.600" }}
+                        onClick={() => navigate('/alerts')}
+                    >
+                        {alertCta} →
+                    </Text>
+                </Flex>
+            )}
           </Box>
 
           {/* FIELDS LIST */}

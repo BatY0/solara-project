@@ -179,6 +179,8 @@
     "add_field_desc": "Define a new IoT device and field to the system.",
     "loading": "Loading your data...",
     "air_temp": "Air Temp",
+    "location_info": "Location Info",
+    "active_alert_msg": "{{fieldName}}: {{ruleName}} ({{metric}} is {{value}})",
     "alert_msg": "Low moisture in Antalya Greenhouse. Irrigation recommended."
   },
   "add_field": {
@@ -260,7 +262,8 @@
     "admin": "Admin",
     "farmer": "Farmer",
     "logout": "Log Out",
-    "iot_devices": "IoT Devices"
+    "iot_devices": "IoT Devices",
+    "alerts": "Alerts"
   },
   "admin_devices": {
     "title": "IoT Devices Tracker",
@@ -633,5 +636,59 @@
     "offline_stat": "offline",
     "online": "Online",
     "offline": "Offline"
+  },
+  "alerts": {
+    "title": "Smart Alerts",
+    "subtitle": "Manage notifications and rules",
+    "all_fields": "All Fields",
+    "tab_rules": "Rules",
+    "tab_history": "History",
+    "add_rule": "Add Rule",
+    "col_name": "Name / Field",
+    "col_condition": "Condition",
+    "col_duration": "Duration",
+    "col_status": "Status",
+    "col_actions": "Actions",
+    "mark_all_read": "Mark All as Read",
+    "history_desc": "A detailed log of all past and current system breaches.",
+    "no_events": "No alert events recorded yet.",
+    "no_rules": "No alert rules defined yet.",
+    "active_breach": "Active Breach",
+    "resolved_at": "Resolved at",
+    "dismiss": "Dismiss",
+    "save_rule": "Save Rule",
+    "cancel": "Cancel",
+    "create_rule_title": "Create Rule",
+    "edit_rule_title": "Edit Rule",
+    "rule_name": "Rule Name",
+    "select_field": "Select Field",
+    "metric": "Metric",
+    "operator": "Operator",
+    "threshold": "Threshold Value",
+    "duration_min": "Duration (Minutes)",
+    "send_email": "Email Notification",
+    "col_time": "Time (Triggered)",
+    "col_field": "Field",
+    "col_rule": "Rule",
+    "col_condition_val": "Condition / Value",
+    "condition_text": "{{metric}} was {{value}} (Threshold: {{threshold}})",
+    "metrics": {
+      "SOIL_HUMIDITY": "Soil Humidity",
+      "SOIL_TEMP": "Soil Temp",
+      "AMBIENT_TEMP": "Ambient Temp",
+      "AMBIENT_HUMIDITY": "Ambient Humidity",
+      "BATTERY_PERCENTAGE": "Battery %"
+    },
+    "dashboard_active_title": "{{count}} Active System Alert",
+    "dashboard_active_title_plural": "{{count}} Active System Alerts",
+    "dashboard_normal_title": "System Status",
+    "dashboard_normal_msg": "All sensors report normal conditions. Everything is running smoothly.",
+    "dashboard_view_history": "View History"
+  },
+  "chat": {
+    "title": "Solara Farmer Assistant",
+    "placeholder": "Type your question...",
+    "empty_msg": "Ask me anything about {{cropName}}!",
+    "error_msg": "Sorry, I am having trouble connecting right now."
   }
 }

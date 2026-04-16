@@ -86,7 +86,7 @@ export const FieldCard = ({ field, onDetailsClick }: FieldCardProps) => {
                         </Text>
                         <Flex align="center" gap={1} mt={1} color="gray.500">
                             <MapPin size={14} />
-                            <Text fontSize="sm">Konum Bilgisi</Text>
+                            <Text fontSize="sm">{t('dashboard.location_info')}</Text>
                         </Flex>
                     </Box>
                 </Flex>
@@ -139,7 +139,7 @@ export const FieldCard = ({ field, onDetailsClick }: FieldCardProps) => {
                         </Flex>
 
                         <Flex direction="column" bg="gray.50" p={3} borderRadius="lg" border="1px solid" borderColor="gray.100" align="center">
-                            <Text fontSize="xs" color="gray.500" mb={1}>{t('dashboard.air_temp') || 'Air Temp'}</Text>
+                            <Text fontSize="xs" color="gray.500" mb={1}>{t('dashboard.air_temp')}</Text>
                             <Flex align="center" justify="center" gap={1.5}>
                                 <Thermometer size={16} color="#0ea5e9" />
                                 <Text fontWeight="bold" color="gray.700">

@@ -1,18 +1,17 @@
-import { Box, Flex, Text, Button } from "@chakra-ui/react"
-import { ArrowRight } from "lucide-react"
+import { Box, Flex, Text, Button, IconButton } from "@chakra-ui/react"
+import { ArrowRight, X } from "lucide-react"
 
 interface AlertCardProps {
     title: string
     message: string
     ctaText: string
     onAction: () => void
+    onDismiss?: () => void
 }
 
-export const AlertCard = ({ title, message, ctaText, onAction }: AlertCardProps) => (
+export const AlertCard = ({ title, message, ctaText, onAction, onDismiss }: AlertCardProps) => (
     <Flex
-        bgGradient="to-br"
-        gradientFrom="neutral.dark"
-        gradientTo="slate.800"
+        bg="red.500"
         p={6}
         borderRadius="2xl"
         shadow="md"
@@ -29,19 +28,33 @@ export const AlertCard = ({ title, message, ctaText, onAction }: AlertCardProps)
             w={32}
             h={32}
             bg="white"
-            opacity={0.05}
+            opacity={0.1}
             borderRadius="full"
             transform="translate(50%, -50%)"
             filter="blur(24px)"
         />
-        <Box position="relative" zIndex={10}>
-            <Text color="accent.500" fontWeight="medium" fontSize="sm" mb={1}>
-                {title}
-            </Text>
-            <Text fontSize="sm" opacity={0.9} maxW="80%">
-                {message}
-            </Text>
-        </Box>
+        <Flex justify="space-between" align="flex-start" position="relative" zIndex={10}>
+            <Box>
+                <Text color="red.100" fontWeight="bold" fontSize="sm" mb={1} textTransform="uppercase" letterSpacing="wide">
+                    {title}
+                </Text>
+                <Text fontSize="sm" opacity={0.95} maxW="100%">
+                    {message}
+                </Text>
+            </Box>
+            {onDismiss && (
+                <IconButton 
+                    aria-label="Dismiss alert"
+                    bg="transparent"
+                    _hover={{ bg: "whiteAlpha.200" }}
+                    onClick={onDismiss}
+                    size="sm"
+                    color="white"
+                >
+                    <X size={18} />
+                </IconButton>
+            )}
+        </Flex>
         <Button
             variant="plain"
             onClick={onAction}
@@ -51,7 +64,7 @@ export const AlertCard = ({ title, message, ctaText, onAction }: AlertCardProps)
             fontWeight="bold"
             color="white"
             p={0}
-            _hover={{ color: "accent.500" }}
+            _hover={{ color: "red.100" }}
             display="flex"
             alignItems="center"
             gap={1}
