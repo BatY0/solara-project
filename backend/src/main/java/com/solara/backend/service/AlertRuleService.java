@@ -1,5 +1,6 @@
 package com.solara.backend.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -68,6 +69,7 @@ public class AlertRuleService {
             verifyFieldOwnership(userId, req.getFieldId());
         }
 
+        boolean wasActive = rule.isActive();
         rule.setFieldId(req.getFieldId());
         rule.setName(req.getName());
         rule.setMetric(req.getMetric());
@@ -78,6 +80,12 @@ public class AlertRuleService {
         rule.setActive(req.isActive());
 
         rule = alertRuleRepository.save(rule);
+
+        // If rule was deactivated, cleanup its open events
+        if (wasActive && !rule.isActive()) {
+            cleanupRelatedEvents(ruleId);
+        }
+
         return mapToRuleDTO(rule);
     }
 
@@ -85,13 +93,37 @@ public class AlertRuleService {
         AlertRule rule = alertRuleRepository.findByIdAndUserId(ruleId, userId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Alert rule not found or you don't have permission"));
 
+        // Cleanup before deleting the rule itself
+        cleanupRelatedEvents(ruleId);
         alertRuleRepository.delete(rule);
     }
 
+    private void cleanupRelatedEvents(UUID ruleId) {
+        List<AlertEvent> relatedEvents = alertEventRepository.findByRuleIdOrderByTriggeredAtDesc(ruleId);
+        boolean changed = false;
+        for (AlertEvent event : relatedEvents) {
+            if (!event.isRead() || event.getResolvedAt() == null) {
+                event.setRead(true);
+                if (event.getResolvedAt() == null) {
+                    event.setResolvedAt(LocalDateTime.now());
+                }
+                changed = true;
+            }
+        }
+        if (changed) {
+            alertEventRepository.saveAll(relatedEvents);
+        }
+    }
+
     public List<AlertEventDTO> getEventHistory(UUID userId, UUID fieldId) {
+        List<UUID> existingRuleIds = alertRuleRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+                .map(AlertRule::getId)
+                .collect(Collectors.toList());
+
         if (fieldId != null) {
             verifyFieldOwnership(userId, fieldId);
             return alertEventRepository.findByFieldIdOrderByTriggeredAtDesc(fieldId).stream()
+                    .filter(e -> existingRuleIds.contains(e.getRuleId()))
                     .map(this::mapToEventDTO)
                     .collect(Collectors.toList());
         } else {
@@ -99,6 +131,7 @@ public class AlertRuleService {
             List<UUID> userFieldIds = getUserFieldIds(userId);
             if (userFieldIds.isEmpty()) return List.of();
             return alertEventRepository.findByFieldIdInOrderByTriggeredAtDesc(userFieldIds).stream()
+                    .filter(e -> existingRuleIds.contains(e.getRuleId()))
                     .map(this::mapToEventDTO)
                     .collect(Collectors.toList());
         }

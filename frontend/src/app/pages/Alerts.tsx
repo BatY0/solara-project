@@ -18,6 +18,10 @@ export const Alerts = () => {
     const [fields, setFields] = useState<Field[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     
+    // Filter states
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'resolved'>('all');
+    
     // UI state
     const [activeTab, setActiveTab] = useState<'rules' | 'history'>('rules');
     const [selectedFieldId, setSelectedFieldId] = useState<string>('');
@@ -309,6 +313,37 @@ export const Alerts = () => {
                                     {t('alerts.mark_all_read')}
                                 </Button>
                             </Flex>
+
+                            {/* Filter Bar */}
+                            <Flex gap={4} mb={6} direction={{ base: "column", md: "row" }} align="center">
+                                <Box flex={1} w="full">
+                                    <Input 
+                                        placeholder={t('alerts.search_placeholder')}
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        bg="white"
+                                        borderRadius="xl"
+                                    />
+                                </Box>
+                                <Box w={{ base: "full", md: "200px" }}>
+                                    <chakra.select 
+                                        w="full"
+                                        h="40px"
+                                        px={3}
+                                        value={statusFilter}
+                                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatusFilter(e.target.value as any)}
+                                        bg="white"
+                                        border="1px solid"
+                                        borderColor="neutral.border"
+                                        borderRadius="xl"
+                                        fontSize="sm"
+                                    >
+                                        <option value="all">{t('alerts.filter_all')}</option>
+                                        <option value="active">{t('alerts.filter_active')}</option>
+                                        <option value="resolved">{t('alerts.filter_resolved')}</option>
+                                    </chakra.select>
+                                </Box>
+                            </Flex>
                             
                             {events.length === 0 ? (
                                 <Text color="gray.500" textAlign="center" py={10}>{t('alerts.no_events')}</Text>
@@ -325,7 +360,22 @@ export const Alerts = () => {
                                             </Box>
                                         </Box>
                                         <Box as="tbody">
-                                            {events.map(event => {
+                                            {events
+                                                .filter(event => {
+                                                    // Search text filter
+                                                    const matchesSearch = 
+                                                        event.ruleName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                        event.fieldName.toLowerCase().includes(searchTerm.toLowerCase());
+                                                    
+                                                    // Status filter
+                                                    const matchesStatus = 
+                                                        statusFilter === 'all' || 
+                                                        (statusFilter === 'active' && event.active) || 
+                                                        (statusFilter === 'resolved' && !event.active);
+                                                    
+                                                    return matchesSearch && matchesStatus;
+                                                })
+                                                .map(event => {
                                                 const triggered = new Date(event.triggeredAt);
                                                 return (
                                                     <Box as="tr" key={event.id} bg={event.active ? "red.50" : "transparent"} borderBottom="1px solid" borderColor="gray.100">
