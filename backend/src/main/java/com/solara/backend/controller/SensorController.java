@@ -1,11 +1,15 @@
 package com.solara.backend.controller;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.solara.backend.dto.response.SensorResponse;
+import com.solara.backend.entity.User;
+import com.solara.backend.service.FieldService;
 import com.solara.backend.service.SensorLogsService;
 
 
@@ -21,9 +27,11 @@ import com.solara.backend.service.SensorLogsService;
 @RequestMapping("/api/v1/sensor")
 public class SensorController {
     private final SensorLogsService sensorService;
+    private final FieldService fieldService;
 
-    public SensorController(SensorLogsService sensorService) {
+    public SensorController(SensorLogsService sensorService, FieldService fieldService) {
         this.sensorService = sensorService;
+        this.fieldService = fieldService;
     }
 
     @GetMapping("/most-recent/{id}")
@@ -52,4 +60,27 @@ public class SensorController {
 
         return logs;
     }
+
+    @GetMapping("/export/csv")
+    public ResponseEntity<byte[]> getSensorLogsAsCSV(
+        @AuthenticationPrincipal User currentUser, 
+        @RequestParam UUID fieldId
+    ) {
+        if (!fieldService.userHasAccessToField(currentUser.getID(), fieldId)) {
+            return ResponseEntity.status(403).build();
+        }
+
+        String fieldName = fieldService.getFieldName(fieldId);
+
+        byte[] csvData = sensorService.exportToCSV(fieldId);
+
+        String safeFieldName = fieldName != null ? fieldName.replaceAll("[^a-zA-Z0-9\\-_]", "_") : "Unknown_Field";
+        String filename = safeFieldName + "_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss")) + ".csv";
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .body(csvData);
+    }
+    
 }
