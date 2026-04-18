@@ -23,9 +23,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
     const logout = useCallback(async () => {
-        await SecureStore.deleteItemAsync('token');
-        setToken(null);
-        setUser(null);
+        try {
+            await SecureStore.deleteItemAsync('token');
+        } catch (error) {
+            console.error('Failed to clear stored token during logout', error);
+        } finally {
+            // Always clear in-memory auth state so navigation switches to auth stack.
+            setToken(null);
+            setUser(null);
+        }
     }, []);
 
     const updateLocalUser = useCallback((updates: Partial<User>) => {
@@ -37,7 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const payload = jwtDecode<{ sub?: string }>(token);
             if (!payload.sub) {
                 console.error('Token missing sub claim');
-                logout();
+                await logout();
                 return;
             }
             try {
@@ -46,7 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } catch (err: any) {
                 if (err?.response?.status === 401 || err?.response?.status === 403) {
                     console.error('Token rejected by server, logging out', err);
-                    logout();
+                    await logout();
                     return;
                 }
                 console.error('Failed to fetch user profile, falling back to token sub', err);
@@ -54,7 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
         } catch (error) {
             console.error('Failed to decode token', error);
-            logout();
+            await logout();
         }
     }, [logout]);
 

@@ -9,12 +9,16 @@ import {
     Inter_600SemiBold,
     Inter_700Bold,
 } from '@expo-google-fonts/inter';
+import { registerForNotifications } from '../src/services/notificationsService';
+import { useAlertNotifications } from '../src/hooks/useAlertNotifications';
 import '../src/i18n/i18n'; // Initialize i18n (TR/EN) on app start
 
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
     const { isLoading, token } = useAuth();
+    useAlertNotifications(Boolean(token));
+
     const [fontsLoaded] = useFonts({
         Inter_400Regular,
         Inter_500Medium,
@@ -27,6 +31,10 @@ function RootLayoutNav() {
             SplashScreen.hideAsync();
         }
     }, [fontsLoaded, isLoading]);
+
+    useEffect(() => {
+        void registerForNotifications();
+    }, []);
 
     if (!fontsLoaded || isLoading) {
         return null;

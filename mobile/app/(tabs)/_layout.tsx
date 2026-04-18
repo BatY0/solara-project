@@ -1,10 +1,42 @@
 import { Tabs } from 'expo-router';
 import { theme } from '../../src/theme/theme';
-import { BookOpen, Home, MessageCircle, Settings } from 'lucide-react-native';
+import { Bell, BookOpen, Home, MessageCircle, Settings } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
+import { useEffect, useState } from 'react';
+import { AppState, type AppStateStatus } from 'react-native';
+import { alertsService } from '../../src/services/alertsService';
 
 export default function TabsLayout() {
     const { t } = useTranslation();
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    useEffect(() => {
+        const fetchUnreadCount = async () => {
+            try {
+                const count = await alertsService.getUnreadCount();
+                setUnreadCount(count);
+            } catch (error) {
+                console.error('Failed to fetch unread alert count:', error);
+            }
+        };
+        void fetchUnreadCount();
+        const interval = setInterval(() => {
+            void fetchUnreadCount();
+        }, 10000);
+
+        let appState: AppStateStatus = AppState.currentState;
+        const sub = AppState.addEventListener('change', (nextState) => {
+            if ((appState === 'background' || appState === 'inactive') && nextState === 'active') {
+                void fetchUnreadCount();
+            }
+            appState = nextState;
+        });
+
+        return () => {
+            clearInterval(interval);
+            sub.remove();
+        };
+    }, []);
 
     return (
         <Tabs screenOptions={{
@@ -37,6 +69,14 @@ export default function TabsLayout() {
                 options={{
                     title: t('chatbot.tab'),
                     tabBarIcon: ({ color }) => <MessageCircle color={color} size={24} />,
+                }}
+            />
+            <Tabs.Screen
+                name="alerts"
+                options={{
+                    title: t('alerts.title'),
+                    tabBarIcon: ({ color }) => <Bell color={color} size={24} />,
+                    tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
                 }}
             />
             <Tabs.Screen

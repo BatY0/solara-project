@@ -8,17 +8,21 @@ import {
     ActivityIndicator,
     RefreshControl,
     Alert,
+    AppState,
+    type AppStateStatus,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Sprout, MapPin, Zap, Plus, LogOut, ChevronRight, Wifi, WifiOff } from 'lucide-react-native';
+import { Sprout, MapPin, Zap, Plus, LogOut, ChevronRight, Wifi, WifiOff, Bell } from 'lucide-react-native';
 
 import { useAuth } from '../../src/context/AuthContext';
 import { theme } from '../../src/theme/theme';
 import { fieldsService } from '../../src/services/fieldsService';
 import type { Field } from '../../src/types/fields';
 import AddFieldModal from '../../src/components/AddFieldModal';
+import { alertsService } from '../../src/services/alertsService';
+import { getDeviceStatus } from '../../src/utils/deviceStatus';
 
 export default function DashboardScreen() {
     const { user, logout } = useAuth();
@@ -29,6 +33,7 @@ export default function DashboardScreen() {
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isWizardOpen, setIsWizardOpen] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
 
     const fetchFields = useCallback(async (isRefresh = false) => {
         if (!isRefresh) setIsLoading(true);
@@ -47,6 +52,34 @@ export default function DashboardScreen() {
     useEffect(() => {
         fetchFields();
     }, [fetchFields]);
+
+    useEffect(() => {
+        const fetchUnread = async () => {
+            try {
+                const count = await alertsService.getUnreadCount();
+                setUnreadCount(count);
+            } catch (error) {
+                console.error('Error fetching unread alerts:', error);
+            }
+        };
+        void fetchUnread();
+        const interval = setInterval(() => {
+            void fetchUnread();
+        }, 10000);
+
+        let appState: AppStateStatus = AppState.currentState;
+        const sub = AppState.addEventListener('change', nextState => {
+            if ((appState === 'background' || appState === 'inactive') && nextState === 'active') {
+                void fetchUnread();
+            }
+            appState = nextState;
+        });
+
+        return () => {
+            clearInterval(interval);
+            sub.remove();
+        };
+    }, []);
 
     const handleLogout = () => {
         Alert.alert(
@@ -75,7 +108,7 @@ export default function DashboardScreen() {
         fetchFields(true);
     };
 
-    const onlineCount = fields.filter(f => !!f.deviceId).length;
+    const onlineCount = fields.filter(field => getDeviceStatus(field, t).status === 'online').length;
 
     return (
         <SafeAreaView style={styles.container}>
@@ -85,9 +118,19 @@ export default function DashboardScreen() {
                     <Sprout color={theme.colors.brand[500]} size={26} />
                     <Text style={styles.brandText}>Solara</Text>
                 </View>
-                <TouchableOpacity style={styles.headerIcon} onPress={handleLogout}>
-                    <LogOut color={theme.colors.chart.danger} size={20} />
-                </TouchableOpacity>
+                <View style={styles.headerActions}>
+                    <TouchableOpacity style={styles.headerIcon} onPress={() => router.push({ pathname: '/(tabs)/alerts', params: { tab: 'history' } })}>
+                        <Bell color={theme.colors.neutral.subtext} size={20} />
+                        {unreadCount > 0 && (
+                            <View style={styles.headerBadge}>
+                                <Text style={styles.headerBadgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.headerIcon} onPress={handleLogout}>
+                        <LogOut color={theme.colors.chart.danger} size={20} />
+                    </TouchableOpacity>
+                </View>
             </View>
 
             <ScrollView
@@ -166,8 +209,18 @@ export default function DashboardScreen() {
     );
 }
 
-function FieldCard({ field, t, router }: { field: Field; t: (key: string) => string; router: any }) {
-    const isOnline = !!field.deviceId;
+function FieldCard({
+    field,
+    t,
+    router,
+}: {
+    field: Field;
+    t: (key: string, options?: Record<string, unknown>) => string;
+    router: any;
+}) {
+    const deviceStatus = getDeviceStatus(field, t);
+    const isOnline = deviceStatus.status === 'online';
+    const isInactive = deviceStatus.status === 'inactive';
     const soilKey = `add_field.${field.soilType}`;
     const translatedSoil = t(soilKey);
     const soilLabel = translatedSoil === soilKey ? field.soilType : translatedSoil;
@@ -185,15 +238,25 @@ function FieldCard({ field, t, router }: { field: Field; t: (key: string) => str
                 </View>
             </View>
             <View style={styles.fieldCardRight}>
-                <View style={[styles.badge, isOnline ? styles.badgeOnline : styles.badgeOffline]}>
-                    {isOnline
-                        ? <Wifi color="#059669" size={12} />
-                        : <WifiOff color="#94a3b8" size={12} />}
-                    <Text style={[styles.badgeText, isOnline ? { color: '#059669' } : { color: '#94a3b8' }]}>
-                        {isOnline ? t('dashboard.online') : t('dashboard.offline')}
-                    </Text>
+                <View style={styles.fieldCardStatusRow}>
+                    <View style={[styles.badge, isOnline ? styles.badgeOnline : isInactive ? styles.badgeInactive : styles.badgeOffline]}>
+                        {isOnline
+                            ? <Wifi color="#059669" size={12} />
+                            : isInactive
+                              ? <Wifi color="#ca8a04" size={12} />
+                              : <WifiOff color="#94a3b8" size={12} />}
+                        <Text
+                            style={[
+                                styles.badgeText,
+                                isOnline ? { color: '#059669' } : isInactive ? { color: '#a16207' } : { color: '#94a3b8' },
+                            ]}
+                        >
+                            {deviceStatus.label}
+                        </Text>
+                    </View>
+                    <ChevronRight color={theme.colors.neutral.subtext} size={18} />
                 </View>
-                <ChevronRight color={theme.colors.neutral.subtext} size={18} />
+                {deviceStatus.lastSeenText ? <Text style={styles.lastSeenText}>{deviceStatus.lastSeenText}</Text> : null}
             </View>
         </TouchableOpacity>
     );
@@ -208,7 +271,21 @@ const styles = StyleSheet.create({
     },
     logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     brandText: { fontSize: 20, fontWeight: 'bold', color: theme.colors.neutral.dark },
+    headerActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     headerIcon: { padding: 8 },
+    headerBadge: {
+        position: 'absolute',
+        top: 2,
+        right: 2,
+        minWidth: 16,
+        height: 16,
+        borderRadius: 8,
+        backgroundColor: theme.colors.chart.danger,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 3,
+    },
+    headerBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
     content: { padding: 20, paddingBottom: 100 },
     welcomeCard: {
         backgroundColor: theme.colors.brand[900], borderRadius: 20, padding: 24,
@@ -252,11 +329,14 @@ const styles = StyleSheet.create({
     },
     fieldName: { fontSize: 14, fontWeight: '600', color: theme.colors.neutral.dark },
     fieldMeta: { fontSize: 12, color: theme.colors.neutral.subtext, marginTop: 2 },
-    fieldCardRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    fieldCardRight: { alignItems: 'flex-end', gap: 6 },
+    fieldCardStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     badge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
     badgeOnline: { backgroundColor: '#ECFDF5' },
+    badgeInactive: { backgroundColor: '#FEF9C3' },
     badgeOffline: { backgroundColor: '#F8FAFC' },
     badgeText: { fontSize: 11, fontWeight: '600' },
+    lastSeenText: { fontSize: 10, color: theme.colors.neutral.subtext, maxWidth: 130, textAlign: 'right' },
     fab: {
         position: 'absolute', right: 20, bottom: 28, width: 56, height: 56,
         borderRadius: 28, backgroundColor: theme.colors.brand[500],

@@ -8,6 +8,7 @@ import { MapPin, Wifi, WifiOff, ChevronRight, ArrowLeft } from 'lucide-react-nat
 import { theme } from '../../src/theme/theme';
 import { fieldsService } from '../../src/services/fieldsService';
 import type { Field } from '../../src/types/fields';
+import { getDeviceStatus } from '../../src/utils/deviceStatus';
 
 export default function AllFieldsScreen() {
     const { t } = useTranslation();
@@ -26,7 +27,9 @@ export default function AllFieldsScreen() {
     }, []);
 
     const renderItem = ({ item }: { item: Field }) => {
-        const isOnline = !!item.deviceId;
+        const deviceStatus = getDeviceStatus(item, t);
+        const isOnline = deviceStatus.status === 'online';
+        const isInactive = deviceStatus.status === 'inactive';
         const soilKey = `add_field.${item.soilType}`;
         const translatedSoil = t(soilKey);
         const soilLabel = translatedSoil === soilKey ? item.soilType : translatedSoil;
@@ -45,13 +48,20 @@ export default function AllFieldsScreen() {
                     </View>
                 </View>
                 <View style={styles.fieldCardRight}>
-                    <View style={[styles.badge, isOnline ? styles.badgeOnline : styles.badgeOffline]}>
-                        {isOnline ? <Wifi color="#059669" size={12} /> : <WifiOff color="#94a3b8" size={12} />}
-                        <Text style={[styles.badgeText, isOnline ? { color: '#059669' } : { color: '#94a3b8' }]}>
-                            {isOnline ? t('dashboard.online') : t('dashboard.offline')}
-                        </Text>
+                    <View style={styles.fieldCardStatusRow}>
+                        <View style={[styles.badge, isOnline ? styles.badgeOnline : isInactive ? styles.badgeInactive : styles.badgeOffline]}>
+                            {isOnline
+                                ? <Wifi color="#059669" size={12} />
+                                : isInactive
+                                  ? <Wifi color="#ca8a04" size={12} />
+                                  : <WifiOff color="#94a3b8" size={12} />}
+                            <Text style={[styles.badgeText, isOnline ? { color: '#059669' } : isInactive ? { color: '#a16207' } : { color: '#94a3b8' }]}>
+                                {deviceStatus.label}
+                            </Text>
+                        </View>
+                        <ChevronRight color={theme.colors.neutral.subtext} size={18} />
                     </View>
-                    <ChevronRight color={theme.colors.neutral.subtext} size={18} />
+                    {deviceStatus.lastSeenText ? <Text style={styles.lastSeenText}>{deviceStatus.lastSeenText}</Text> : null}
                 </View>
             </TouchableOpacity>
         );
@@ -115,9 +125,12 @@ const styles = StyleSheet.create({
     },
     fieldName: { fontSize: 14, fontWeight: '600', color: theme.colors.neutral.dark },
     fieldMeta: { fontSize: 12, color: theme.colors.neutral.subtext, marginTop: 2 },
-    fieldCardRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    fieldCardRight: { alignItems: 'flex-end', gap: 6 },
+    fieldCardStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     badge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
     badgeOnline: { backgroundColor: '#ECFDF5' },
+    badgeInactive: { backgroundColor: '#FEF9C3' },
     badgeOffline: { backgroundColor: '#F8FAFC' },
     badgeText: { fontSize: 11, fontWeight: '600' },
+    lastSeenText: { fontSize: 10, color: theme.colors.neutral.subtext, maxWidth: 130, textAlign: 'right' },
 });

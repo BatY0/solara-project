@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Slider from '@react-native-community/slider';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Thermometer, Droplet, Wind, CloudRain, Cpu, Link, Unlink, Wifi, Map as MapIcon, Trash2, BrainCircuit, Leaf, Settings, Activity, MessageCircle } from 'lucide-react-native';
+import { ArrowLeft, Thermometer, Droplet, Wind, CloudRain, Cpu, Link, Unlink, Wifi, Map as MapIcon, Trash2, BrainCircuit, Leaf, Settings, Activity, MessageCircle, Zap } from 'lucide-react-native';
 import MapView, { Polygon, PROVIDER_GOOGLE, type Region } from 'react-native-maps';
 import { LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
@@ -16,6 +16,11 @@ import type { Field, SensorData, WeatherData, AnalysisResult, HistoricalSensorDa
 import MapSelector from '../../src/components/MapSelector';
 import axios from 'axios';
 import { normalizeCropName } from '../../src/utils/normalizeCropName';
+
+const toLocalISO = (date: Date): string => {
+    const tzOffset = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - tzOffset).toISOString().slice(0, -1);
+};
 
 export default function FieldDetailsScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -32,11 +37,12 @@ export default function FieldDetailsScreen() {
     const [history, setHistory] = useState<HistoricalSensorData[]>([]);
     const [timeframe, setTimeframe] = useState<'today' | 7 | 30>(7);
     const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+    const [isHistoryTableExpanded, setIsHistoryTableExpanded] = useState(false);
     const [visibleMetrics, setVisibleMetrics] = useState({
         soilTemp: true,
         soilHumidity: true,
-        ambientTemp: false,
-        ambientHumidity: false
+        ambientTemp: true,
+        ambientHumidity: true
     });
 
     const screenWidth = Dimensions.get('window').width;
@@ -100,18 +106,18 @@ export default function FieldDetailsScreen() {
         const fetchHistory = async () => {
             setIsHistoryLoading(true);
             try {
-                const end = new Date().toISOString();
+                const end = toLocalISO(new Date());
                 let start = '';
                 let interval = 'DAILY';
 
                 if (timeframe === 'today') {
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
-                    start = today.toISOString();
+                    start = toLocalISO(today);
                     interval = 'RAW';
                 } else {
                     const startDate = new Date(Date.now() - timeframe * 24 * 60 * 60 * 1000);
-                    start = startDate.toISOString();
+                    start = toLocalISO(startDate);
                 }
 
                 const data = await fieldsService.getHistoricalTelemetry(id as string, interval, start, end);
@@ -481,6 +487,8 @@ export default function FieldDetailsScreen() {
                             <Box label={t('fields.soil_moisture')} value={telemetry.soilHumidity?.toFixed(1)} unit="%" icon={<Droplet color="#3b82f6" size={24} />} />
                             <Box label={t('fields.ambient_temp')} value={telemetry.ambientTemp?.toFixed(1)} unit="°C" icon={<Wind color="#10b981" size={24} />} />
                             <Box label={t('fields.ambient_humidity')} value={telemetry.ambientHumidity?.toFixed(1)} unit="%" icon={<CloudRain color="#6366f1" size={24} />} />
+                            <Box label={t('fields.battery')} value={telemetry.batteryPercentage?.toFixed(0)} unit="%" icon={<Zap color="#16a34a" size={24} />} />
+                            <Box label={t('fields.battery_voltage')} value={telemetry.batteryVoltage?.toFixed(2)} unit="V" icon={<Cpu color="#0f766e" size={24} />} />
                         </View>
                     )}
                 </View>
@@ -574,34 +582,49 @@ export default function FieldDetailsScreen() {
                                     </View>
                                 </ScrollView>
 
-                                <View style={{ marginTop: 24 }}>
-                                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                                        <View>
-                                            <View style={styles.tableRowHeader}>
-                                                <Text style={[styles.tableCellHeader, { width: 100 }]}>{t('common.date', 'Date')}</Text>
-                                                <Text style={[styles.tableCellHeader, { width: 75 }]}>{t('fields.soil_temp', 'Soil Temp')}</Text>
-                                                <Text style={[styles.tableCellHeader, { width: 75 }]}>{t('fields.soil_moisture', 'Soil Moist')}</Text>
-                                                <Text style={[styles.tableCellHeader, { width: 75 }]}>{t('fields.ambient_temp', 'Amb Temp')}</Text>
-                                                <Text style={[styles.tableCellHeader, { width: 75 }]}>{t('fields.ambient_humidity', 'Amb Hum')}</Text>
-                                            </View>
-                                            {history.map((item, index) => {
-                                                const dateObj = new Date(item.period);
-                                                const dateStr = timeframe === 'today' 
-                                                    ? dateObj.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit', hour12: false })
-                                                    : dateObj.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' });
-                                                    
-                                                return (
-                                                    <View key={index} style={[styles.tableRow, index % 2 === 0 ? styles.tableRowEven : styles.tableRowOdd]}>
-                                                        <Text style={[styles.tableCell, { width: 100, fontWeight: 'bold' }]}>{dateStr}</Text>
-                                                        <Text style={[styles.tableCell, { width: 75 }]}>{item.avgSoilTemp != null ? item.avgSoilTemp.toFixed(1) + '°C' : '--'}</Text>
-                                                        <Text style={[styles.tableCell, { width: 75 }]}>{item.avgSoilHumidity != null ? item.avgSoilHumidity.toFixed(1) + '%' : '--'}</Text>
-                                                        <Text style={[styles.tableCell, { width: 75 }]}>{item.avgAmbientTemp != null ? item.avgAmbientTemp.toFixed(1) + '°C' : '--'}</Text>
-                                                        <Text style={[styles.tableCell, { width: 75 }]}>{item.avgAmbientHumidity != null ? item.avgAmbientHumidity.toFixed(1) + '%' : '--'}</Text>
+                                <View style={{ marginTop: 20 }}>
+                                    <TouchableOpacity
+                                        style={styles.tableToggleBtn}
+                                        onPress={() => setIsHistoryTableExpanded((prev) => !prev)}
+                                    >
+                                        <Text style={styles.tableToggleBtnText}>
+                                            {isHistoryTableExpanded
+                                                ? t('fields.hide_historical_table', 'Hide historical table')
+                                                : t('fields.show_historical_table', 'Show historical table')}
+                                        </Text>
+                                    </TouchableOpacity>
+
+                                    {isHistoryTableExpanded && (
+                                        <View style={{ marginTop: 12 }}>
+                                            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                                <View>
+                                                    <View style={styles.tableRowHeader}>
+                                                        <Text style={[styles.tableCellHeader, { width: 100 }]}>{t('common.date', 'Date')}</Text>
+                                                        <Text style={[styles.tableCellHeader, { width: 75 }]}>{t('fields.soil_temp', 'Soil Temp')}</Text>
+                                                        <Text style={[styles.tableCellHeader, { width: 75 }]}>{t('fields.soil_moisture', 'Soil Moist')}</Text>
+                                                        <Text style={[styles.tableCellHeader, { width: 75 }]}>{t('fields.ambient_temp', 'Amb Temp')}</Text>
+                                                        <Text style={[styles.tableCellHeader, { width: 75 }]}>{t('fields.ambient_humidity', 'Amb Hum')}</Text>
                                                     </View>
-                                                );
-                                            })}
+                                                    {history.map((item, index) => {
+                                                        const dateObj = new Date(item.period);
+                                                        const dateStr = timeframe === 'today'
+                                                            ? dateObj.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit', hour12: false })
+                                                            : dateObj.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' });
+
+                                                        return (
+                                                            <View key={index} style={[styles.tableRow, index % 2 === 0 ? styles.tableRowEven : styles.tableRowOdd]}>
+                                                                <Text style={[styles.tableCell, { width: 100, fontWeight: 'bold' }]}>{dateStr}</Text>
+                                                                <Text style={[styles.tableCell, { width: 75 }]}>{item.avgSoilTemp != null ? item.avgSoilTemp.toFixed(1) + '°C' : '--'}</Text>
+                                                                <Text style={[styles.tableCell, { width: 75 }]}>{item.avgSoilHumidity != null ? item.avgSoilHumidity.toFixed(1) + '%' : '--'}</Text>
+                                                                <Text style={[styles.tableCell, { width: 75 }]}>{item.avgAmbientTemp != null ? item.avgAmbientTemp.toFixed(1) + '°C' : '--'}</Text>
+                                                                <Text style={[styles.tableCell, { width: 75 }]}>{item.avgAmbientHumidity != null ? item.avgAmbientHumidity.toFixed(1) + '%' : '--'}</Text>
+                                                            </View>
+                                                        );
+                                                    })}
+                                                </View>
+                                            </ScrollView>
                                         </View>
-                                    </ScrollView>
+                                    )}
                                 </View>
                             </View>
                         );
@@ -894,6 +917,18 @@ const styles = StyleSheet.create({
     inputLabel: { fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 },
     metricFilterBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#e5e7eb', backgroundColor: '#f9fafb' },
     metricFilterText: { fontSize: 12, fontWeight: '600', color: '#6b7280' },
+    tableToggleBtn: {
+        alignSelf: 'flex-start',
+        backgroundColor: '#f3f4f6',
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+    },
+    tableToggleBtnText: {
+        color: '#374151',
+        fontSize: 12,
+        fontWeight: '700',
+    },
     // Table
     tableRowHeader: { flexDirection: 'row', paddingVertical: 10, borderBottomWidth: 2, borderBottomColor: '#e5e7eb', marginBottom: 4 },
     tableCellHeader: { fontSize: 12, fontWeight: '700', color: '#4b5563', paddingHorizontal: 4 },

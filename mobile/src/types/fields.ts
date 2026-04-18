@@ -4,6 +4,8 @@ export interface SensorData {
     soilHumidity: number | null;
     ambientTemp: number | null;
     ambientHumidity: number | null;
+    batteryVoltage?: number | null;
+    batteryPercentage?: number | null;
     recordedAt: string;
 }
 
@@ -34,6 +36,7 @@ export interface Field {
     userId: string;
     createdAt: string;
     deviceId?: string | null;
+    deviceLastSeenAt?: string | null;
     status?: 'online' | 'offline';
 }
 

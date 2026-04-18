@@ -174,7 +174,6 @@ export default function GuidesScreen() {
                                 guide={guide}
                                 label={cropLabel(guide.name, guide.commonNames) || guide.commonNames || guide.name}
                                 trValue={trValue}
-                                t={t}
                                 onPress={() =>
                                     router.push(`/guides/${toCropSlug(guide.slug || guide.name)}`)
                                 }
@@ -191,15 +190,15 @@ function GuideCard({
     guide,
     label,
     trValue,
-    t,
     onPress,
 }: {
     guide: CropGuide;
     label: string;
     trValue: (group: 'growth_habit' | 'soil_type', value?: string) => string;
-    t: (key: string, opts?: object) => string;
     onPress: () => void;
 }) {
+    const { t } = useTranslation();
+
     return (
         <View style={styles.card}>
             {guide.image ? (
