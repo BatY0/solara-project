@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Box, Button, Flex, Input, Spinner, Text } from "@chakra-ui/react";
 import { MessageCircle, X, Send } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { chatService } from "./chat.service";
 
 interface CropChatbotProps {
@@ -30,6 +31,7 @@ const formatChatText = (text: string) => {
 };
 
 export const CropChatbot = ({ cropId, cropName }: CropChatbotProps) => {
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
@@ -76,7 +78,7 @@ export const CropChatbot = ({ cropId, cropName }: CropChatbotProps) => {
             console.error("Chat error:", error);
             setMessages((prev) => [
                 ...prev,
-                { id: crypto.randomUUID(), role: "bot", text: "Sorry, I am having trouble connecting right now." }
+                { id: crypto.randomUUID(), role: "bot", text: t("chat.error_msg") }
             ]);
         } finally {
             setIsLoading(false);
@@ -111,7 +113,7 @@ export const CropChatbot = ({ cropId, cropName }: CropChatbotProps) => {
                 <Flex bg="brand.500" color="white" p={4} align="center" justify="space-between">
                     <Flex align="center" gap={2}>
                         <MessageCircle size={20} />
-                        <Text fontWeight="semibold">Solara Farmer Assistant</Text>
+                        <Text fontWeight="semibold">{t("chat.title")}</Text>
                     </Flex>
                     <Button
                         variant="ghost"
@@ -138,7 +140,7 @@ export const CropChatbot = ({ cropId, cropName }: CropChatbotProps) => {
                 >
                     {messages.length === 0 && (
                         <Text color="gray.500" fontSize="sm" textAlign="center" mt={4}>
-                            Ask me anything about {cropName}!
+                            {t("chat.empty_msg", { cropName })}
                         </Text>
                     )}
                     {messages.map((msg) => (
@@ -176,7 +178,7 @@ export const CropChatbot = ({ cropId, cropName }: CropChatbotProps) => {
                 <Flex p={3} bg="white" borderTop="1px solid" borderColor="gray.200" gap={2} align="center">
                     <Input
                         flex="1"
-                        placeholder="Type your question..."
+                        placeholder={t("chat.placeholder")}
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={(e) => {

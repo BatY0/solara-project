@@ -179,6 +179,8 @@
     "add_field_desc": "Sisteme yeni bir IoT cihazı ve tarla tanımlayın.",
     "loading": "Verileriniz yükleniyor...",
     "air_temp": "Hava Sıc.",
+    "location_info": "Konum Bilgisi",
+    "active_alert_msg": "{{fieldName}}: {{ruleName}} ({{metric}} değeri: {{value}})",
     "alert_msg": "Antalya Serası'nda nem oranı düşük. Sulama öneriliyor."
   },
   "add_field": {
@@ -260,7 +262,8 @@
     "admin": "Yönetici",
     "farmer": "Çiftçi",
     "logout": "Oturumu Kapat",
-    "iot_devices": "IoT Cihazları"
+    "iot_devices": "IoT Cihazları",
+    "alerts": "Uyarılar"
   },
   "admin_devices": {
     "title": "IoT Cihaz Takibi",
@@ -633,5 +636,63 @@
     "offline_stat": "çevrimdışı",
     "online": "Çevrimiçi",
     "offline": "Çevrimdışı"
+  },
+  "alerts": {
+    "title": "Akıllı Uyarılar",
+    "subtitle": "Bildirimleri ve kuralları yönetin",
+    "all_fields": "Tüm Tarlalar",
+    "tab_rules": "Kurallar",
+    "tab_history": "Geçmiş",
+    "add_rule": "Kural Ekle",
+    "col_name": "İsim / Tarla",
+    "col_condition": "Koşul",
+    "filter_all": "Hepsi",
+    "filter_active": "Aktif",
+    "filter_resolved": "Çözülmüş",
+    "search_placeholder": "Kural veya tarla ara...",
+    "col_duration": "Süre",
+    "col_status": "Durum",
+    "col_actions": "Aksiyon",
+    "mark_all_read": "Tümünü Okundu İşaretle",
+    "history_desc": "Geçmiş ve mevcut tüm sistem ihlallerinin detaylı günlüğü.",
+    "no_events": "Henüz uyarı kaydı bulunmuyor.",
+    "no_rules": "Henüz tanımlı bir uyarı kuralı yok.",
+    "active_breach": "Aktif İhlal",
+    "resolved_at": "Çözüldü",
+    "dismiss": "Kapat",
+    "save_rule": "Kaydet",
+    "cancel": "İptal",
+    "create_rule_title": "Kural Oluştur",
+    "edit_rule_title": "Kural Düzenle",
+    "rule_name": "Kural Adı",
+    "select_field": "Tarla Seç",
+    "metric": "Metrik",
+    "operator": "Koşul",
+    "threshold": "Eşik Değeri",
+    "duration_min": "Süre (Dakika)",
+    "send_email": "E-Posta Bildirimi Gönder",
+    "col_time": "Zaman (Tetiklendi)",
+    "col_field": "Tarla",
+    "col_rule": "Kural",
+    "col_condition_val": "Koşul / Değer",
+    "condition_text": "{{metric}} {{value}} idi (Eşik: {{threshold}})",
+    "metrics": {
+      "SOIL_HUMIDITY": "Toprak Nemi",
+      "SOIL_TEMP": "Toprak Sıc.",
+      "AMBIENT_TEMP": "Ortam Sıc.",
+      "AMBIENT_HUMIDITY": "Ortam Nemi",
+      "BATTERY_PERCENTAGE": "Pil %"
+    },
+    "dashboard_active_title": "{{count}} Aktif Sistem Uyarısı",
+    "dashboard_active_title_plural": "{{count}} Aktif Sistem Uyarısı",
+    "dashboard_normal_title": "Sistem Durumu",
+    "dashboard_normal_msg": "Tüm sensörler normal koşullar bildiriyor. Her şey sorunsuz çalışıyor.",
+    "dashboard_view_history": "Geçmişi Gör"
+  },
+  "chat": {
+    "title": "Solara Çiftçi Asistanı",
+    "placeholder": "Sorunuzu yazın...",
+    "empty_msg": "{{cropName}} hakkında bana her şeyi sorabilirsiniz!",
+    "error_msg": "Üzgünüm, şu anda bağlantı sorunu yaşıyorum."
   }
 }

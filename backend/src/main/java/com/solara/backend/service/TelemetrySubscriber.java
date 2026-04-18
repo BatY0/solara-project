@@ -36,6 +36,7 @@ public class TelemetrySubscriber {
     private final SensorLogsRepository sensorLogsRepository;
     private final EspDeviceRepository espDeviceRepository;
     private final ObjectMapper objectMapper;
+    private final AlertEvaluationService alertEvaluationService;
 
     /**
      * The @ServiceActivator annotation wires this method to the mqttInputChannel bean.
@@ -118,6 +119,9 @@ public class TelemetrySubscriber {
                     .build();
 
             sensorLogsRepository.save(logEntry);
+            
+            // Evaluate smart alerts
+            alertEvaluationService.evaluate(logEntry);
             
             // Update the lastSeenAt for the device
             EspDevice espDevice = field.getEspDevice();

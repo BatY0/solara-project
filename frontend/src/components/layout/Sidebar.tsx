@@ -1,5 +1,5 @@
 import { Box, Flex, Text, VStack, Link as ChakraLink } from "@chakra-ui/react"
-import { LayoutDashboard, MapPin, BookOpen, Settings, Sprout, LogOut, Radio } from "lucide-react"
+import { LayoutDashboard, MapPin, BookOpen, Settings, Sprout, LogOut, Radio, Bell } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Link, useLocation } from "react-router-dom"
 import { useAuth } from "../../features/auth/useAuth"
@@ -21,6 +21,7 @@ export const Sidebar = () => {
             { path: "/dashboard", icon: LayoutDashboard, label: t("sidebar.dashboard") },
             { path: "/fields", icon: MapPin, label: t("sidebar.fields") },
             { path: "/guide", icon: BookOpen, label: t("sidebar.guide") },
+            { path: "/alerts", icon: Bell, label: t("sidebar.alerts", { defaultValue: "Alerts" }) },
             { path: "/settings", icon: Settings, label: t("sidebar.settings") },
         ]
 
