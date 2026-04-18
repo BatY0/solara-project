@@ -29,6 +29,7 @@ public class DeviceMonitorService {
     private final SensorLogsRepository sensorLogsRepository;
     private final UserRepository userRepository;
     private final EmailService emailService;
+    private final PushNotificationService pushNotificationService;
 
     /**
      * Cron expression: "0 0 * * * *" = top of every hour.
@@ -58,6 +59,10 @@ public class DeviceMonitorService {
                     // Send alert to the field owner
                     userRepository.findById(field.getUserId()).ifPresent(user -> {
                         sendOfflineAlert(user, field);
+                        pushNotificationService.sendOfflineDevicePush(
+                                user.getID(),
+                                field.getName(),
+                                field.getEspDevice().getSerialNumber());
                         field.setLastOfflineAlertSentAt(LocalDateTime.now());
                         fieldRepository.save(field);
                     });

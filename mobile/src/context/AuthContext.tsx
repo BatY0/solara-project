@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import { jwtDecode } from 'jwt-decode';
 import api from '../api/api';
 import { LoginRequest, RegisterRequest, User, AuthResponse } from '../types/auth';
+import { pushTokensService } from '../services/pushTokensService';
 
 interface AuthContextType {
     user: User | null;
@@ -23,6 +24,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
     const logout = useCallback(async () => {
+        try {
+            const expoPushToken = await SecureStore.getItemAsync('expoPushToken');
+            if (expoPushToken) {
+                await pushTokensService.unregisterExpoPushToken(expoPushToken);
+                await SecureStore.deleteItemAsync('expoPushToken');
+            }
+        } catch (error) {
+            console.error('Failed to unregister push token during logout', error);
+        }
+
         try {
             await SecureStore.deleteItemAsync('token');
         } catch (error) {

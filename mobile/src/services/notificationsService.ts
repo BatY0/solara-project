@@ -70,6 +70,36 @@ export async function registerForNotifications(): Promise<boolean> {
 }
 
 /**
+ * Request permissions (if needed) and return Expo push token for remote delivery.
+ * Returns null when permissions are denied or this runtime cannot provide a token.
+ */
+export async function getExpoPushToken(): Promise<string | null> {
+    const Notifications = await getNotificationsModule();
+    if (!Notifications) return null;
+
+    const granted = await registerForNotifications();
+    if (!granted) return null;
+
+    const projectId =
+        process.env.EXPO_PUBLIC_EAS_PROJECT_ID ??
+        Constants.expoConfig?.extra?.eas?.projectId ??
+        Constants.easConfig?.projectId;
+
+    if (!projectId) {
+        console.warn('Missing EAS projectId for Expo push token retrieval.');
+        return null;
+    }
+
+    try {
+        const tokenResponse = await Notifications.getExpoPushTokenAsync({ projectId });
+        return tokenResponse.data;
+    } catch (error) {
+        console.error('Failed to get Expo push token:', error);
+        return null;
+    }
+}
+
+/**
  * Schedule an immediate local push notification for a single alert event.
  * The notification appears in the system tray just like a remote push.
  */

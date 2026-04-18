@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { alertsService } from '../services/alertsService';
-import { scheduleAlertNotification, setBadgeCount } from '../services/notificationsService';
+import { setBadgeCount } from '../services/notificationsService';
 
 const POLL_INTERVAL_MS = 60000;
 
@@ -18,7 +18,6 @@ export function useAlertNotifications(enabled: boolean): void {
             const newlySeen = activeUnread.filter(event => !notifiedEventIdsRef.current.has(event.id));
 
             for (const event of newlySeen) {
-                await scheduleAlertNotification(event);
                 notifiedEventIdsRef.current.add(event.id);
             }
 

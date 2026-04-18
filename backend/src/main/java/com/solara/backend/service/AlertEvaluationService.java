@@ -31,6 +31,7 @@ public class AlertEvaluationService {
     private final FieldRepository fieldRepository;
     private final UserRepository userRepository;
     private final EmailService emailService;
+    private final PushNotificationService pushNotificationService;
 
     @Transactional
     public void evaluate(SensorLogs logEntry) {
@@ -61,6 +62,10 @@ public class AlertEvaluationService {
                                 .build();
                         
                         alertEventRepository.save(event);
+                        String fieldName = fieldRepository.findById(logEntry.getFieldId())
+                                .map(field -> field.getName())
+                                .orElse("Field");
+                        pushNotificationService.sendAlertTriggeredPush(rule.getUserId(), fieldName, event);
                         log.info("[Alerts] Rule breached, event started: rule={}, field={}", rule.getId(), rule.getFieldId());
                     } else {
                         // Ongoing breach
