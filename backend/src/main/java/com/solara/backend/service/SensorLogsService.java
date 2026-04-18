@@ -1,6 +1,10 @@
 package com.solara.backend.service;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
@@ -124,6 +128,36 @@ public class SensorLogsService {
 
     public boolean hasLogsForField(UUID fieldId) {
         return sensorRepo.existsByFieldId(fieldId);
+    }
+
+    public byte[] exportToCSV(UUID fieldId){
+        List<SensorLogs> logs = sensorRepo.findByFieldId(fieldId);
+
+        ByteArrayOutputStream outstream = new ByteArrayOutputStream();
+        try(PrintWriter printWriter = new PrintWriter(outstream, true, StandardCharsets.UTF_8)) {
+
+            printWriter.println("Timestamp,Soil Temperature,Soil Humidity,Ambient Temperature,Ambient Humidity");
+
+            DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+
+            for (SensorLogs log: logs) {
+                String timestamp = log.getTimestamp() != null ? log.getTimestamp().format(formatter) : "";
+
+                printWriter.printf("%s,%s,%s,%s,%s%n",
+                        timestamp,
+                        safeString(log.getSoilTemp()),
+                        safeString(log.getSoilHumidity()),
+                        safeString(log.getAmbientTemp()),
+                        safeString(log.getAmbientHumidity())
+                );
+            }
+        }
+
+        return outstream.toByteArray();
+    }
+
+    private String safeString(Object obj) {
+        return obj == null ? "" : obj.toString();
     }
 
 }

@@ -53,6 +53,10 @@ public class FieldService {
         return fieldRepository.findByUserId(userId);
     }
 
+    public boolean userHasAccessToField(UUID userId, UUID fieldId) {
+        return fieldRepository.existsByIdAndUserId(fieldId, userId);
+    }
+
     public Field updateField(UUID id, Field fieldDetails) {
         Field existingField = fieldRepository.findById(id)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Field not found with id: " + id));
@@ -114,5 +118,15 @@ public class FieldService {
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Field not found with id: " + fieldId));
         field.setEspDevice(null);
         return fieldRepository.save(field);
+    }
+
+    public String getFieldName(UUID fieldId) {
+        String fieldName = fieldRepository.findNameById(fieldId);
+
+        if (fieldName == null) {
+            throw new AppException(HttpStatus.NOT_FOUND, "Field not found with id: " + fieldId);
+        }
+
+        return fieldName;
     }
 }
