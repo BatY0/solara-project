@@ -1,4 +1,3 @@
-import axios from 'axios';
 import api from '../api/api';
 import type {
     Field,
@@ -16,16 +15,9 @@ import type {
 
 export const fieldsService = {
     getUserFields: async (): Promise<Field[]> => {
-        try {
-            const response = await api.get('/fields/user-fields');
-            return response.data.data;
-        } catch (err) {
-            // Backend returns 403 or 404 when the user has no fields yet — treat as empty list
-            if (axios.isAxiosError(err) && (err.response?.status === 403 || err.response?.status === 404)) {
-                return [];
-            }
-            throw err;
-        }
+        // Backend returns 200 with an empty list when the user has no fields yet
+        const response = await api.get('/fields/user-fields');
+        return response.data.data ?? [];
     },
 
     getFieldById: async (id: string): Promise<Field> => {
@@ -105,12 +97,10 @@ export const fieldsService = {
     },
 
     getLastAnalysis: async (fieldId: string): Promise<AnalysisResult | null> => {
-        try {
-            const response = await api.get(`/analysis/field/${fieldId}/last`);
-            return response.data.data;
-        } catch (err: any) {
-            if (err.response?.status === 404) return null;
-            throw err;
-        }
+        // Backend returns 200 with an empty list when there is no analysis yet
+        const response = await api.get(`/analysis/field/${fieldId}/last`);
+        const data = response.data.data;
+        if (!data || (Array.isArray(data) && data.length === 0)) return null;
+        return data;
     }
 };

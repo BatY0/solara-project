@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import * as SplashScreen from 'expo-splash-screen';
@@ -55,9 +55,22 @@ function RootLayoutNav() {
                 console.error('Failed to sync Expo push token:', error);
             }
         };
-
         void syncPushToken();
     }, [token]);
+
+    const router = useRouter();
+    const segments = useSegments();
+
+    useEffect(() => {
+        if (!isLoading) {
+            const inAuthGroup = segments[0] === '(auth)';
+            if (!token && !inAuthGroup) {
+                router.replace('/(auth)/login');
+            } else if (token && inAuthGroup) {
+                router.replace('/(tabs)');
+            }
+        }
+    }, [token, isLoading, segments]);
 
     if (!fontsLoaded || isLoading) {
         return null;
@@ -65,11 +78,8 @@ function RootLayoutNav() {
 
     return (
         <Stack screenOptions={{ headerShown: false }}>
-            {!token ? (
-                <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
-            ) : (
-                <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
-            )}
+            <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
+            <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
         </Stack>
     );
 }
