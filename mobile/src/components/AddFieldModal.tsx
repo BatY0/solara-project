@@ -35,7 +35,15 @@ interface FormData {
     useDefaultPh: boolean;
 }
 
-const SOIL_TYPES = ['clay', 'loam', 'sand', 'chalk', 'peat'] as const;
+const SOIL_TYPES = [
+    'alluvial_loam',
+    'clay_loam',
+    'light_sandy_loam',
+    'loam',
+    'rich_loam',
+    'sandy_loam',
+    'well_drained_loam',
+] as const;
 
 const DEFAULT_PH = 6.44;
 
@@ -115,7 +123,7 @@ export default function AddFieldModal({ visible, onClose, onSuccess }: Props) {
                 name: formData.name,
                 location: getLocationForApi(),
                 areaHa: parseFloat(formData.areaHa) || 0,
-                soilType: formData.soilType || 'clay',
+                soilType: formData.soilType || 'loam',
             });
             await fieldsService.updateFieldProperties(created.id, {
                 name: formData.name,
@@ -136,14 +144,7 @@ export default function AddFieldModal({ visible, onClose, onSuccess }: Props) {
     const currentPhColor = phColor(formData.ph);
 
     const soilTypeKey = (s: string) => {
-        const map: Record<string, string> = {
-            clay: t('add_field.clay'),
-            loam: t('add_field.loam'),
-            sand: t('add_field.sand'),
-            chalk: t('add_field.chalk'),
-            peat: t('add_field.peat'),
-        };
-        return map[s] ?? s;
+        return t(`add_field.${s}`);
     };
 
     return (

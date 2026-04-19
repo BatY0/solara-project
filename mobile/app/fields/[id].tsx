@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Slider from '@react-native-community/slider';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Thermometer, Droplet, Wind, CloudRain, Cpu, Link, Unlink, Wifi, Map as MapIcon, Trash2, BrainCircuit, Leaf, Settings, Activity, MessageCircle, Zap } from 'lucide-react-native';
+import { ArrowLeft, Thermometer, Droplet, Wind, CloudRain, Cpu, Link, Unlink, Wifi, Map as MapIcon, Trash2, BrainCircuit, Leaf, Settings, Activity, MessageCircle, Zap, LocateFixed } from 'lucide-react-native';
 import MapView, { Polygon, PROVIDER_GOOGLE, type Region } from 'react-native-maps';
 import { LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
@@ -146,6 +146,15 @@ export default function FieldDetailsScreen() {
         }, 350);
         return () => clearTimeout(t);
     }, [field]);
+
+    const handleRecenterMap = () => {
+        if (!field?.location || field.location.length === 0) return;
+        const coords = field.location.map((c) => ({ latitude: c[1], longitude: c[0] }));
+        readonlyMapRef.current?.fitToCoordinates(coords, {
+            edgePadding: { top: 40, right: 40, bottom: 40, left: 40 },
+            animated: true,
+        });
+    };
 
     const handlePair = async () => {
         if (!macInput.trim() || !id) return;
@@ -424,6 +433,9 @@ export default function FieldDetailsScreen() {
                                 }}>
                                     <MapIcon color="#fff" size={16} />
                                     <Text style={styles.editMapFloatText}>{t('common.edit', 'Edit')}</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.recenterMapFloatBtn} onPress={handleRecenterMap}>
+                                    <LocateFixed color="#fff" size={16} />
                                 </TouchableOpacity>
                             </View>
                         )
@@ -891,6 +903,18 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 12,
         fontWeight: 'bold',
+    },
+    recenterMapFloatBtn: {
+        position: 'absolute',
+        bottom: 10,
+        right: 10,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+        borderRadius: 8,
+        justifyContent: 'center'
     },
     cancelBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 6, backgroundColor: '#f3f4f6' },
     cancelBtnText: { color: '#374151', fontWeight: 'bold', fontSize: 13 },
