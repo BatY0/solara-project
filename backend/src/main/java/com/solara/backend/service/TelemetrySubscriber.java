@@ -1,6 +1,7 @@
 package com.solara.backend.service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import org.springframework.integration.annotation.ServiceActivator;
@@ -125,7 +126,7 @@ public class TelemetrySubscriber {
             
             // Update the lastSeenAt for the device
             EspDevice espDevice = field.getEspDevice();
-            espDevice.setLastSeenAt(LocalDateTime.now());
+            espDevice.setLastSeenAt(LocalDateTime.now(ZoneOffset.UTC));
             espDeviceRepository.save(espDevice);
             
             log.info("Saved telemetry from device='{}' for field='{}'", deviceId, fieldId);

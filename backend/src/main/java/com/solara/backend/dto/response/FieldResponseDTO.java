@@ -1,6 +1,8 @@
 package com.solara.backend.dto.response;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -27,8 +29,8 @@ public class FieldResponseDTO {
     private String soilType;
     private String deviceId;
     private UUID userId;
-    private LocalDateTime createdAt;
-    private LocalDateTime deviceLastSeenAt;
+    private OffsetDateTime createdAt;
+    private OffsetDateTime deviceLastSeenAt;
 
     // Constructor to convert Entity -> DTO
     public FieldResponseDTO(Field field) {
@@ -37,10 +39,10 @@ public class FieldResponseDTO {
         this.areaHa = field.getAreaHa();
         this.userId = field.getUserId();
         this.deviceId = field.getEspDevice() != null ? field.getEspDevice().getSerialNumber() : null;
-        this.deviceLastSeenAt = field.getEspDevice() != null ? field.getEspDevice().getLastSeenAt() : null;
+        this.deviceLastSeenAt = field.getEspDevice() != null ? toUtcOffset(field.getEspDevice().getLastSeenAt()) : null;
         this.location = convertPolygonToCoordinates(field.getLocation());
         this.soilType = field.getSoilType();
-        this.createdAt = field.getCreatedAt();
+        this.createdAt = toUtcOffset(field.getCreatedAt());
     }
 
     private List<double[]> convertPolygonToCoordinates(Polygon polygon) {
@@ -75,9 +77,13 @@ public class FieldResponseDTO {
     public String getDeviceId() { return deviceId; }
     public void setDeviceId(String deviceId) { this.deviceId = deviceId; }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public OffsetDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
 
-    public LocalDateTime getDeviceLastSeenAt() { return deviceLastSeenAt; }
-    public void setDeviceLastSeenAt(LocalDateTime deviceLastSeenAt) { this.deviceLastSeenAt = deviceLastSeenAt; }
+    public OffsetDateTime getDeviceLastSeenAt() { return deviceLastSeenAt; }
+    public void setDeviceLastSeenAt(OffsetDateTime deviceLastSeenAt) { this.deviceLastSeenAt = deviceLastSeenAt; }
+
+    private OffsetDateTime toUtcOffset(LocalDateTime value) {
+        return value == null ? null : value.atOffset(ZoneOffset.UTC);
+    }
 }

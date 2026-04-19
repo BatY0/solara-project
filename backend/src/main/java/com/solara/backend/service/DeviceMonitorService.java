@@ -1,6 +1,7 @@
 package com.solara.backend.service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 import org.springframework.scheduling.annotation.Scheduled;
@@ -39,7 +40,7 @@ public class DeviceMonitorService {
     public void checkOfflineDevices() {
         log.info("[DeviceMonitor] Running hourly offline device check...");
 
-        LocalDateTime threshold = LocalDateTime.now().minusHours(24);
+        LocalDateTime threshold = LocalDateTime.now(ZoneOffset.UTC).minusHours(24);
 
         // Get all fields that have a device paired
         List<Field> pairedFields = fieldRepository.findAll().stream()
@@ -63,7 +64,7 @@ public class DeviceMonitorService {
                                 user.getID(),
                                 field.getName(),
                                 field.getEspDevice().getSerialNumber());
-                        field.setLastOfflineAlertSentAt(LocalDateTime.now());
+                        field.setLastOfflineAlertSentAt(LocalDateTime.now(ZoneOffset.UTC));
                         fieldRepository.save(field);
                     });
                 }

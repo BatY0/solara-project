@@ -1,4 +1,5 @@
 import type { Field } from '../features/fields/types';
+import { parseBackendDate } from './dateTime';
 
 export type DeviceStatus = 'online' | 'offline' | 'inactive';
 
@@ -29,9 +30,7 @@ export function getDeviceStatus(field: Field, t: (key: string, options?: any) =>
         };
     }
 
-    // Attempt to parse date (assuming backend returns something like "2026-04-04T22:00:00")
-    // If backend LocalDateTime doesn't end with Z, browsers parse it as local time.
-    let lastSeenDate = new Date(field.deviceLastSeenAt);
+    const lastSeenDate = parseBackendDate(field.deviceLastSeenAt);
     
     // In case the parsing results in invalid date
     if (isNaN(lastSeenDate.getTime())) {

@@ -18,6 +18,7 @@ import { fieldsService } from "../../features/fields/fields.service"
 import type { UpdateFieldRequest } from "../../features/fields/fields.service"
 import { normalizeCropName, toCropSlug } from "../../features/crop-guides/normalizeCropName"
 import MapSelector from "../../components/map/MapSelector"
+import { parseBackendDate, toLocalDateInputValue, toUtcIsoNoZone } from "../../utils/dateTime"
 import type {
     Field as FieldType,
     SensorData,
@@ -31,7 +32,7 @@ import { getDeviceStatus } from "../../utils/deviceStatus"
 const ESRI_SATELLITE = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 const ESRI_LABELS = 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
 
-function formatDate(d: Date): string { return toLocalISO(d).slice(0, 10); }
+function formatDate(d: Date): string { return toLocalDateInputValue(d); }
 
 function scenarioBadgeColor(scenario: string): string {
     if (scenario === 'RANGE') return '#2f855a';
@@ -61,13 +62,6 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-const toLocalISO = (d: Date): string => {
-    const tzOffset = d.getTimezoneOffset() * 60000;
-    return new Date(d.getTime() - tzOffset).toISOString().slice(0, -1);
-};
-
-
-
 const MonthSelect = ({ value, onChange, labels }: { value: number; onChange: (v: number) => void; labels: string[] }) => (
     <select value={value} onChange={e => onChange(Number(e.currentTarget.value))}
         style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #E2E8F0', background: 'white', fontSize: '14px', cursor: 'pointer' }}>
@@ -77,8 +71,8 @@ const MonthSelect = ({ value, onChange, labels }: { value: number; onChange: (v:
 
 /* ── Telemetry metric card ─────────────────────────────────────────────────── */
 function MetricCard({ label, value, unit, icon, accent }: { label: string; value: string | number | null | undefined; unit: string; icon: React.ReactNode; accent: string }) {
-    const display = value != null 
-        ? (typeof value === 'number' ? value.toFixed(2) : String(value)) 
+    const display = value != null
+        ? (typeof value === 'number' ? value.toFixed(2) : String(value))
         : '--';
     return (
         <Box
@@ -110,7 +104,7 @@ interface EditState {
     ph: string;
 }
 
-  /* ── Map Recenter Control ── */
+/* ── Map Recenter Control ── */
 const RecenterControl = ({ bounds }: { bounds: number[][] }) => {
     const map = useMap();
     if (!bounds || bounds.length === 0) return null;
@@ -175,10 +169,10 @@ const OverrideSlider = ({
     const sliderVal = isNaN(parsedVal) ? min : parsedVal;
 
     return (
-        <Slider.Root 
-            min={min} max={max} step={step} 
-            value={[sliderVal]} 
-            colorPalette={themeColor} 
+        <Slider.Root
+            min={min} max={max} step={step}
+            value={[sliderVal]}
+            colorPalette={themeColor}
             onValueChange={e => { setLiveVal(e.value[0]); }}
             onValueChangeEnd={e => onValueChangeEnd(e.value[0])}
         >
@@ -188,15 +182,15 @@ const OverrideSlider = ({
                     <Slider.Label fontSize="sm" fontWeight="medium" color="gray.800">{label}</Slider.Label>
                 </Flex>
                 <Flex align="center" gap={1}>
-                    <Input 
+                    <Input
                         type="number" min={min} max={max} step={step}
                         value={liveVal}
                         onChange={e => setLiveVal(e.target.value)}
                         onBlur={handleInputBlur}
                         onKeyDown={e => e.key === 'Enter' && handleInputBlur()}
-                        size="sm" width="50px" textAlign="right" fontWeight="bold" 
-                        color={`${themeColor}.600`} bg="transparent" 
-                        border="none" borderBottom="2px solid" borderColor={`${themeColor}.300`} 
+                        size="sm" width="50px" textAlign="right" fontWeight="bold"
+                        color={`${themeColor}.600`} bg="transparent"
+                        border="none" borderBottom="2px solid" borderColor={`${themeColor}.300`}
                         borderRadius="0" px={0} py={0}
                         _focus={{ outline: 'none', borderColor: `${themeColor}.600` }}
                     />
@@ -281,18 +275,18 @@ export const FieldDetails = () => {
     /* ── Fetch core data ── */
     const loadHistory = useCallback(async (tf: 'today' | 7 | 14 | 30) => {
         if (!id) return;
-        const end = toLocalISO(new Date());
+        const end = toUtcIsoNoZone(new Date());
         let start: string;
         let interval: 'RAW' | 'HOURLY' | 'DAILY' = 'DAILY';
 
         if (tf === 'today') {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            start = toLocalISO(today);
+            start = toUtcIsoNoZone(today);
             interval = 'RAW';
         } else {
             const startDate = new Date(Date.now() - tf * 24 * 60 * 60 * 1000);
-            start = toLocalISO(startDate);
+            start = toUtcIsoNoZone(startDate);
         }
 
         const data = await fieldsService.getHistoricalTelemetry(id, interval, start, end).catch(() => []);
@@ -302,7 +296,7 @@ export const FieldDetails = () => {
     useEffect(() => {
         if (!id) return;
         let isMounted = true;
-        
+
         const fetchCritical = async () => {
             setIsLoading(true);
             try {
@@ -325,7 +319,7 @@ export const FieldDetails = () => {
                 const [telData, weatherData, histData, analysisData] = await Promise.all([
                     fieldsService.getMostRecentTelemetry(id).catch(() => null),
                     fieldsService.getLiveWeather(id).catch(() => null),
-                    fieldsService.getHistoricalTelemetry(id, 'DAILY', toLocalISO(new Date(Date.now() - 7 * 86400000)), toLocalISO(new Date())).catch(() => []),
+                    fieldsService.getHistoricalTelemetry(id, 'DAILY', toUtcIsoNoZone(new Date(Date.now() - 7 * 86400000)), toUtcIsoNoZone(new Date())).catch(() => []),
                     fieldsService.getLastAnalysis(id).catch(() => null),
                 ]);
                 if (!isMounted) return;
@@ -482,9 +476,9 @@ export const FieldDetails = () => {
 
     const status: 'online' | 'paired' | 'offline' = field?.deviceId && telemetry ? 'online' : field?.deviceId ? 'paired' : 'offline';
     const statusConfig = {
-        online:  { bg: 'brand.50',  color: 'green.700',  border: 'brand.100',  dot: 'green.500',  pulse: true,  label: t('dashboard.online') },
-        paired:  { bg: 'yellow.50', color: 'yellow.700', border: 'yellow.100', dot: 'yellow.500', pulse: false, label: t('dashboard.paired', 'Paired') },
-        offline: { bg: 'red.50',    color: 'red.700',    border: 'red.100',    dot: 'red.500',    pulse: false, label: t('dashboard.offline') },
+        online: { bg: 'brand.50', color: 'green.700', border: 'brand.100', dot: 'green.500', pulse: true, label: t('dashboard.online') },
+        paired: { bg: 'yellow.50', color: 'yellow.700', border: 'yellow.100', dot: 'yellow.500', pulse: false, label: t('dashboard.paired', 'Paired') },
+        offline: { bg: 'red.50', color: 'red.700', border: 'red.100', dot: 'red.500', pulse: false, label: t('dashboard.offline') },
     }[status];
 
     /* ── Chart gradient definition ── */
@@ -512,8 +506,8 @@ export const FieldDetails = () => {
     const chartData = history.map(d => ({
         ...d,
         label: timeframe === 'today'
-            ? new Date(d.period).toLocaleTimeString(i18n.language === 'tr' ? 'tr-TR' : 'en-US', { hour: '2-digit', minute: '2-digit' })
-            : new Date(d.period).toLocaleDateString(i18n.language === 'tr' ? 'tr-TR' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+            ? parseBackendDate(d.period).toLocaleTimeString(i18n.language === 'tr' ? 'tr-TR' : 'en-US', { hour: '2-digit', minute: '2-digit' })
+            : parseBackendDate(d.period).toLocaleDateString(i18n.language === 'tr' ? 'tr-TR' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
     }));
 
     if (isLoading || !field) {
@@ -935,7 +929,7 @@ export const FieldDetails = () => {
                 <Box bg="white" p={6} borderRadius="2xl" border="1px solid" borderColor="gray.200" mb={6} style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
                     <Flex align="center" justify="space-between" mb={5} wrap="wrap" gap={3}>
                         <Text fontSize="lg" fontWeight="bold" color="gray.800">{t('field_details.historical_trends')}</Text>
-                        
+
                         <Flex gap={3} wrap="wrap">
                             {/* Metric Toggle Pills */}
                             <Flex bg="gray.50" p={1} borderRadius="lg" border="1px solid" borderColor="gray.200" gap={1}>
@@ -1004,7 +998,7 @@ export const FieldDetails = () => {
                                 <Flex bg="green.50" p={2} borderRadius="lg"><BrainCircuit size={20} color="#059669" /></Flex>
                                 <Box>
                                     <Text fontSize="lg" fontWeight="semibold">{t('field_details.ai.results_title')}</Text>
-                                    <Text fontSize="xs" color="gray.500">{new Date(lastAnalysis.timestamp).toLocaleString()}</Text>
+                                    <Text fontSize="xs" color="gray.500">{parseBackendDate(lastAnalysis.timestamp).toLocaleString()}</Text>
                                 </Box>
                                 <Flex px={2} py={0.5} borderRadius="full" fontSize="xs" fontWeight="bold" color="white" bg={scenarioBadgeColor(lastAnalysis.scenario)}>
                                     {scenarioLabel(lastAnalysis.scenario)}
