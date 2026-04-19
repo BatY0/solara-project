@@ -115,15 +115,13 @@ public class FieldController {
     @GetMapping("/user-fields")
     public ApiResponse<List<FieldResponseDTO>> getFieldsByUserId(@AuthenticationPrincipal User currentUser) {
         List<Field> fields = fieldService.getFieldsByUserId(currentUser.getID());
-        if (fields.isEmpty()) {
-            throw new AppException(HttpStatus.NOT_FOUND, "No fields found for user with id: " + currentUser.getID());
-        }
-
         List<FieldResponseDTO> fieldResponseDTOs = fields.stream()
                 .map(FieldResponseDTO::new)
                 .toList();
-
-        return ApiResponse.success(fieldResponseDTOs, HttpStatus.OK.value(), "Fields retrieved successfully for user.");
+        String message = fields.isEmpty()
+                ? "No fields found for user."
+                : "Fields retrieved successfully for user.";
+        return ApiResponse.success(fieldResponseDTOs, HttpStatus.OK.value(), message);
     }
     
 

@@ -63,7 +63,7 @@ public class AnalysisController {
     /**
      * GET /api/v1/analysis/field/{fieldId}/last
      * Returns the most recent saved analysis for a field.
-     * Returns 404 if no analysis has been run yet.
+     * Returns 200 with null data if no analysis exists yet.
      */
     @GetMapping("/field/{fieldId}/last")
     public ApiResponse<AnalysisResultDTO> getLastAnalysis(
@@ -76,10 +76,10 @@ public class AnalysisController {
                     "You do not have permission to view analysis for this field.");
         }
 
-        AnalysisResultDTO result = analysisService.getLastAnalysis(fieldId)
-                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND,
-                        "No analysis has been run yet for field: " + fieldId));
-
-        return ApiResponse.success(result, HttpStatus.OK.value(), "Last analysis retrieved successfully.");
+        AnalysisResultDTO result = analysisService.getLastAnalysis(fieldId).orElse(null);
+        String message = (result == null)
+                ? "No analysis has been run yet for this field."
+                : "Last analysis retrieved successfully.";
+        return ApiResponse.success(result, HttpStatus.OK.value(), message);
     }
 }
