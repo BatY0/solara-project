@@ -1,0 +1,4 @@
+solaraapp.com.tr, www.solaraapp.com.tr {
+    encode gzip
+    reverse_proxy frontend:80
+}
