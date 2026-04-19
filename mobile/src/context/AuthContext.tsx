@@ -24,24 +24,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
     const logout = useCallback(async () => {
-        try {
-            const expoPushToken = await SecureStore.getItemAsync('expoPushToken');
-            if (expoPushToken) {
-                await pushTokensService.unregisterExpoPushToken(expoPushToken);
-                await SecureStore.deleteItemAsync('expoPushToken');
-            }
-        } catch (error) {
-            console.error('Failed to unregister push token during logout', error);
-        }
+        // 1. Immediately clear in-memory state to trigger navigation change
+        setToken(null);
+        setUser(null);
 
+        // 2. Clear token from storage first
         try {
             await SecureStore.deleteItemAsync('token');
         } catch (error) {
             console.error('Failed to clear stored token during logout', error);
-        } finally {
-            // Always clear in-memory auth state so navigation switches to auth stack.
-            setToken(null);
-            setUser(null);
+        }
+
+        // 3. Try cleaning up push tokens (may fail if token was invalid)
+        try {
+            const expoPushToken = await SecureStore.getItemAsync('expoPushToken');
+            if (expoPushToken) {
+                // If the token was 403, this will fail, but we catch it.
+                await pushTokensService.unregisterExpoPushToken(expoPushToken).catch(() => {});
+                await SecureStore.deleteItemAsync('expoPushToken');
+            }
+        } catch (error) {
+            console.error('Failed to unregister push token during logout', error);
         }
     }, []);
 

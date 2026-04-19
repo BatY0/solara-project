@@ -1,0 +1,83 @@
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: solara-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-solara}
+      POSTGRES_USER: ${POSTGRES_USER:-solara}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-solara}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-solara} -d ${POSTGRES_DB:-solara}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: solara-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./iot-firmware/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+
+  ml-engine:
+    build:
+      context: ./ml-engine
+    container_name: solara-ml-engine
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+
+  chatbot:
+    build:
+      context: ./chatbot
+    container_name: solara-chatbot
+    restart: unless-stopped
+    env_file:
+      - ./chatbot/.env
+    environment:
+      BACKEND_BASE_URL: http://backend:8080
+    ports:
+      - "8001:8001"
+
+  backend:
+    build:
+      context: ./backend
+    container_name: solara-backend
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+      ml-engine:
+        condition: service_started
+      chatbot:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-solara}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-solara}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-solara}
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      ML_ENGINE_URL: http://ml-engine:8000
+      CHATBOT_ENGINE_URL: http://chatbot:8001/api/v1/chat
+      MQTT_BROKER_URL: tcp://mosquitto:1883
+      SECURITY_JWT_SECRET: ${SECURITY_JWT_SECRET}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD}
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:
