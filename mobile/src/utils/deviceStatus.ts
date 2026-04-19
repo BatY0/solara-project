@@ -1,4 +1,5 @@
 import type { Field } from '../types/fields';
+import { parseBackendUtcDate } from './parseBackendUtcDate';
 
 export type DeviceStatus = 'online' | 'offline' | 'inactive';
 
@@ -24,8 +25,8 @@ export function getDeviceStatus(field: Field, t: (key: string, options?: Record<
         };
     }
 
-    const parsed = new Date(field.deviceLastSeenAt);
-    if (Number.isNaN(parsed.getTime())) {
+    const parsed = parseBackendUtcDate(field.deviceLastSeenAt);
+    if (!parsed) {
         return {
             status: 'online',
             label: t('dashboard.online'),
