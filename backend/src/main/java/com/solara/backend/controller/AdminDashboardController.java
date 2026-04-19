@@ -8,21 +8,23 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.solara.backend.dto.response.AdminDashboardStatsDTO;
 import com.solara.backend.dto.response.ApiResponse;
+import com.solara.backend.dto.response.EspDeviceResponseDTO;
+import com.solara.backend.dto.response.FieldResponseDTO;
 import com.solara.backend.dto.response.UserDTO;
+import com.solara.backend.entity.Field;
 import com.solara.backend.entity.User;
 import com.solara.backend.repository.EspDeviceRepository;
 import com.solara.backend.service.FieldService;
 import com.solara.backend.service.UserService;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
 
 @RestController
@@ -41,6 +43,11 @@ public class AdminDashboardController {
         long totalUsers
     ) {}
 
+    public record FieldWithDeviceDTO(
+        FieldResponseDTO field,
+        EspDeviceResponseDTO device
+    ) {}
+
     private final UserService userService;
     private final FieldService fieldService;
     private final EspDeviceRepository espDeviceRepository;
@@ -51,19 +58,10 @@ public class AdminDashboardController {
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size) {
         Page<User> users = userService.listUsersPaginated(page, size);
-        Page<UserDTO> userDTOs = users.map(user -> UserDTO.builder()
-                .id(user.getID())
-                .name(user.getName())
-                .surname(user.getSurname())
-                .email(user.getEmail())
-                .role(user.getRole())
-                .preferredLanguage(user.getPreferredLanguage())
-                .createdAt(user.getCreatedAt())
-                .build());
 
-        Page<UserDetail> userDetails = userDTOs.map(user -> {
+        Page<UserDetail> userDetails = users.map(user -> {
             UserDTO userDTO = UserDTO.builder()
-                    .id(user.getId())
+                    .id(user.getID())
                     .name(user.getName())
                     .surname(user.getSurname())
                     .email(user.getEmail())
@@ -86,8 +84,27 @@ public class AdminDashboardController {
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{user_id}/update-role")
     public ApiResponse<String> updateUserRole(@PathVariable("user_id") UUID userId, @RequestBody String newRole) {
-        userService.updateUserRole(userId, newRole);        
-        return ApiResponse.success(userId.toString() + " role updated to " + newRole, HttpStatus.OK.value(), "User role updated successfully.");
+        String cleanRole = newRole.replaceAll("^\"|\"$", "");
+        
+        userService.updateUserRole(userId, cleanRole);        
+        return ApiResponse.success(userId.toString() + " role updated to " + cleanRole, HttpStatus.OK.value(), "User role updated successfully.");
+   }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/{user_id}/details")
+    public ApiResponse<List<FieldWithDeviceDTO>> getUserDetailedInfo(@PathVariable("user_id") UUID userId) {
+        List<Field> userFields = fieldService.getFieldsByUserId(userId);
+
+        List<FieldWithDeviceDTO> response = userFields.stream().map(field -> {
+            FieldResponseDTO fieldDTO = new FieldResponseDTO(field);
+            EspDeviceResponseDTO deviceDTO = field.getEspDevice() != null 
+                ? new EspDeviceResponseDTO(field.getEspDevice()) 
+                : null;
+                
+            return new FieldWithDeviceDTO(fieldDTO, deviceDTO);
+        }).toList();
+        
+        return ApiResponse.success(response, HttpStatus.OK.value(), "User details retrieved successfully.");
     }
     
 }
