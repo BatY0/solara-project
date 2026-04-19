@@ -16,6 +16,7 @@ import type { Field, SensorData, WeatherData, AnalysisResult, HistoricalSensorDa
 import MapSelector from '../../src/components/MapSelector';
 import axios from 'axios';
 import { normalizeCropName } from '../../src/utils/normalizeCropName';
+import { parseBackendUtcDate } from '../../src/utils/parseBackendUtcDate';
 
 const toLocalISO = (date: Date): string => {
     const tzOffset = date.getTimezoneOffset() * 60000;
@@ -536,7 +537,8 @@ export default function FieldDetailsScreen() {
                         <Text style={styles.emptyText}>{t('fields.no_history', 'No historical data found.')}</Text>
                     ) : (() => {
                         const chartLabels = history.map(item => {
-                            const dateObj = new Date(item.period);
+                            const dateObj = parseBackendUtcDate(item.period);
+                            if (!dateObj) return '--';
                             return timeframe === 'today' 
                                 ? dateObj.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit', hour12: false })
                                 : dateObj.toLocaleDateString(i18n.language, { month: '2-digit', day: '2-digit' });
@@ -606,10 +608,12 @@ export default function FieldDetailsScreen() {
                                                         <Text style={[styles.tableCellHeader, { width: 75 }]}>{t('fields.ambient_humidity', 'Amb Hum')}</Text>
                                                     </View>
                                                     {history.map((item, index) => {
-                                                        const dateObj = new Date(item.period);
-                                                        const dateStr = timeframe === 'today'
-                                                            ? dateObj.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit', hour12: false })
-                                                            : dateObj.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' });
+                                                        const dateObj = parseBackendUtcDate(item.period);
+                                                        const dateStr = !dateObj
+                                                            ? '--'
+                                                            : timeframe === 'today'
+                                                              ? dateObj.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit', hour12: false })
+                                                              : dateObj.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' });
 
                                                         return (
                                                             <View key={index} style={[styles.tableRow, index % 2 === 0 ? styles.tableRowEven : styles.tableRowOdd]}>

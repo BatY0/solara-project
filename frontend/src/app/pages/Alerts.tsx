@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { 
+import {
     Box, Flex, Text, Button, Badge, IconButton, Input, useDisclosure, chakra, Spinner
 } from '@chakra-ui/react';
 import { Plus, Trash2, Edit, BellRing, Clock } from 'lucide-react';
@@ -10,6 +10,7 @@ import type { AlertRule, AlertEvent, CreateAlertRuleRequest } from '../../featur
 import { AlertMetric, AlertOperator } from '../../features/alerts/types';
 import { fieldsService } from '../../features/fields/fields.service';
 import type { Field } from '../../features/fields/types';
+import { parseBackendDate } from '../../utils/dateTime';
 
 export const Alerts = () => {
     const { t } = useTranslation();
@@ -17,16 +18,16 @@ export const Alerts = () => {
     const [events, setEvents] = useState<AlertEvent[]>([]);
     const [fields, setFields] = useState<Field[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    
+
     // Filter states
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'resolved'>('all');
-    
+
     // UI state
     const [activeTab, setActiveTab] = useState<'rules' | 'history'>('rules');
     const [selectedFieldId, setSelectedFieldId] = useState<string>('');
     const { open, onOpen, onClose } = useDisclosure();
-    
+
     // Modal state
     const [editingRule, setEditingRule] = useState<AlertRule | null>(null);
     const [formData, setFormData] = useState<CreateAlertRuleRequest>({
@@ -149,7 +150,7 @@ export const Alerts = () => {
     return (
         <DashboardLayout title={t('alerts.title')} subtitle={t('alerts.subtitle')}>
             <Flex direction="column" gap={6} w="full">
-                
+
                 {/* Header Actions */}
                 <Flex justify="space-between" align="center">
                     <Flex gap={2}>
@@ -198,11 +199,11 @@ export const Alerts = () => {
                             </chakra.select>
                         </Box>
                         {activeTab === 'rules' && (
-                            <Button 
-                                size="sm" 
-                                bg="green.500" 
-                                color="white" 
-                                _hover={{ bg: "green.600" }} 
+                            <Button
+                                size="sm"
+                                bg="green.500"
+                                color="white"
+                                _hover={{ bg: "green.600" }}
                                 onClick={() => handleOpenModal()}
                             >
                                 <Plus size={16} /> {t('alerts.add_rule')}
@@ -245,16 +246,16 @@ export const Alerts = () => {
                                                         <Text color="gray.600" fontSize="sm">{rule.durationMinutes} min</Text>
                                                     </Box>
                                                     <Box as="td" p={4}>
-                                                        <Box 
-                                                            w="44px" h="24px" 
-                                                            bg={rule.active ? "green.500" : "gray.300"} 
-                                                            borderRadius="full" 
+                                                        <Box
+                                                            w="44px" h="24px"
+                                                            bg={rule.active ? "green.500" : "gray.300"}
+                                                            borderRadius="full"
                                                             position="relative"
                                                             cursor="pointer"
                                                             transition="background-color 0.2s"
                                                             onClick={() => toggleRuleActive(rule)}
                                                         >
-                                                            <Box 
+                                                            <Box
                                                                 w="20px" h="20px" bg="white" borderRadius="full"
                                                                 position="absolute" top="2px" shadow="sm"
                                                                 left={rule.active ? "22px" : "2px"}
@@ -263,23 +264,23 @@ export const Alerts = () => {
                                                         </Box>
                                                     </Box>
                                                     <Box as="td" p={4} textAlign="right">
-                                                        <IconButton 
-                                                            aria-label="Edit" 
+                                                        <IconButton
+                                                            aria-label="Edit"
                                                             color="gray.500"
                                                             bg="transparent"
                                                             _hover={{ bg: "gray.100" }}
-                                                            size="sm" 
+                                                            size="sm"
                                                             mr={2}
                                                             onClick={() => handleOpenModal(rule)}
                                                         >
                                                             <Edit size={16} />
                                                         </IconButton>
-                                                        <IconButton 
-                                                            aria-label="Delete" 
+                                                        <IconButton
+                                                            aria-label="Delete"
                                                             color="red.500"
                                                             bg="transparent"
                                                             _hover={{ bg: "red.50" }}
-                                                            size="sm" 
+                                                            size="sm"
                                                             onClick={() => handleDeleteRule(rule.id)}
                                                         >
                                                             <Trash2 size={16} />
@@ -301,8 +302,8 @@ export const Alerts = () => {
                                 <Text color="gray.600" fontSize="sm">
                                     {t('alerts.history_desc')}
                                 </Text>
-                                <Button 
-                                    size="sm" 
+                                <Button
+                                    size="sm"
                                     variant="outline"
                                     onClick={async () => {
                                         await alertsService.markAllAsRead();
@@ -317,7 +318,7 @@ export const Alerts = () => {
                             {/* Filter Bar */}
                             <Flex gap={4} mb={6} direction={{ base: "column", md: "row" }} align="center">
                                 <Box flex={1} w="full">
-                                    <Input 
+                                    <Input
                                         placeholder={t('alerts.search_placeholder')}
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -326,7 +327,7 @@ export const Alerts = () => {
                                     />
                                 </Box>
                                 <Box w={{ base: "full", md: "200px" }}>
-                                    <chakra.select 
+                                    <chakra.select
                                         w="full"
                                         h="40px"
                                         px={3}
@@ -344,7 +345,7 @@ export const Alerts = () => {
                                     </chakra.select>
                                 </Box>
                             </Flex>
-                            
+
                             {events.length === 0 ? (
                                 <Text color="gray.500" textAlign="center" py={10}>{t('alerts.no_events')}</Text>
                             ) : (
@@ -363,40 +364,40 @@ export const Alerts = () => {
                                             {events
                                                 .filter(event => {
                                                     // Search text filter
-                                                    const matchesSearch = 
+                                                    const matchesSearch =
                                                         event.ruleName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                                         event.fieldName.toLowerCase().includes(searchTerm.toLowerCase());
-                                                    
+
                                                     // Status filter
-                                                    const matchesStatus = 
-                                                        statusFilter === 'all' || 
-                                                        (statusFilter === 'active' && event.active) || 
+                                                    const matchesStatus =
+                                                        statusFilter === 'all' ||
+                                                        (statusFilter === 'active' && event.active) ||
                                                         (statusFilter === 'resolved' && !event.active);
-                                                    
+
                                                     return matchesSearch && matchesStatus;
                                                 })
                                                 .map(event => {
-                                                const triggered = new Date(event.triggeredAt);
-                                                return (
-                                                    <Box as="tr" key={event.id} bg={event.active ? "red.50" : "transparent"} borderBottom="1px solid" borderColor="gray.100">
-                                                        <Box as="td" p={4}>{triggered.toLocaleString()}</Box>
-                                                        <Box as="td" p={4} fontWeight="medium">{event.fieldName}</Box>
-                                                        <Box as="td" p={4}>{event.ruleName}</Box>
-                                                        <Box as="td" p={4}>
-                                                            {t('alerts.condition_text', { 
-                                                                metric: formatMetric(event.metric), 
-                                                                value: event.lastValue, 
-                                                                threshold: event.threshold 
-                                                            })}
+                                                    const triggered = parseBackendDate(event.triggeredAt);
+                                                    return (
+                                                        <Box as="tr" key={event.id} bg={event.active ? "red.50" : "transparent"} borderBottom="1px solid" borderColor="gray.100">
+                                                            <Box as="td" p={4}>{triggered.toLocaleString()}</Box>
+                                                            <Box as="td" p={4} fontWeight="medium">{event.fieldName}</Box>
+                                                            <Box as="td" p={4}>{event.ruleName}</Box>
+                                                            <Box as="td" p={4}>
+                                                                {t('alerts.condition_text', {
+                                                                    metric: formatMetric(event.metric),
+                                                                    value: event.lastValue,
+                                                                    threshold: event.threshold
+                                                                })}
+                                                            </Box>
+                                                            <Box as="td" p={4}>
+                                                                <Badge bg={event.active ? "red.100" : "green.100"} color={event.active ? "red.700" : "green.700"}>
+                                                                    {event.active ? t('alerts.active_breach') : `${t('alerts.resolved_at')} ${event.resolvedAt ? parseBackendDate(event.resolvedAt).toLocaleTimeString() : ''}`}
+                                                                </Badge>
+                                                            </Box>
                                                         </Box>
-                                                        <Box as="td" p={4}>
-                                                            <Badge bg={event.active ? "red.100" : "green.100"} color={event.active ? "red.700" : "green.700"}>
-                                                                {event.active ? t('alerts.active_breach') : `${t('alerts.resolved_at')} ${event.resolvedAt ? new Date(event.resolvedAt).toLocaleTimeString() : ''}`}
-                                                            </Badge>
-                                                        </Box>
-                                                    </Box>
-                                                )
-                                            })}
+                                                    )
+                                                })}
                                         </Box>
                                     </Box>
                                 </Box>
@@ -415,22 +416,22 @@ export const Alerts = () => {
                             <Text fontSize="xl" fontWeight="bold" mb={4}>
                                 {editingRule ? t('alerts.edit_rule_title') : t('alerts.create_rule_title')}
                             </Text>
-                            
+
                             <Flex direction="column" gap={4}>
                                 <Box>
                                     <Text fontSize="sm" fontWeight="bold" mb={1}>{t('alerts.rule_name')}</Text>
-                                    <Input 
+                                    <Input
                                         value={formData.name}
-                                        onChange={(e) => setFormData(prev => ({...prev, name: e.target.value}))}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                                         placeholder="e.g. Low Moisture Alert"
                                     />
                                 </Box>
 
                                 <Box>
                                     <Text fontSize="sm" fontWeight="bold" mb={1}>{t('alerts.select_field')}</Text>
-                                    <chakra.select 
-                                        value={formData.fieldId} 
-                                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({...formData, fieldId: e.target.value})}
+                                    <chakra.select
+                                        value={formData.fieldId}
+                                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, fieldId: e.target.value })}
                                         border="1px solid" borderColor="gray.200" borderRadius="md" p={2} w="full" bg="white"
                                     >
                                         {fields.map(f => (
@@ -442,9 +443,9 @@ export const Alerts = () => {
                                 <Flex gap={4}>
                                     <Box flex={1}>
                                         <Text fontSize="sm" fontWeight="bold" mb={1}>{t('alerts.metric')}</Text>
-                                        <chakra.select 
-                                            value={formData.metric} 
-                                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({...formData, metric: e.target.value as AlertMetric})}
+                                        <chakra.select
+                                            value={formData.metric}
+                                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, metric: e.target.value as AlertMetric })}
                                             border="1px solid" borderColor="gray.200" borderRadius="md" p={2} w="full" bg="white"
                                         >
                                             <option value={AlertMetric.SOIL_HUMIDITY}>Soil Moisture</option>
@@ -456,9 +457,9 @@ export const Alerts = () => {
                                     </Box>
                                     <Box flex={1}>
                                         <Text fontSize="sm" fontWeight="bold" mb={1}>{t('alerts.operator')}</Text>
-                                        <chakra.select 
-                                            value={formData.operator} 
-                                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({...formData, operator: e.target.value as AlertOperator})}
+                                        <chakra.select
+                                            value={formData.operator}
+                                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, operator: e.target.value as AlertOperator })}
                                             border="1px solid" borderColor="gray.200" borderRadius="md" p={2} w="full" bg="white"
                                         >
                                             <option value={AlertOperator.BELOW}>Below &lt;</option>
@@ -470,17 +471,17 @@ export const Alerts = () => {
                                 <Flex gap={4}>
                                     <Box flex={1}>
                                         <Text fontSize="sm" fontWeight="bold" mb={1}>{t('alerts.threshold')}</Text>
-                                        <Input 
+                                        <Input
                                             type="number"
                                             value={formData.threshold}
-                                            onChange={(e) => setFormData(prev => ({...prev, threshold: Number(e.target.value)}))}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, threshold: Number(e.target.value) }))}
                                         />
                                     </Box>
                                     <Box flex={1}>
                                         <Text fontSize="sm" fontWeight="bold" mb={1}>{t('alerts.duration_min')}</Text>
-                                        <chakra.select 
-                                            value={formData.durationMinutes} 
-                                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({...formData, durationMinutes: parseInt(e.target.value)})}
+                                        <chakra.select
+                                            value={formData.durationMinutes}
+                                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, durationMinutes: parseInt(e.target.value) })}
                                             border="1px solid" borderColor="gray.200" borderRadius="md" p={2} w="full" bg="white"
                                         >
                                             <option value={1}>1 Minute</option>
@@ -493,9 +494,9 @@ export const Alerts = () => {
 
                                 <Box mt={2}>
                                     <Flex align="center" gap={3}>
-                                        <Flex 
-                                            w="36px" h="20px" bg={formData.notifyEmail ? "green.500" : "gray.300"} 
-                                            borderRadius="full" p="2px" cursor="pointer" onClick={() => setFormData({...formData, notifyEmail: !formData.notifyEmail})}
+                                        <Flex
+                                            w="36px" h="20px" bg={formData.notifyEmail ? "green.500" : "gray.300"}
+                                            borderRadius="full" p="2px" cursor="pointer" onClick={() => setFormData({ ...formData, notifyEmail: !formData.notifyEmail })}
                                         >
                                             <Box w={3} h={3} bg="white" borderRadius="full" transform={formData.notifyEmail ? "translateX(14px)" : "translateX(2px)"} transition="transform 0.2s" />
                                         </Flex>
@@ -506,9 +507,9 @@ export const Alerts = () => {
 
                             <Flex justify="flex-end" gap={3} mt={8}>
                                 <Button variant="ghost" onClick={onClose}>{t('alerts.cancel')}</Button>
-                                <Button 
-                                    bg="green.500" 
-                                    color="white" 
+                                <Button
+                                    bg="green.500"
+                                    color="white"
                                     _hover={{ bg: 'green.600' }}
                                     onClick={handleSaveRule}
                                 >

@@ -25,6 +25,7 @@ import { setBadgeCount } from '../../src/services/notificationsService';
 import type { Field } from '../../src/types/fields';
 import { AlertMetric, AlertOperator, type AlertEvent, type AlertRule, type CreateAlertRuleRequest } from '../../src/types/alerts';
 import { useAuth } from '../../src/context/AuthContext';
+import { parseBackendUtcDate } from '../../src/utils/parseBackendUtcDate';
 
 type HistoryFilter = 'all' | 'active' | 'resolved';
 
@@ -410,7 +411,9 @@ export default function AlertsScreen() {
                                                 threshold: event.threshold,
                                             })}
                                         </Text>
-                                        <Text style={styles.eventTime}>{new Date(event.triggeredAt).toLocaleString()}</Text>
+                                        <Text style={styles.eventTime}>
+                                            {parseBackendUtcDate(event.triggeredAt)?.toLocaleString() ?? ''}
+                                        </Text>
                                         <Text
                                             style={[
                                                 styles.eventStatus,
@@ -422,7 +425,7 @@ export default function AlertsScreen() {
                                             ]}
                                         >
                                             {!event.active
-                                                ? `${t('alerts.resolved_at')} ${event.resolvedAt ? new Date(event.resolvedAt).toLocaleTimeString() : ''}`
+                                                ? `${t('alerts.resolved_at')} ${event.resolvedAt ? parseBackendUtcDate(event.resolvedAt)?.toLocaleTimeString() ?? '' : ''}`
                                                 : !event.read
                                                   ? t('alerts.active_breach')
                                                   : t('alerts.acknowledged')}

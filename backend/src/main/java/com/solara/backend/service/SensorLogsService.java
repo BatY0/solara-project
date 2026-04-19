@@ -4,6 +4,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
@@ -39,13 +41,13 @@ public class SensorLogsService {
     @Builder
     @NoArgsConstructor
     public static class AggregateLog {
-        private LocalDateTime period;
+        private OffsetDateTime period;
         private Double avgAmbientTemp;
         private Double avgSoilTemp;
         private Double avgAmbientHumidity;
         private Double avgSoilHumidity;
 
-        public AggregateLog(LocalDateTime period, Double avgAmbientTemp, Double avgSoilTemp, Double avgAmbientHumidity, Double avgSoilHumidity) {
+        public AggregateLog(OffsetDateTime period, Double avgAmbientTemp, Double avgSoilTemp, Double avgAmbientHumidity, Double avgSoilHumidity) {
             this.period = period;
             this.avgAmbientTemp = avgAmbientTemp;
             this.avgSoilTemp = avgSoilTemp;
@@ -53,7 +55,7 @@ public class SensorLogsService {
             this.avgSoilHumidity = avgSoilHumidity;
         }
 
-        public LocalDateTime getPeriod() { return period; }
+        public OffsetDateTime getPeriod() { return period; }
         public Double getAvgAmbientTemp() { return avgAmbientTemp; }
         public Double getAvgSoilTemp() { return avgSoilTemp; }
         public Double getAvgAmbientHumidity() { return avgAmbientHumidity; }
@@ -79,7 +81,7 @@ public class SensorLogsService {
         if (interval == Intervals.RAW) {
             return logs.stream().map(log -> 
                 new AggregateLog(
-                    log.getTimestamp(), 
+                    toUtcOffset(log.getTimestamp()), 
                     log.getAmbientTemp(), 
                     log.getSoilTemp(), 
                     log.getAmbientHumidity(), 
@@ -119,7 +121,7 @@ public class SensorLogsService {
                         .mapToDouble(SensorLogs::getSoilHumidity)
                         .average().stream().boxed().findFirst().orElse(null);
 
-                return new AggregateLog(period, avgAmbTemp, avgSoilTemp, avgAmbHum, avgSoilHum);
+                return new AggregateLog(toUtcOffset(period), avgAmbTemp, avgSoilTemp, avgAmbHum, avgSoilHum);
             })
             // Sort by period
             .sorted(Comparator.comparing(AggregateLog::getPeriod))
@@ -158,6 +160,10 @@ public class SensorLogsService {
 
     private String safeString(Object obj) {
         return obj == null ? "" : obj.toString();
+    }
+
+    private static OffsetDateTime toUtcOffset(LocalDateTime value) {
+        return value == null ? null : value.atOffset(ZoneOffset.UTC);
     }
 
 }
