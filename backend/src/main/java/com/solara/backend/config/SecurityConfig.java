@@ -59,8 +59,12 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Allow your specific Vite frontend origin
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        // Allow local development and production domains.
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:5173",
+                "https://solaraapp.com.tr",
+                "https://www.solaraapp.com.tr"
+        ));
 
         // Essential for JWTs and standard REST actions
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
