@@ -53,7 +53,10 @@ public class AdminDashboardController {
     ) {}
 
     public record FieldWithDeviceResponse(
+        UserDTO user,
         List<FieldWithDeviceDTO> fields,
+        long totalFields,
+        long totalDevices,
         long totalSensorLogs,
         long totalAnalysisLogs
     ) {}
@@ -115,6 +118,16 @@ public class AdminDashboardController {
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{user_id}/details")
     public ApiResponse<FieldWithDeviceResponse> getUserDetailedInfo(@PathVariable("user_id") UUID userId) {
+        User user = userService.getUserById(userId);
+        UserDTO userDTO = UserDTO.builder()
+                .id(user.getID())
+                .name(user.getName())
+                .surname(user.getSurname())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .preferredLanguage(user.getPreferredLanguage())
+                .createdAt(user.getCreatedAt())
+                .build();
         List<Field> userFields = fieldService.getFieldsByUserId(userId);
 
         List<FieldWithDeviceDTO> response = userFields.stream().map(field -> {
@@ -126,10 +139,12 @@ public class AdminDashboardController {
             return new FieldWithDeviceDTO(fieldDTO, deviceDTO);
         }).toList();
 
+        long deviceCount = espDeviceRepository.countByField_UserId(userId);
+        long fieldCount = fieldService.countFieldsByUserId(userId);
         long analysisCount = analysisService.countAnalysisLogsForUser(userId);
         long sensorLogsCount = sensorLogsService.countLogsForUser(userId);
 
-        FieldWithDeviceResponse fullResponse = new FieldWithDeviceResponse(response, sensorLogsCount, analysisCount);
+        FieldWithDeviceResponse fullResponse = new FieldWithDeviceResponse(userDTO, response, fieldCount, deviceCount, sensorLogsCount, analysisCount);
         
         return ApiResponse.success(fullResponse, HttpStatus.OK.value(), "User details retrieved successfully.");
     }
