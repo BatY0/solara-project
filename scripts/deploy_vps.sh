@@ -24,10 +24,32 @@ git fetch origin "${BRANCH}"
 git checkout "${BRANCH}"
 git reset --hard "origin/${BRANCH}"
 
-docker compose down --remove-orphans
-docker compose pull || true
-docker compose build --pull
-docker compose up -d --remove-orphans
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE_CMD=(docker compose)
+elif command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE_CMD=(docker-compose)
+else
+  echo "Docker Compose is not installed. Install docker compose plugin or docker-compose."
+  exit 1
+fi
+
+compose() {
+  "${COMPOSE_CMD[@]}" "$@"
+}
+
+SUPPORTS_REMOVE_ORPHANS=false
+if compose up --help 2>/dev/null | grep -q -- '--remove-orphans'; then
+  SUPPORTS_REMOVE_ORPHANS=true
+fi
+
+compose down
+compose pull || true
+compose build --pull
+if [ "${SUPPORTS_REMOVE_ORPHANS}" = "true" ]; then
+  compose up -d --remove-orphans
+else
+  compose up -d
+fi
 
 docker image prune -f
 
