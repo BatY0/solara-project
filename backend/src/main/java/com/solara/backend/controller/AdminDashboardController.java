@@ -21,7 +21,9 @@ import com.solara.backend.dto.response.UserDTO;
 import com.solara.backend.entity.Field;
 import com.solara.backend.entity.User;
 import com.solara.backend.repository.EspDeviceRepository;
+import com.solara.backend.service.AnalysisService;
 import com.solara.backend.service.FieldService;
+import com.solara.backend.service.SensorLogsService;
 import com.solara.backend.service.UserService;
 
 import lombok.RequiredArgsConstructor;
@@ -35,7 +37,9 @@ public class AdminDashboardController {
     public record UserDetail (
         UserDTO user,
         long deviceCount,
-        long fieldCount
+        long fieldCount,
+        long analysisCount,
+        long sensorLogsCount
     ) {}
 
     public record UserDashboardResponse (
@@ -48,9 +52,25 @@ public class AdminDashboardController {
         EspDeviceResponseDTO device
     ) {}
 
+    public record FieldWithDeviceResponse(
+        List<FieldWithDeviceDTO> fields,
+        long totalSensorLogs,
+        long totalAnalysisLogs
+    ) {}
+
+    public record StatsResponse(
+        long totalUsers,
+        long totalFields,
+        long totalDevices,
+        long totalAnalysisLogs,
+        long totalSensorLogs
+    ) {}
+
     private final UserService userService;
     private final FieldService fieldService;
     private final EspDeviceRepository espDeviceRepository;
+    private final AnalysisService analysisService;
+    private final SensorLogsService sensorLogsService;
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/list-users")
@@ -71,7 +91,9 @@ public class AdminDashboardController {
                     .build();
             long deviceCount = espDeviceRepository.countByField_UserId(userDTO.getId());
             long fieldCount = fieldService.countFieldsByUserId(userDTO.getId());
-            return new UserDetail(userDTO, deviceCount, fieldCount);
+            long analysisCount = analysisService.countAnalysisLogsForUser(userDTO.getId());
+            long sensorLogsCount = sensorLogsService.countLogsForUser(userDTO.getId());
+            return new UserDetail(userDTO, deviceCount, fieldCount, analysisCount, sensorLogsCount);
         });
 
         long totalUsers = userService.countUsers();
@@ -92,7 +114,7 @@ public class AdminDashboardController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{user_id}/details")
-    public ApiResponse<List<FieldWithDeviceDTO>> getUserDetailedInfo(@PathVariable("user_id") UUID userId) {
+    public ApiResponse<FieldWithDeviceResponse> getUserDetailedInfo(@PathVariable("user_id") UUID userId) {
         List<Field> userFields = fieldService.getFieldsByUserId(userId);
 
         List<FieldWithDeviceDTO> response = userFields.stream().map(field -> {
@@ -103,8 +125,27 @@ public class AdminDashboardController {
                 
             return new FieldWithDeviceDTO(fieldDTO, deviceDTO);
         }).toList();
+
+        long analysisCount = analysisService.countAnalysisLogsForUser(userId);
+        long sensorLogsCount = sensorLogsService.countLogsForUser(userId);
+
+        FieldWithDeviceResponse fullResponse = new FieldWithDeviceResponse(response, sensorLogsCount, analysisCount);
         
-        return ApiResponse.success(response, HttpStatus.OK.value(), "User details retrieved successfully.");
+        return ApiResponse.success(fullResponse, HttpStatus.OK.value(), "User details retrieved successfully.");
     }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/stats")
+    public ApiResponse<StatsResponse> getStats() {
+        long totalUsers = userService.countUsers();
+        long totalFields = fieldService.countAllFields();
+        long totalDevices = espDeviceRepository.count();
+        long totalAnalysisLogs = analysisService.countAnalysisLogs();
+        long totalSensorLogs = sensorLogsService.countLogs();
+
+        StatsResponse stats = new StatsResponse(totalUsers, totalFields, totalDevices, totalAnalysisLogs, totalSensorLogs);
+
+        return ApiResponse.success(stats, HttpStatus.OK.value(), "Statistics retrieved successfully.");
+    } 
     
 }

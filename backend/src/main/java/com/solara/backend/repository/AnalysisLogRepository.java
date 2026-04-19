@@ -9,4 +9,5 @@ import com.solara.backend.entity.AnalysisLog;
 
 public interface AnalysisLogRepository extends JpaRepository<AnalysisLog, UUID> {
     Optional<AnalysisLog> findTopByFieldIdOrderByCreatedAtDesc(UUID fieldId);
+    long countByFieldId(UUID fieldId);
 }

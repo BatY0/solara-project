@@ -321,6 +321,23 @@ public class AnalysisService {
         return result;
     }
 
+    public long countAnalysisLogsForUser(UUID userId) {
+        long total = 0;
+
+        List<Field> userFields = fieldService.getFieldsByUserId(userId);
+
+        for (Field field : userFields) {
+            long count = analysisLogRepository.countByFieldId(field.getId());
+            total += count;
+        }
+        
+        return total;
+    }
+
+    public long countAnalysisLogs() {
+        return analysisLogRepository.count();
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private MlPayloadDTO buildPayload(FieldProperties props, double temperature,

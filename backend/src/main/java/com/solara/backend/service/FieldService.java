@@ -133,4 +133,8 @@ public class FieldService {
     public long countFieldsByUserId(UUID userId) {
         return fieldRepository.countByUserId(userId);
     }
+
+    public long countAllFields() {
+        return fieldRepository.count();
+    }
 }

@@ -26,6 +26,7 @@ public interface SensorLogsRepository extends JpaRepository<SensorLogs, UUID> {
 
     // Used by DeviceMonitorService to check if device sent data in the last 24 hours
     boolean existsByFieldIdAndTimestampAfter(UUID fieldId, LocalDateTime since);
+    long countByFieldId(UUID fieldId);
 }
 
 
