@@ -20,6 +20,18 @@ if [ ! -d .git ]; then
   exit 1
 fi
 
+if [ ! -f "${APP_DIR}/.env" ]; then
+  echo "Missing ${APP_DIR}/.env"
+  echo "Create it manually on VPS or provide APP_ENV_FILE in GitHub Actions secrets."
+  exit 1
+fi
+
+if [ ! -f "${APP_DIR}/chatbot/.env" ]; then
+  echo "Missing ${APP_DIR}/chatbot/.env"
+  echo "Create it manually on VPS or provide CHATBOT_ENV_FILE in GitHub Actions secrets."
+  exit 1
+fi
+
 git fetch origin "${BRANCH}"
 git checkout "${BRANCH}"
 git reset --hard "origin/${BRANCH}"

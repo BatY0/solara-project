@@ -42,4 +42,14 @@ jobs:
             ${{ secrets.CHATBOT_ENV_FILE }}
             EOF
 
+            if [ ! -s "${APP_DIR}/.env" ]; then
+              echo "APP_ENV_FILE secret is missing or empty."
+              exit 1
+            fi
+
+            if [ ! -s "${APP_DIR}/chatbot/.env" ]; then
+              echo "CHATBOT_ENV_FILE secret is missing or empty."
+              exit 1
+            fi
+
             bash "${APP_DIR}/scripts/deploy_vps.sh"
