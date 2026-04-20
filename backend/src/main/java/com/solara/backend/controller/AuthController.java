@@ -46,4 +46,6 @@ public class AuthController {
         authService.deleteUser(id);
         return ResponseEntity.ok(AuthResponse.builder().message("User deleted successfully.").build());
     }
+
+    
 }

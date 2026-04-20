@@ -19,4 +19,5 @@ public interface FieldRepository extends  JpaRepository<Field, UUID> {
     Optional<Field> findByEspDevice_SerialNumber(String serialNumber);
     boolean existsByEspDevice_SerialNumber(String serialNumber);
     boolean existsByIdAndUserId(UUID fieldId, UUID userId);
+    long countByUserId(UUID userId);
 }

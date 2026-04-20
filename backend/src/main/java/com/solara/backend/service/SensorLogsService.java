@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.solara.backend.entity.Field;
 import com.solara.backend.entity.SensorLogs;
 import com.solara.backend.exception.AppException;
 import com.solara.backend.repository.SensorLogsRepository;
@@ -28,9 +29,11 @@ import lombok.NoArgsConstructor;
 @Service
 public class SensorLogsService {
     private final SensorLogsRepository sensorRepo;
+    private final FieldService fieldService;
 
-    public SensorLogsService(SensorLogsRepository sensorRepo) {
+    public SensorLogsService(SensorLogsRepository sensorRepo, FieldService fieldService) {
         this.sensorRepo = sensorRepo;
+        this.fieldService = fieldService;
     }
 
     public enum Intervals {
@@ -156,6 +159,21 @@ public class SensorLogsService {
         }
 
         return outstream.toByteArray();
+    }
+
+    public long countLogsForUser(UUID userId) {
+        List<Field> userFields = fieldService.getFieldsByUserId(userId);
+
+        long totalLogs = 0;
+
+        for(Field field : userFields) {
+            totalLogs += sensorRepo.countByFieldId(field.getId());
+        }
+        return totalLogs;
+    }
+
+    public long countLogs() {
+        return sensorRepo.count();
     }
 
     private String safeString(Object obj) {

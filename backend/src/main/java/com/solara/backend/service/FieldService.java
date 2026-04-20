@@ -129,4 +129,12 @@ public class FieldService {
 
         return fieldName;
     }
+
+    public long countFieldsByUserId(UUID userId) {
+        return fieldRepository.countByUserId(userId);
+    }
+
+    public long countAllFields() {
+        return fieldRepository.count();
+    }
 }

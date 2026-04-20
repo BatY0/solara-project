@@ -2,17 +2,21 @@ package com.solara.backend.service;
 
 import java.time.LocalDateTime;
 import java.util.Random;
+import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.solara.backend.dto.request.VerifyConfirmDTO;
 import com.solara.backend.dto.request.ChangePasswordDTO;
 import com.solara.backend.dto.request.UpdateProfileDTO;
+import com.solara.backend.dto.request.VerifyConfirmDTO;
 import com.solara.backend.dto.response.UserDTO;
 import com.solara.backend.dto.response.VerifyResponse;
+import com.solara.backend.entity.Role;
 import com.solara.backend.entity.User;
 import com.solara.backend.entity.VerificationCode;
 import com.solara.backend.repository.UserRepository;
@@ -138,5 +142,34 @@ public class UserService {
                 .preferredLanguage(user.getPreferredLanguage())
                 .createdAt(user.getCreatedAt())
                 .build();
+    }
+
+    public Page<User> listUsersPaginated(int page, int size) {
+        Pageable pageable = Pageable.ofSize(size).withPage(page);
+        return userRepository.findAll(pageable);
+    }
+
+    public long countUsers() {
+        return userRepository.count();
+    }
+
+    public User getUserById(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+
+        return user;
+    }
+
+    public boolean updateUserRole(UUID userId, String newRole) {
+        User user = getUserById(userId);
+        try {
+            // Convert string to uppercase to match enum formatting standard
+            Role roleEnum = Role.valueOf(newRole.toUpperCase());
+            user.setRole(roleEnum);
+            userRepository.save(user);
+            return true;
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid role provided: " + newRole);
+        }
     }
 }
