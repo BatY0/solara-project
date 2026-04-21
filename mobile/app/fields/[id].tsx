@@ -12,7 +12,7 @@ import { Dimensions } from 'react-native';
 import { theme } from '../../src/theme/theme';
 import { fieldsService } from '../../src/services/fieldsService';
 import { cropGuidesService } from '../../src/services/cropGuidesService';
-import type { Field, SensorData, WeatherData, AnalysisResult, HistoricalSensorData } from '../../src/types/fields';
+import type { Field, SensorData, WeatherData, AnalysisResult, HistoricalSensorData, FieldProperties } from '../../src/types/fields';
 import MapSelector from '../../src/components/MapSelector';
 import axios from 'axios';
 import { normalizeCropName } from '../../src/utils/normalizeCropName';
@@ -23,12 +23,21 @@ const toLocalISO = (date: Date): string => {
     return new Date(date.getTime() - tzOffset).toISOString().slice(0, -1);
 };
 
+function phColor(ph: number) {
+    if (ph < 4) return '#ef4444';
+    if (ph < 6) return '#f97316';
+    if (ph <= 8) return '#22c55e';
+    if (ph <= 10) return '#3b82f6';
+    return '#7c3aed';
+}
+
 export default function FieldDetailsScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
     const { t, i18n } = useTranslation();
 
     const [field, setField] = useState<Field | null>(null);
+    const [properties, setProperties] = useState<FieldProperties | null>(null);
     const [telemetry, setTelemetry] = useState<SensorData | null>(null);
     const [weather, setWeather] = useState<WeatherData | null>(null);
     const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
@@ -75,20 +84,34 @@ export default function FieldDetailsScreen() {
     const [overrideRain, setOverrideRain] = useState(400);
     const [useOverrideRain, setUseOverrideRain] = useState(false);
 
+    // Properties Edit State
+    const [isEditingProps, setIsEditingProps] = useState(false);
+    const [editPropsForm, setEditPropsForm] = useState({
+        nitrogen: '',
+        phosphorus: '',
+        potassium: '',
+        ph: 6.44,
+        phText: '6.4',
+        useDefaultPh: false
+    });
+    const [isSavingProps, setIsSavingProps] = useState(false);
+
     useEffect(() => {
         if (!id) return;
         const fetchData = async () => {
             try {
                 const f = await fieldsService.getFieldById(id);
                 setField(f);
-                const [tel, wea, analysisRes] = await Promise.all([
+                const [tel, wea, analysisRes, props] = await Promise.all([
                     fieldsService.getMostRecentTelemetry(id).catch(() => null),
                     fieldsService.getLiveWeather(id).catch(() => null),
-                    fieldsService.getLastAnalysis(id).catch(() => null)
+                    fieldsService.getLastAnalysis(id).catch(() => null),
+                    fieldsService.getFieldProperties(id).catch(() => null)
                 ]);
                 setTelemetry(tel);
                 setWeather(wea);
                 setAnalysis(analysisRes);
+                setProperties(props);
             } catch (err) {
                 console.error('Failed to fetch field details', err);
             } finally {
@@ -255,6 +278,41 @@ export default function FieldDetailsScreen() {
                 }
             ]
         );
+    };
+
+    const handleSaveProperties = async () => {
+        if (!id || !field) return;
+        setIsSavingProps(true);
+        try {
+            const updatedProps = await fieldsService.updateFieldProperties(id, {
+                name: field.name,
+                nitrogen: editPropsForm.nitrogen ? parseFloat(editPropsForm.nitrogen) : 52.6,
+                phosphorus: editPropsForm.phosphorus ? parseFloat(editPropsForm.phosphorus) : 58.1,
+                potassium: editPropsForm.potassium ? parseFloat(editPropsForm.potassium) : 52.0,
+                ph: editPropsForm.useDefaultPh ? 6.44 : editPropsForm.ph,
+            });
+            setProperties(updatedProps);
+            setIsEditingProps(false);
+            Alert.alert(t('common.success', 'Success'), t('fields.props_update_success', 'Properties updated successfully'));
+        } catch (err) {
+            console.error('Failed to update properties', err);
+            Alert.alert(t('common.error', 'Error'), t('fields.props_update_failed', 'Failed to update properties'));
+        } finally {
+            setIsSavingProps(false);
+        }
+    };
+
+    const openEditPropsModal = () => {
+        const initialPh = properties?.ph || 6.44;
+        setEditPropsForm({
+            nitrogen: properties?.nitrogen?.toString() || '',
+            phosphorus: properties?.phosphorus?.toString() || '',
+            potassium: properties?.potassium?.toString() || '',
+            ph: initialPh,
+            phText: initialPh.toString(),
+            useDefaultPh: false
+        });
+        setIsEditingProps(true);
     };
 
     const handleRunAnalysis = async () => {
@@ -484,6 +542,27 @@ export default function FieldDetailsScreen() {
                         </View>
                     )}
                 </View>
+
+                {/* PROPERTIES SECTION */}
+                {properties && (
+                    <View style={[styles.card, { marginTop: 16 }]}>
+                        <View style={[styles.cardHeader, { justifyContent: 'space-between' }]}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                <Leaf color="#10b981" size={20} />
+                                <Text style={styles.cardTitle}>{t('fields.properties', 'Field Properties')}</Text>
+                            </View>
+                            <TouchableOpacity onPress={openEditPropsModal} style={{ padding: 4 }}>
+                                <Settings color="#6b7280" size={20} />
+                            </TouchableOpacity>
+                        </View>
+                        <View style={styles.grid}>
+                            <Box label={t('add_field.nitrogen')} value={properties.nitrogen != null ? Number(properties.nitrogen.toFixed(2)) : undefined} unit="mg/kg" icon={<Activity color="#10b981" size={24} />} />
+                            <Box label={t('add_field.phosphorus')} value={properties.phosphorus != null ? Number(properties.phosphorus.toFixed(2)) : undefined} unit="mg/kg" icon={<Activity color="#3b82f6" size={24} />} />
+                            <Box label={t('add_field.potassium')} value={properties.potassium != null ? Number(properties.potassium.toFixed(2)) : undefined} unit="mg/kg" icon={<Activity color="#f59e0b" size={24} />} />
+                            <Box label={t('add_field.ph_value')} value={properties.ph != null ? Number(properties.ph.toFixed(2)) : undefined} unit="pH" icon={<Activity color="#8b5cf6" size={24} />} />
+                        </View>
+                    </View>
+                )}
 
                 {/* TELEMETRY SECTION */}
                 <View style={[styles.card, { marginTop: 16 }]}>
@@ -830,6 +909,84 @@ export default function FieldDetailsScreen() {
                             </TouchableOpacity>
                             <TouchableOpacity onPress={handleRunAnalysis} style={[styles.saveBtn, { opacity: isAnalyzing ? 0.7 : 1 }]} disabled={isAnalyzing}>
                                 {isAnalyzing ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveBtnText}>{t('fields.ai_analyze', 'Analyze')}</Text>}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Edit Properties Modal */}
+            <Modal visible={isEditingProps} transparent animationType="slide" onRequestClose={() => setIsEditingProps(false)}>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>{t('fields.edit_properties', 'Edit Properties')}</Text>
+                            <TouchableOpacity onPress={() => setIsEditingProps(false)}><Text style={{ fontSize: 24, color: '#6b7280' }}>×</Text></TouchableOpacity>
+                        </View>
+                        <ScrollView style={{ maxHeight: 500 }} keyboardShouldPersistTaps="handled">
+                            <Text style={[styles.subtext, { marginBottom: 16 }]}>{t('add_field.lab_alert', 'Leave fields empty to use automatic values.')}</Text>
+                            <View style={{ gap: 12 }}>
+                                <Text style={styles.inputLabel}>{t('add_field.nitrogen')}</Text>
+                                <TextInput style={styles.input} keyboardType="decimal-pad" value={editPropsForm.nitrogen} onChangeText={(v) => setEditPropsForm(p => ({ ...p, nitrogen: v }))} placeholder={t('add_field.auto')} />
+                                
+                                <Text style={styles.inputLabel}>{t('add_field.phosphorus')}</Text>
+                                <TextInput style={styles.input} keyboardType="decimal-pad" value={editPropsForm.phosphorus} onChangeText={(v) => setEditPropsForm(p => ({ ...p, phosphorus: v }))} placeholder={t('add_field.auto')} />
+                                
+                                <Text style={styles.inputLabel}>{t('add_field.potassium')}</Text>
+                                <TextInput style={styles.input} keyboardType="decimal-pad" value={editPropsForm.potassium} onChangeText={(v) => setEditPropsForm(p => ({ ...p, potassium: v }))} placeholder={t('add_field.auto')} />
+                                
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                                    <Text style={styles.inputLabel}>{t('add_field.use_default_ph', { value: '6.44' })}</Text>
+                                    <Switch value={editPropsForm.useDefaultPh} onValueChange={(v) => setEditPropsForm(p => ({ ...p, useDefaultPh: v }))} trackColor={{ true: '#10b981' }} />
+                                </View>
+                                
+                                {!editPropsForm.useDefaultPh && (
+                                    <View>
+                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Text style={styles.inputLabel}>{t('add_field.ph_value')}</Text>
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                                <TextInput
+                                                    style={{ width: 64, paddingVertical: 6, borderWidth: 2, borderColor: phColor(editPropsForm.ph), color: phColor(editPropsForm.ph), fontWeight: 'bold', borderRadius: 8, paddingHorizontal: 8, fontSize: 15, backgroundColor: '#f9fafb', textAlign: 'center' }}
+                                                    keyboardType="decimal-pad"
+                                                    value={editPropsForm.phText}
+                                                    onChangeText={(v) => {
+                                                        setEditPropsForm(p => ({ ...p, phText: v }));
+                                                        const num = parseFloat(v);
+                                                        if (!isNaN(num)) {
+                                                            const clamped = Math.min(14, Math.max(0, num));
+                                                            setEditPropsForm(p => ({ ...p, ph: clamped }));
+                                                        }
+                                                    }}
+                                                    onEndEditing={() => {
+                                                        setEditPropsForm(p => ({ ...p, phText: p.ph.toString() }));
+                                                    }}
+                                                />
+                                                <Text style={{ fontSize: 12, color: '#6b7280' }}>pH</Text>
+                                            </View>
+                                        </View>
+                                        <Slider
+                                            style={{ width: '100%', height: 40 }}
+                                            minimumValue={0}
+                                            maximumValue={14}
+                                            step={0.1}
+                                            value={editPropsForm.ph}
+                                            onValueChange={(v) => {
+                                                const rounded = Math.round(v * 10) / 10;
+                                                setEditPropsForm(p => ({ ...p, ph: rounded, phText: rounded.toString() }));
+                                            }}
+                                            minimumTrackTintColor={phColor(editPropsForm.ph)}
+                                            maximumTrackTintColor="#d1d5db"
+                                        />
+                                    </View>
+                                )}
+                            </View>
+                        </ScrollView>
+                        <View style={{ marginTop: 20, flexDirection: 'row', justifyContent: 'flex-end', gap: 12 }}>
+                            <TouchableOpacity onPress={() => setIsEditingProps(false)} style={styles.cancelBtn}>
+                                <Text style={styles.cancelBtnText}>{t('common.cancel', 'Cancel')}</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={handleSaveProperties} style={[styles.saveBtn, { opacity: isSavingProps ? 0.7 : 1 }]} disabled={isSavingProps}>
+                                {isSavingProps ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveBtnText}>{t('common.save', 'Save')}</Text>}
                             </TouchableOpacity>
                         </View>
                     </View>

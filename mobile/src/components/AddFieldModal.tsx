@@ -16,6 +16,7 @@ import { CheckCircle, ArrowLeft, ArrowRight, AlertCircle, Leaf, Ruler, Mountain,
 import { theme } from '../theme/theme';
 import { fieldsService } from '../services/fieldsService';
 import MapSelector from './MapSelector';
+import Slider from '@react-native-community/slider';
 
 interface Props {
     visible: boolean;
@@ -127,10 +128,10 @@ export default function AddFieldModal({ visible, onClose, onSuccess }: Props) {
             });
             await fieldsService.updateFieldProperties(created.id, {
                 name: formData.name,
-                nitrogen: formData.nitrogen ? parseFloat(formData.nitrogen) : null,
-                phosphorus: formData.phosphorus ? parseFloat(formData.phosphorus) : null,
-                potassium: formData.potassium ? parseFloat(formData.potassium) : null,
-                ph: formData.useDefaultPh ? null : formData.ph,
+                nitrogen: formData.nitrogen ? parseFloat(formData.nitrogen) : 52.6,
+                phosphorus: formData.phosphorus ? parseFloat(formData.phosphorus) : 58.1,
+                potassium: formData.potassium ? parseFloat(formData.potassium) : 52.0,
+                ph: formData.useDefaultPh ? 6.44 : formData.ph,
             });
             onSuccess?.();
             setStep(3);
@@ -332,21 +333,27 @@ export default function AddFieldModal({ visible, onClose, onSuccess }: Props) {
                                                         setField('ph', clamped);
                                                     }
                                                 }}
+                                                onEndEditing={() => {
+                                                    setPhInput(formData.ph.toString());
+                                                }}
                                             />
                                             <Text style={styles.phUnit}>pH</Text>
                                         </View>
 
-                                        {/* Rainbow bar */}
-                                        <View style={styles.rainbowBar} />
-
-                                        {/* Slider replacement: +/- buttons and number taps */}
-                                        <View style={styles.phSliderRow}>
-                                            {[0, 2, 4, 6, 7, 8, 10, 12, 14].map(n => (
-                                                <TouchableOpacity key={n} onPress={() => { setField('ph', n); setPhInput(String(n)); }}>
-                                                    <Text style={[styles.phTick, { color: Math.abs(formData.ph - n) < 0.5 ? currentPhColor : '#94a3b8' }]}>{n}</Text>
-                                                </TouchableOpacity>
-                                            ))}
-                                        </View>
+                                        <Slider
+                                            style={{ width: '100%', height: 40, marginTop: 8 }}
+                                            minimumValue={0}
+                                            maximumValue={14}
+                                            step={0.1}
+                                            value={formData.ph}
+                                            onValueChange={(v) => {
+                                                const rounded = Math.round(v * 10) / 10;
+                                                setField('ph', rounded);
+                                                setPhInput(rounded.toString());
+                                            }}
+                                            minimumTrackTintColor={currentPhColor}
+                                            maximumTrackTintColor="#d1d5db"
+                                        />
 
                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
                                             <Text style={{ fontSize: 11, color: '#ef4444' }}>{t('add_field.acidic')}</Text>
