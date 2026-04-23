@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Box, Flex, Text, Spinner, Input, Badge } from "@chakra-ui/react"
+import { Box, Flex, Text, Spinner, Input, Circle } from "@chakra-ui/react"
 import { Search, MapPin, Wifi, WifiOff } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
@@ -11,16 +11,28 @@ import { getDeviceStatus } from "../../utils/deviceStatus"
 const FieldRow = ({ field, onDetailsClick }: { field: Field; onDetailsClick: (id: string) => void }) => {
     const { t } = useTranslation()
     const deviceStatus = getDeviceStatus(field, t)
-    
+    const compactStatusText = {
+        online: t('fields_page.online'),
+        inactive: t('fields_page.inactive'),
+        offline: t('fields_page.offline')
+    }[deviceStatus.status]
+    const statusConfig = {
+        online: { bg: "green.50", color: "green.700", border: "green.100", dot: "green.500" },
+        inactive: { bg: "yellow.50", color: "yellow.700", border: "yellow.100", dot: "yellow.500" },
+        offline: { bg: "red.50", color: "red.700", border: "red.100", dot: "red.500" },
+    }[deviceStatus.status]
+
     return (
         <Flex
             align="center"
-            justify="space-between"
+            justify="flex-start"
+            direction="row"
+            gap={4}
             bg="white"
             borderRadius="xl"
             border="1px solid"
             borderColor="neutral.border"
-            px={6}
+            px={{ base: 4, md: 6 }}
             py={4}
             shadow="sm"
             cursor="pointer"
@@ -28,45 +40,114 @@ const FieldRow = ({ field, onDetailsClick }: { field: Field; onDetailsClick: (id
             _hover={{ shadow: "md", borderColor: "brand.200" }}
             onClick={() => onDetailsClick(field.id)}
         >
-            <Flex align="center" gap={4}>
+            <Flex align="center" gap={4} minW={0} flex={1}>
                 <Flex
-                    w={10} h={10}
+                    w={10}
+                    h={10}
                     bg={deviceStatus.status === 'online' ? "brand.50" : deviceStatus.status === 'inactive' ? "yellow.50" : "gray.50"}
                     borderRadius="lg"
                     align="center"
                     justify="center"
                 >
-                    {deviceStatus.status === 'online' 
+                    {deviceStatus.status === 'online'
                         ? <Wifi size={18} color="#059669" />
                         : deviceStatus.status === 'inactive'
-                        ? <Wifi size={18} color="#D97706" /> 
-                        : <WifiOff size={18} color="#9ca3af" />
+                            ? <Wifi size={18} color="#D97706" />
+                            : <WifiOff size={18} color="#9ca3af" />
                     }
                 </Flex>
-                <Box>
-                    <Text fontWeight="bold" color="gray.800">{field.name}</Text>
-                    <Flex align="center" gap={1} color="gray.400" mt={0.5}>
-                        <MapPin size={12} />
-                        <Text fontSize="xs">{field.areaHa} {t('field_details.hectares').toLowerCase()} — {field.soilType}</Text>
+                <Box minW={0} flex={1}>
+                    <Text fontWeight="bold" color="gray.800" truncate>{field.name}</Text>
+                    <Flex mt={0.5} align="center" justify="space-between" gap={2}>
+                        <Flex align="center" gap={1} color="gray.400" minW={0}>
+                            <MapPin size={12} />
+                            <Text fontSize="xs" truncate>{field.areaHa} {t('field_details.hectares').toLowerCase()}</Text>
+                        </Flex>
+                        {field.deviceId && (
+                            <Flex
+                                align="center"
+                                justify="center"
+                                h="28px"
+                                fontSize="xs"
+                                color="brand.600"
+                                fontWeight="medium"
+                                lineHeight="1"
+                                bg="brand.50"
+                                px={2}
+                                borderRadius="md"
+                                maxW={{ base: "120px", md: "220px" }}
+                                minW={0}
+                                title={field.deviceId}
+                                flexShrink={0}
+                                display={{ base: "flex", md: "none" }}
+                            >
+                                <Text truncate>{field.deviceId}</Text>
+                            </Flex>
+                        )}
+                    </Flex>
+                    <Flex mt={2} justify="flex-end" display={{ base: "flex", md: "none" }}>
+                        <Flex
+                            px={2}
+                            py={1}
+                            borderRadius="full"
+                            fontSize="xs"
+                            fontWeight="bold"
+                            border="1px solid"
+                            align="center"
+                            gap={1.5}
+                            bg={statusConfig.bg}
+                            color={statusConfig.color}
+                            borderColor={statusConfig.border}
+                            whiteSpace="normal"
+                            title={deviceStatus.text}
+                            flexShrink={0}
+                        >
+                            <Circle size={1.5} bg={statusConfig.dot} />
+                            {deviceStatus.text}
+                        </Flex>
                     </Flex>
                 </Box>
             </Flex>
-
-            <Flex align="center" gap={3}>
+            <Flex align="center" gap={2} flexShrink={0} display={{ base: "none", md: "flex" }}>
                 {field.deviceId && (
-                    <Text fontSize="xs" color="brand.600" fontWeight="medium" bg="brand.50" px={2} py={1} borderRadius="md">
-                        {field.deviceId}
-                    </Text>
+                    <Flex
+                        align="center"
+                        justify="center"
+                        h="28px"
+                        fontSize="xs"
+                        color="brand.600"
+                        fontWeight="medium"
+                        lineHeight="1"
+                        bg="brand.50"
+                        px={2}
+                        borderRadius="md"
+                        maxW="220px"
+                        minW={0}
+                        title={field.deviceId}
+                        flexShrink={0}
+                    >
+                        <Text truncate>{field.deviceId}</Text>
+                    </Flex>
                 )}
-                <Badge
-                    px={2} py={1}
+                <Flex
+                    px={2}
+                    py={1}
                     borderRadius="full"
                     fontSize="xs"
                     fontWeight="bold"
-                    colorScheme={deviceStatus.colorScheme}
+                    border="1px solid"
+                    align="center"
+                    gap={1.5}
+                    bg={statusConfig.bg}
+                    color={statusConfig.color}
+                    borderColor={statusConfig.border}
+                    whiteSpace="nowrap"
+                    title={deviceStatus.text}
+                    flexShrink={0}
                 >
-                    {deviceStatus.text}
-                </Badge>
+                    <Circle size={1.5} bg={statusConfig.dot} />
+                    {compactStatusText}
+                </Flex>
             </Flex>
         </Flex>
     )

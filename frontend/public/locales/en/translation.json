@@ -40,7 +40,7 @@
     },
     "step2": {
       "title": "Data Collection & Processing",
-      "desc": "The system automatically combines sensor data and satellite-derived soil data (SoilGrids)."
+      "desc": "The system automatically combines and processes sensor data for analysis and recommendations."
     },
     "step3": {
       "title": "Recommendation Report",
@@ -635,7 +635,14 @@
     "online_stat": "online",
     "offline_stat": "offline",
     "online": "Online",
-    "offline": "Offline"
+    "offline": "Offline",
+    "inactive": "Inactive",
+    "waiting_for_data": "Paired - Waiting for data",
+    "last_seen": "Last seen {{value}}",
+    "time_just_now": "just now",
+    "time_min_ago": "{{value}} min ago",
+    "time_hour_ago": "{{value}} hr ago",
+    "time_day_ago": "{{value}} day ago"
   },
   "alerts": {
     "title": "Smart Alerts",
@@ -648,6 +655,7 @@
     "col_condition": "Condition",
     "filter_all": "All",
     "filter_active": "Active",
+    "filter_inactive": "Inactive",
     "filter_resolved": "Resolved",
     "search_placeholder": "Search rule or field...",
     "col_duration": "Duration",
@@ -662,14 +670,22 @@
     "dismiss": "Dismiss",
     "save_rule": "Save Rule",
     "cancel": "Cancel",
+    "delete_rule_title": "Delete Rule",
     "create_rule_title": "Create Rule",
     "edit_rule_title": "Edit Rule",
     "rule_name": "Rule Name",
+    "rule_name_placeholder": "e.g. Low Moisture Alert",
     "select_field": "Select Field",
     "metric": "Metric",
     "operator": "Operator",
+    "operator_below": "Below <",
+    "operator_above": "Above >",
     "threshold": "Threshold Value",
     "duration_min": "Duration (Minutes)",
+    "duration_1m": "1 Minute",
+    "duration_15m": "15 Minutes",
+    "duration_30m": "30 Minutes",
+    "duration_60m": "1 Hour",
     "send_email": "Email Notification",
     "col_time": "Time (Triggered)",
     "col_field": "Field",

@@ -3,6 +3,7 @@ import { Box, Button, Heading, Input, VStack, Text, Link, IconButton, HStack, Fl
 import { Link as RouterLink, useNavigate } from "react-router-dom"
 import { useAuth } from "../../features/auth/useAuth"
 import { LanguageSwitcher } from "../../components/ui/LanguageSwitcher"
+import { Logo } from "../../components/ui/Logo"
 import { useTranslation } from "react-i18next"
 import { User, Mail, Lock, CheckCircle, ArrowLeft, Loader2, AlertCircle, Eye, EyeOff, XCircle } from "lucide-react"
 import { Sprout } from "lucide-react"
@@ -92,7 +93,7 @@ export const Register = () => {
         flex="1"
         bg="neutral.dark"
         position="relative"
-        display="flex"
+        display={{ base: "none", md: "flex" }}
         alignItems="center"
         justifyContent="center"
         p={{ base: 8, md: 12 }}
@@ -111,7 +112,7 @@ export const Register = () => {
         />
 
         <Box position="relative" zIndex="10" maxW="lg" w="full">
-          <Box mb={8}>
+          <Box mb={{ base: 6, md: 8 }}>
             <Heading size="3xl" fontWeight="bold" mb={4}>{t('register.brand_title')}</Heading>
             <Text color="neutral.subtext" fontSize="lg">{t('register.brand_subtitle')}</Text>
           </Box>
@@ -140,13 +141,13 @@ export const Register = () => {
       </Box>
 
       {/* RIGHT SIDE (FORM) */}
-      <Box flex="1" bg="white" display="flex" alignItems="center" justifyContent="center" p={8} position="relative" order={{ base: 1, md: 2 }}>
+      <Box flex="1" bg="white" display="flex" alignItems="center" justifyContent="center" p={{ base: 4, md: 8 }} position="relative" order={{ base: 1, md: 2 }} pb={{ base: 24, md: 8 }}>
         <Link
           asChild
           position="absolute"
           top={8}
           left={8}
-          display="flex"
+          display={{ base: "none", md: "flex" }}
           alignItems="center"
           gap={2}
           color="neutral.subtext"
@@ -159,17 +160,32 @@ export const Register = () => {
             Home
           </RouterLink>
         </Link>
-        <Box position="absolute" top={8} right={8}>
+        <Box position="absolute" top={8} right={8} display={{ base: "none", md: "block" }}>
           <LanguageSwitcher />
         </Box>
 
         <Box w="full" maxW="md" mt={{ base: 10, md: 0 }}>
+          <Flex display={{ base: "flex", md: "none" }} justify="space-between" align="center" mb={4} px={1}>
+            <Link asChild color="neutral.subtext" _hover={{ color: "brand.600" }} fontSize="sm" fontWeight="medium">
+              <RouterLink to="/">
+                <Icon asChild size="sm" mr={1}><ArrowLeft size={16} /></Icon>
+                Home
+              </RouterLink>
+            </Link>
+            <LanguageSwitcher />
+          </Flex>
+
           <Box mb={8}>
-            <Box w={12} h={12} bg="brand.50" borderRadius="xl" display="flex" alignItems="center" justifyContent="center" mb={4} color="brand.600">
+            <Flex display={{ base: "flex", md: "none" }} justify="center" mb={4}>
+              <Logo />
+            </Flex>
+            <Box w={12} h={12} bg="brand.50" borderRadius="xl" display={{ base: "none", md: "flex" }} alignItems="center" justifyContent="center" mb={4} color="brand.600">
               <Icon asChild size="xl"><Sprout size={24} /></Icon>
             </Box>
             <Heading size="2xl" fontWeight="bold" color="neutral.dark">{t('register.title')}</Heading>
-            <Text color="neutral.subtext" mt={2}>{t('register.subtitle')}</Text>
+            <Text color="neutral.subtext" mt={2} fontSize={{ base: "xs", sm: "sm", md: "md" }} lineHeight={{ base: "short", md: "normal" }}>
+              {t('register.subtitle')}
+            </Text>
           </Box>
 
           {error && (
@@ -179,10 +195,10 @@ export const Register = () => {
             </Box>
           )}
 
-          <form onSubmit={handleSubmit}>
+          <form id="register-form" onSubmit={handleSubmit}>
             <VStack gap={5}>
               {/* First & Last Name Grid */}
-              <SimpleGrid columns={2} gap={4} w="full">
+              <SimpleGrid columns={{ base: 1, md: 2 }} gap={4} w="full">
                 <Box>
                   <Text mb={2} fontSize="sm" fontWeight="semibold" color="neutral.text">{t('register.first_name_label')}</Text>
                   <Box position="relative">
@@ -253,7 +269,7 @@ export const Register = () => {
                   <Text fontSize="xs" fontWeight="semibold" color="neutral.text" mb={2}>
                     {t('register.password_req_title')}
                   </Text>
-                  <SimpleGrid columns={2} gap={2}>
+                  <SimpleGrid columns={{ base: 1, sm: 2 }} gap={2}>
                     <RequirementItem valid={passwordValidations.length} text={t('register.password_req_length')} />
                     <RequirementItem valid={passwordValidations.uppercase} text={t('register.password_req_uppercase')} />
                     <RequirementItem valid={passwordValidations.number} text={t('register.password_req_number')} />
@@ -352,7 +368,7 @@ export const Register = () => {
                 shadowColor="brand.200"
                 fontWeight="bold"
                 mt={4}
-                display="flex"
+                display={{ base: "none", md: "flex" }}
                 alignItems="center"
                 justifyContent="center"
                 gap={2}
@@ -371,6 +387,43 @@ export const Register = () => {
               </RouterLink>
             </Link>
           </Box>
+        </Box>
+
+        {/* Mobile Sticky Submit */}
+        <Box
+          display={{ base: "block", md: "none" }}
+          position="fixed"
+          left={0}
+          right={0}
+          bottom={0}
+          p={4}
+          bg="white"
+          borderTopWidth="1px"
+          borderColor="neutral.border"
+          zIndex={30}
+        >
+          <Button
+            type="submit"
+            form="register-form"
+            disabled={isLoading || !isPasswordValid}
+            bg="brand.600"
+            color="white"
+            _hover={{ bg: "brand.700" }}
+            w="full"
+            py="3"
+            h="auto"
+            borderRadius="xl"
+            shadow="lg"
+            shadowColor="brand.200"
+            fontWeight="bold"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            gap={2}
+            _disabled={{ opacity: 0.7, cursor: "not-allowed", bg: "neutral.subtext" }}
+          >
+            {isLoading ? <Loader2 className="animate-spin" size={20} /> : t('register.submit')}
+          </Button>
         </Box>
       </Box>
     </Box>

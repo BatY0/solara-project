@@ -76,7 +76,7 @@ function MetricCard({ label, value, unit, icon, accent }: { label: string; value
         : '--';
     return (
         <Box
-            flex="1" minW="140px" p={5} borderRadius="2xl" border="1px solid"
+            flex="1" minW={{ base: "100%", sm: "140px" }} p={5} borderRadius="2xl" border="1px solid"
             borderColor="gray.100" bg="white"
             style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
             transition="transform 0.2s, box-shadow 0.2s"
@@ -581,7 +581,7 @@ export const FieldDetails = () => {
             <Dialog.Root open={isAnalysisModalOpen} onOpenChange={e => { setIsAnalysisModalOpen(e.open); if (!e.open) setAnalysisError(null); }} placement="center" size="lg">
                 <Portal>
                     <Dialog.Backdrop backdropFilter="auto" backdropBlur="sm" />
-                    <Dialog.Positioner><Dialog.Content maxW="560px">
+                    <Dialog.Positioner><Dialog.Content maxW={{ base: "calc(100vw - 2rem)", md: "560px" }}>
                         <Dialog.Header pb={0}>
                             <Dialog.Title>
                                 <Flex align="center" gap={2}><BrainCircuit size={20} color="#059669" />{t('field_details.ai.modal_title')}</Flex>
@@ -590,7 +590,7 @@ export const FieldDetails = () => {
                         </Dialog.Header>
                         <Dialog.Body pt={4} pb={6}>
                             <Tabs.Root value={activeScenario} onValueChange={d => { setActiveScenario(d.value as 'range' | 'future' | 'whatif'); setAnalysisError(null); }} variant="line">
-                                <Tabs.List mb={5}>
+                                <Tabs.List mb={5} flexWrap="wrap" gap={1}>
                                     <Tabs.Trigger value="range">{t('field_details.ai.tab_range')}</Tabs.Trigger>
                                     <Tabs.Trigger value="future">{t('field_details.ai.tab_future')}</Tabs.Trigger>
                                     <Tabs.Trigger value="whatif">{t('field_details.ai.tab_whatif')}</Tabs.Trigger>
@@ -599,7 +599,7 @@ export const FieldDetails = () => {
                                 <Tabs.Content value="range">
                                     <Flex direction="column" gap={4}>
                                         <Box bg="green.50" border="1px solid" borderColor="green.100" borderRadius="lg" p={3}><Text fontSize="sm" color="green.700">{t('field_details.ai.range_info')}</Text></Box>
-                                        <Flex gap={4}>
+                                        <Flex gap={4} direction={{ base: "column", md: "row" }}>
                                             <ChakraField.Root flex={1}><ChakraField.Label>{t('field_details.ai.start_date')}</ChakraField.Label><Input type="date" lang={i18n.language === 'tr' ? 'tr-TR' : 'en-US'} value={rangeStart} onChange={e => setRangeStart(e.target.value)} max={rangeEnd} /></ChakraField.Root>
                                             <ChakraField.Root flex={1}><ChakraField.Label>{t('field_details.ai.end_date')}</ChakraField.Label><Input type="date" lang={i18n.language === 'tr' ? 'tr-TR' : 'en-US'} value={rangeEnd} onChange={e => setRangeEnd(e.target.value)} min={rangeStart} max={formatDate(new Date())} /></ChakraField.Root>
                                         </Flex>
@@ -608,7 +608,7 @@ export const FieldDetails = () => {
                                 <Tabs.Content value="future">
                                     <Flex direction="column" gap={4}>
                                         <Box bg="blue.50" border="1px solid" borderColor="blue.100" borderRadius="lg" p={3}><Text fontSize="sm" color="blue.700">{t('field_details.ai.future_info')}</Text></Box>
-                                        <Flex gap={4}>
+                                        <Flex gap={4} direction={{ base: "column", md: "row" }}>
                                             <ChakraField.Root flex={1}><ChakraField.Label>{t('field_details.ai.season_start')}</ChakraField.Label><MonthSelect value={monthStart} onChange={setMonthStart} labels={monthLabels} /></ChakraField.Root>
                                             <ChakraField.Root flex={1}><ChakraField.Label>{t('field_details.ai.season_end')}</ChakraField.Label><MonthSelect value={monthEnd} onChange={setMonthEnd} labels={monthLabels} /></ChakraField.Root>
                                         </Flex>
@@ -617,7 +617,7 @@ export const FieldDetails = () => {
                                 <Tabs.Content value="whatif">
                                     <Flex direction="column" gap={5}>
                                         <Box bg="purple.50" border="1px solid" borderColor="purple.100" borderRadius="lg" p={3}><Text fontSize="sm" color="purple.700">{t('field_details.ai.whatif_info')}</Text></Box>
-                                        <Flex gap={4}>
+                                        <Flex gap={4} direction={{ base: "column", md: "row" }}>
                                             <ChakraField.Root flex={1}><ChakraField.Label>{t('field_details.ai.season_start')}</ChakraField.Label><MonthSelect value={monthStart} onChange={setMonthStart} labels={monthLabels} /></ChakraField.Root>
                                             <ChakraField.Root flex={1}><ChakraField.Label>{t('field_details.ai.season_end')}</ChakraField.Label><MonthSelect value={monthEnd} onChange={setMonthEnd} labels={monthLabels} /></ChakraField.Root>
                                         </Flex>
@@ -706,7 +706,7 @@ export const FieldDetails = () => {
                 <Box bg="white" p={6} borderRadius="2xl" borderWidth="1px" borderColor="gray.200" mb={6} style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
                     <Flex align="flex-start" justify="space-between" gap={4} wrap="wrap">
                         {/* Left: identity info */}
-                        <Flex align="center" gap={4} flex={1} minW="280px">
+                        <Flex align="center" gap={4} flex={1} minW={{ base: 0, md: "280px" }}>
                             <Flex bg="brand.50" p={4} borderRadius="2xl" flexShrink={0}>
                                 <Sprout size={36} color="#059669" />
                             </Flex>
@@ -719,7 +719,7 @@ export const FieldDetails = () => {
                                             <Input value={editState.name} onChange={e => setEditState(s => s ? { ...s, name: e.target.value } : s)} size="sm" borderRadius="lg" />
                                         </Box>
                                         {/* Area + Soil Type */}
-                                        <Flex gap={3}>
+                                        <Flex gap={3} direction={{ base: "column", md: "row" }}>
                                             <Box flex={1}>
                                                 <Text fontSize="xs" color="gray.500" fontWeight="semibold" mb={1}>{t('field_details.area')} (ha)</Text>
                                                 <Input type="number" step="0.1" value={editState.areaHa} onChange={e => setEditState(s => s ? { ...s, areaHa: e.target.value } : s)} size="sm" borderRadius="lg" />
@@ -749,7 +749,7 @@ export const FieldDetails = () => {
                                                 { key: 'potassium' as const, label: 'K' },
                                                 { key: 'ph' as const, label: 'pH' },
                                             ].map(({ key, label }) => (
-                                                <Box key={key} flex="1" minW="60px">
+                                                <Box key={key} flex="1" minW={{ base: "48%", md: "60px" }}>
                                                     <Text fontSize="xs" color="gray.400" fontWeight="bold" mb={1}>{label}</Text>
                                                     <Input type="number" step="0.1" min={0} placeholder="Auto" value={editState[key]} onChange={e => setEditState(s => s ? { ...s, [key]: e.target.value } : s)} size="xs" borderRadius="md" />
                                                 </Box>
@@ -791,7 +791,7 @@ export const FieldDetails = () => {
                         </Flex>
 
                         {/* Right: action buttons */}
-                        <Flex gap={2} align="center" wrap="wrap" flexShrink={0}>
+                        <Flex gap={2} align="center" wrap="wrap" flexShrink={0} w={{ base: "full", md: "auto" }}>
                             {isEditing ? (
                                 <>
                                     <Button size="sm" variant="ghost" colorPalette="gray" onClick={handleCancelEdit}>
@@ -993,8 +993,8 @@ export const FieldDetails = () => {
                 {/* ══════════════ AI RECOMMENDATIONS ══════════════ */}
                 {lastAnalysis ? (
                     <Box bg="white" p={6} borderRadius="2xl" border="1px solid" borderColor="gray.200" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
-                        <Flex align="center" justify="space-between" mb={4}>
-                            <Flex align="center" gap={3}>
+                        <Flex align="center" justify="space-between" mb={4} direction={{ base: "column", md: "row" }} gap={3}>
+                            <Flex align="center" gap={3} wrap="wrap">
                                 <Flex bg="green.50" p={2} borderRadius="lg"><BrainCircuit size={20} color="#059669" /></Flex>
                                 <Box>
                                     <Text fontSize="lg" fontWeight="semibold">{t('field_details.ai.results_title')}</Text>
@@ -1004,7 +1004,7 @@ export const FieldDetails = () => {
                                     {scenarioLabel(lastAnalysis.scenario)}
                                 </Flex>
                             </Flex>
-                            <Button size="xs" variant="outline" colorPalette="brand" onClick={() => setIsAnalysisModalOpen(true)}>{t('field_details.ai.reanalyze')}</Button>
+                            <Button size="xs" variant="outline" colorPalette="brand" onClick={() => setIsAnalysisModalOpen(true)} w={{ base: "full", md: "auto" }}>{t('field_details.ai.reanalyze')}</Button>
                         </Flex>
                         <Box p={3} mb={4} bg="green.50" border="1px solid" borderColor="green.100" borderRadius="lg">
                             <Text fontSize="sm" color="green.800">{weatherSourceLabel(lastAnalysis.weatherSource)}</Text>

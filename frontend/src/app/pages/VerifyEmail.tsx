@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next"
 import { Mail, ArrowLeft, Loader2, AlertCircle, CheckCircle, ShieldCheck, KeyRound, Lock, Eye, EyeOff, XCircle } from "lucide-react"
 import { Sprout } from "lucide-react"
 import { LanguageSwitcher } from "../../components/ui/LanguageSwitcher"
+import { Logo } from "../../components/ui/Logo"
 import api from "../../lib/axios"
 import type { VerifyRequestPayload, VerifyConfirmPayload, VerifyResponse, ResetPasswordPayload } from "../../types/auth"
 import { keyframes } from "@emotion/react"
@@ -217,7 +218,7 @@ export const VerifyEmail = () => {
                 flex="1"
                 bg="neutral.dark"
                 position="relative"
-                display="flex"
+                display={{ base: "none", md: "flex" }}
                 alignItems="center"
                 justifyContent="center"
                 p={{ base: 8, md: 12 }}
@@ -283,13 +284,13 @@ export const VerifyEmail = () => {
             </Box>
 
             {/* RIGHT SIDE (FORM) */}
-            <Box flex="1" bg="white" display="flex" alignItems="center" justifyContent="center" p={8} position="relative" order={{ base: 1, md: 2 }}>
+            <Box flex="1" bg="neutral.canvas" display="flex" alignItems="center" justifyContent="center" p={{ base: 4, md: 8 }} position="relative" order={{ base: 1, md: 2 }}>
                 <Link
                     asChild
                     position="absolute"
                     top={8}
                     left={8}
-                    display="flex"
+                    display={{ base: "none", md: "flex" }}
                     alignItems="center"
                     gap={2}
                     color="neutral.subtext"
@@ -302,96 +303,110 @@ export const VerifyEmail = () => {
                         {t("verify.back_to_login")}
                     </RouterLink>
                 </Link>
-                <Box position="absolute" top={8} right={8}>
+                <Box position="absolute" top={8} right={8} display={{ base: "none", md: "block" }}>
                     <LanguageSwitcher />
                 </Box>
 
                 <Box w="full" maxW="md" mt={{ base: 10, md: 0 }}>
+                    <Flex display={{ base: "flex", md: "none" }} justify="space-between" align="center" mb={4} px={1}>
+                        <Link asChild color="neutral.subtext" _hover={{ color: "brand.600" }} fontSize="sm" fontWeight="medium">
+                            <RouterLink to="/login">
+                                <Icon asChild size="sm" mr={1}><ArrowLeft size={16} /></Icon>
+                                {t("verify.back_to_login")}
+                            </RouterLink>
+                        </Link>
+                        <LanguageSwitcher />
+                    </Flex>
 
-                    {/* --- STEP 1: Enter Email --- */}
-                    {step === 1 && (
-                        <Box animation={`${fadeIn} 0.4s ease-out`}>
-                            <Box mb={8}>
-                                <Box w={12} h={12} bg="brand.50" borderRadius="xl" display="flex" alignItems="center" justifyContent="center" mb={4} color="brand.600">
-                                    <Icon asChild size="xl"><Mail size={24} /></Icon>
-                                </Box>
-                                <Heading size="2xl" fontWeight="bold" color="neutral.dark">
-                                    {mode === "forgot" ? t("verify.title_forgot") : t("verify.title_verify")}
-                                </Heading>
-                                <Text color="neutral.subtext" mt={2}>
-                                    {mode === "forgot" ? t("verify.subtitle_forgot") : t("verify.subtitle_verify")}
-                                </Text>
-                            </Box>
+                    <Box bg="white" p={{ base: 6, md: 10 }} borderRadius="2xl" shadow="xl" borderWidth="1px" borderColor="neutral.border">
+                        <Flex display={{ base: "flex", md: "none" }} justify="center" mb={4}>
+                            <Logo />
+                        </Flex>
 
-                            {error && (
-                                <Box mb={6} p={4} bg="red.50" borderWidth="1px" borderColor="red.200" borderRadius="xl" display="flex" alignItems="center" gap={3} color="red.700" fontSize="sm">
-                                    <Icon asChild size="md"><AlertCircle size={18} /></Icon>
-                                    {error}
-                                </Box>
-                            )}
-
-                            <form onSubmit={handleRequestCode}>
-                                <VStack gap={5}>
-                                    <Box w="full">
-                                        <Text mb={2} fontSize="sm" fontWeight="semibold" color="neutral.text">{t("verify.email_label")}</Text>
-                                        <Box position="relative">
-                                            <Box position="absolute" left="3" top="50%" transform="translateY(-50%)" color="neutral.subtext" zIndex="2">
-                                                <Mail size={18} />
-                                            </Box>
-                                            <Input
-                                                value={email}
-                                                onChange={(e) => setEmail(e.target.value)}
-                                                type="email"
-                                                required
-                                                pl="9"
-                                                pr="3"
-                                                py="3"
-                                                h="auto"
-                                                bg="neutral.canvas"
-                                                borderColor="neutral.border"
-                                                borderRadius="xl"
-                                                _focus={{ borderColor: "brand.500", outline: "none", boxShadow: "0 0 0 2px var(--chakra-colors-brand-500-20)" }}
-                                                fontSize="sm"
-                                                placeholder={t("verify.email_placeholder")}
-                                            />
-                                        </Box>
+                        {/* --- STEP 1: Enter Email --- */}
+                        {step === 1 && (
+                            <Box animation={`${fadeIn} 0.4s ease-out`}>
+                                <Box mb={8}>
+                                    <Box w={12} h={12} bg="brand.50" borderRadius="xl" display="flex" alignItems="center" justifyContent="center" mb={4} color="brand.600">
+                                        <Icon asChild size="xl"><Mail size={24} /></Icon>
                                     </Box>
+                                    <Heading size="2xl" fontWeight="bold" color="neutral.dark">
+                                        {mode === "forgot" ? t("verify.title_forgot") : t("verify.title_verify")}
+                                    </Heading>
+                                    <Text color="neutral.subtext" mt={2}>
+                                        {mode === "forgot" ? t("verify.subtitle_forgot") : t("verify.subtitle_verify")}
+                                    </Text>
+                                </Box>
 
-                                    <Button
-                                        type="submit"
-                                        disabled={isLoading || !email}
-                                        bg="brand.600"
-                                        color="white"
-                                        _hover={{ bg: "brand.700" }}
-                                        w="full"
-                                        py="3"
-                                        h="auto"
-                                        borderRadius="xl"
-                                        shadow="lg"
-                                        shadowColor="brand.200"
-                                        fontWeight="bold"
-                                        mt={2}
-                                        display="flex"
-                                        alignItems="center"
-                                        justifyContent="center"
-                                        gap={2}
-                                        _disabled={{ opacity: 0.7, cursor: "not-allowed", bg: "neutral.subtext" }}
-                                    >
-                                        {isLoading ? <Loader2 className="animate-spin" size={20} /> : t("verify.send_code")}
-                                    </Button>
-                                </VStack>
-                            </form>
+                                {error && (
+                                    <Box mb={6} p={4} bg="red.50" borderWidth="1px" borderColor="red.200" borderRadius="xl" display="flex" alignItems="center" gap={3} color="red.700" fontSize="sm">
+                                        <Icon asChild size="md"><AlertCircle size={18} /></Icon>
+                                        {error}
+                                    </Box>
+                                )}
 
-                            <Box mt={8} pt={6} borderTopWidth="1px" borderColor="neutral.canvas" textAlign="center" fontSize="sm" color="neutral.subtext">
-                                {t("verify.remember_password")}{" "}
-                                <Link asChild color="brand.400" fontWeight="bold" _hover={{ color: "brand.300" }}>
-                                    <RouterLink to="/login">
-                                        {t("verify.login_link")}
-                                    </RouterLink>
-                                </Link>
+                                <form onSubmit={handleRequestCode}>
+                                    <VStack gap={5}>
+                                        <Box w="full">
+                                            <Text mb={2} fontSize="sm" fontWeight="semibold" color="neutral.text">{t("verify.email_label")}</Text>
+                                            <Box position="relative">
+                                                <Box position="absolute" left="3" top="50%" transform="translateY(-50%)" color="neutral.subtext" zIndex="2">
+                                                    <Mail size={18} />
+                                                </Box>
+                                                <Input
+                                                    value={email}
+                                                    onChange={(e) => setEmail(e.target.value)}
+                                                    type="email"
+                                                    required
+                                                    pl="9"
+                                                    pr="3"
+                                                    py="3"
+                                                    h="auto"
+                                                    bg="neutral.canvas"
+                                                    borderColor="neutral.border"
+                                                    borderRadius="xl"
+                                                    _focus={{ borderColor: "brand.500", outline: "none", boxShadow: "0 0 0 2px var(--chakra-colors-brand-500-20)" }}
+                                                    fontSize="sm"
+                                                    placeholder={t("verify.email_placeholder")}
+                                                />
+                                            </Box>
+                                        </Box>
+
+                                        <Button
+                                            type="submit"
+                                            disabled={isLoading || !email}
+                                            bg="brand.600"
+                                            color="white"
+                                            _hover={{ bg: "brand.700" }}
+                                            w="full"
+                                            py="3"
+                                            h="auto"
+                                            borderRadius="xl"
+                                            shadow="lg"
+                                            shadowColor="brand.200"
+                                            fontWeight="bold"
+                                            mt={2}
+                                            display="flex"
+                                            alignItems="center"
+                                            justifyContent="center"
+                                            gap={2}
+                                            _disabled={{ opacity: 0.7, cursor: "not-allowed", bg: "neutral.subtext" }}
+                                        >
+                                            {isLoading ? <Loader2 className="animate-spin" size={20} /> : t("verify.send_code")}
+                                        </Button>
+                                    </VStack>
+                                </form>
+
+                                <Box mt={8} pt={6} borderTopWidth="1px" borderColor="neutral.canvas" textAlign="center" fontSize="sm" color="neutral.subtext">
+                                    {t("verify.remember_password")}{" "}
+                                    <Link asChild color="brand.400" fontWeight="bold" _hover={{ color: "brand.300" }}>
+                                        <RouterLink to="/login">
+                                            {t("verify.login_link")}
+                                        </RouterLink>
+                                    </Link>
+                                </Box>
                             </Box>
-                        </Box>
-                    )}
+                        )}
 
                     {/* --- STEP 2: Enter Code --- */}
                     {step === 2 && !isVerified && (
@@ -417,7 +432,7 @@ export const VerifyEmail = () => {
                             )}
 
                             {/* Code Inputs */}
-                            <HStack gap={3} justify="center" mb={8}>
+                            <HStack gap={{ base: 2, sm: 3 }} justify="center" mb={8}>
                                 {codeDigits.map((digit, index) => (
                                     <Input
                                         key={index}
@@ -430,9 +445,9 @@ export const VerifyEmail = () => {
                                         inputMode="numeric"
                                         maxLength={1}
                                         textAlign="center"
-                                        w="56px"
-                                        h="64px"
-                                        fontSize="2xl"
+                                        w={{ base: "44px", sm: "56px" }}
+                                        h={{ base: "52px", sm: "64px" }}
+                                        fontSize={{ base: "xl", sm: "2xl" }}
                                         fontWeight="bold"
                                         bg="neutral.canvas"
                                         borderWidth="2px"
@@ -521,7 +536,7 @@ export const VerifyEmail = () => {
                             {/* Password Requirements */}
                             <Box mb={6} p={4} bg="neutral.canvas" borderRadius="xl" borderWidth="1px" borderColor="neutral.border">
                                 <Text fontSize="xs" fontWeight="bold" color="neutral.text" mb={2}>{t("verify.password_req_title")}</Text>
-                                <SimpleGrid columns={2} gap={2}>
+                                <SimpleGrid columns={{ base: 1, sm: 2 }} gap={2}>
                                     <RequirementItem valid={passwordValidations.length} text={t("verify.password_req_length")} />
                                     <RequirementItem valid={passwordValidations.uppercase} text={t("verify.password_req_uppercase")} />
                                     <RequirementItem valid={passwordValidations.number} text={t("verify.password_req_number")} />
@@ -615,38 +630,39 @@ export const VerifyEmail = () => {
                     )}
 
                     {/* --- SUCCESS STATE (verify mode or password reset success) --- */}
-                    {(isVerified || passwordResetSuccess) && (
-                        <Box animation={`${fadeIn} 0.4s ease-out`} textAlign="center">
-                            <Box w={16} h={16} bg="green.50" borderRadius="full" display="flex" alignItems="center" justifyContent="center" mx="auto" mb={6}>
-                                <Icon asChild size="xl" color="green.500">
-                                    <CheckCircle size={32} />
-                                </Icon>
+                        {(isVerified || passwordResetSuccess) && (
+                            <Box animation={`${fadeIn} 0.4s ease-out`} textAlign="center">
+                                <Box w={16} h={16} bg="green.50" borderRadius="full" display="flex" alignItems="center" justifyContent="center" mx="auto" mb={6}>
+                                    <Icon asChild size="xl" color="green.500">
+                                        <CheckCircle size={32} />
+                                    </Icon>
+                                </Box>
+                                <Heading size="2xl" fontWeight="bold" color="neutral.dark" mb={3}>
+                                    {passwordResetSuccess ? t("verify.reset_success_title") : t("verify.success_title_verify")}
+                                </Heading>
+                                <Text color="neutral.subtext" mb={8}>
+                                    {success}
+                                </Text>
+                                <Button
+                                    asChild
+                                    bg="brand.600"
+                                    color="white"
+                                    _hover={{ bg: "brand.700" }}
+                                    w="full"
+                                    py="3"
+                                    h="auto"
+                                    borderRadius="xl"
+                                    shadow="lg"
+                                    shadowColor="brand.200"
+                                    fontWeight="bold"
+                                >
+                                    <RouterLink to="/login">
+                                        {t("verify.go_to_login")}
+                                    </RouterLink>
+                                </Button>
                             </Box>
-                            <Heading size="2xl" fontWeight="bold" color="neutral.dark" mb={3}>
-                                {passwordResetSuccess ? t("verify.reset_success_title") : t("verify.success_title_verify")}
-                            </Heading>
-                            <Text color="neutral.subtext" mb={8}>
-                                {success}
-                            </Text>
-                            <Button
-                                asChild
-                                bg="brand.600"
-                                color="white"
-                                _hover={{ bg: "brand.700" }}
-                                w="full"
-                                py="3"
-                                h="auto"
-                                borderRadius="xl"
-                                shadow="lg"
-                                shadowColor="brand.200"
-                                fontWeight="bold"
-                            >
-                                <RouterLink to="/login">
-                                    {t("verify.go_to_login")}
-                                </RouterLink>
-                            </Button>
-                        </Box>
-                    )}
+                        )}
+                    </Box>
                 </Box>
             </Box>
         </Box>

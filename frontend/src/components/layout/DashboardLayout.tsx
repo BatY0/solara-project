@@ -15,6 +15,7 @@ interface DashboardLayoutProps {
 export const DashboardLayout = ({ children, title, subtitle, actions }: DashboardLayoutProps) => {
     const navigate = useNavigate()
     const [unreadCount, setUnreadCount] = useState(0)
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
     useEffect(() => {
         const fetchCount = async () => {
@@ -39,10 +40,10 @@ export const DashboardLayout = ({ children, title, subtitle, actions }: Dashboar
     }, []);
 
     return (
-        <Flex minH="100vh" bg="neutral.canvas" fontFamily="body" color="neutral.text">
-            <Sidebar />
+        <Flex h="100vh" bg="neutral.canvas" fontFamily="body" color="neutral.text" overflow="hidden">
+            <Sidebar mobileMenuOpen={isMobileMenuOpen} onMobileClose={() => setIsMobileMenuOpen(false)} />
 
-            <Flex flex={1} direction="column" minW={0} overflowY="auto" pb={{ base: 20, md: 0 }}>
+            <Flex flex={1} direction="column" minW={0} overflowY="auto" overflowX="hidden">
                 {/* HEADER */}
                 <Box
                     as="header"
@@ -54,7 +55,7 @@ export const DashboardLayout = ({ children, title, subtitle, actions }: Dashboar
                     zIndex={20}
                 >
                     <Box maxW="container.xl" mx="auto" px={{ base: 4, sm: 6, lg: 8 }}>
-                        <Flex justify="space-between" align="center" h="80px">
+                        <Flex justify="space-between" align="center" h={{ base: "72px", md: "80px" }}>
                             {/* Left Side (Title & Mobile Menu) */}
                             <Flex align="center" gap={4}>
                                 <IconButton
@@ -63,11 +64,12 @@ export const DashboardLayout = ({ children, title, subtitle, actions }: Dashboar
                                     display={{ base: "flex", md: "none" }}
                                     color="neutral.subtext"
                                     _hover={{ color: "brand.500" }}
+                                    onClick={() => setIsMobileMenuOpen(true)}
                                 >
                                     <Menu size={24} />
                                 </IconButton>
                                 <Box>
-                                    <Text fontSize="2xl" fontWeight="bold" color="neutral.dark">
+                                    <Text fontSize={{ base: "lg", sm: "xl", md: "2xl" }} fontWeight="bold" color="neutral.dark" truncate>
                                         {title}
                                     </Text>
                                     {subtitle && (
@@ -87,6 +89,7 @@ export const DashboardLayout = ({ children, title, subtitle, actions }: Dashboar
                                     transition="colors 0.2s" 
                                     _hover={{ color: "brand.500" }}
                                     onClick={() => navigate('/alerts')}
+                                    title="Alerts"
                                 >
                                     <Bell size={24} />
                                     {unreadCount > 0 && (
@@ -113,7 +116,7 @@ export const DashboardLayout = ({ children, title, subtitle, actions }: Dashboar
                 </Box>
 
                 {/* PAGE CONTENT */}
-                <Box as="main" maxW="container.xl" w="full" mx="auto" px={{ base: 4, sm: 6, lg: 8 }} py={8}>
+                <Box as="main" maxW="container.xl" w="full" mx="auto" px={{ base: 4, sm: 6, lg: 8 }} py={{ base: 5, md: 8 }} overflowX="hidden">
                     {children}
                 </Box>
             </Flex>

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
     Box, Flex, Text, Button, Badge, IconButton, Input, useDisclosure, chakra, Spinner
 } from '@chakra-ui/react';
-import { Plus, Trash2, Edit, BellRing, Clock } from 'lucide-react';
+import { Plus, Trash2, Edit, BellRing, Clock, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { alertsService } from '../../features/alerts/alerts.service';
@@ -20,8 +20,10 @@ export const Alerts = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     // Filter states
-    const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'resolved'>('all');
+    const [rulesSearchTerm, setRulesSearchTerm] = useState('');
+    const [rulesStatusFilter, setRulesStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+    const [historySearchTerm, setHistorySearchTerm] = useState('');
+    const [historyStatusFilter, setHistoryStatusFilter] = useState<'all' | 'active' | 'resolved'>('all');
 
     // UI state
     const [activeTab, setActiveTab] = useState<'rules' | 'history'>('rules');
@@ -135,6 +137,34 @@ export const Alerts = () => {
 
     const getOperatorSymbol = (op: string) => op === 'ABOVE' ? '>' : '<';
 
+    const filteredRules = rules.filter(rule => {
+        const q = rulesSearchTerm.toLowerCase();
+        const matchesSearch =
+            rule.name.toLowerCase().includes(q) ||
+            rule.fieldName.toLowerCase().includes(q) ||
+            formatMetric(rule.metric).toLowerCase().includes(q);
+
+        const matchesStatus =
+            rulesStatusFilter === 'all' ||
+            (rulesStatusFilter === 'active' && rule.active) ||
+            (rulesStatusFilter === 'inactive' && !rule.active);
+
+        return matchesSearch && matchesStatus;
+    });
+
+    const filteredEvents = events.filter(event => {
+        const matchesSearch =
+            event.ruleName.toLowerCase().includes(historySearchTerm.toLowerCase()) ||
+            event.fieldName.toLowerCase().includes(historySearchTerm.toLowerCase());
+
+        const matchesStatus =
+            historyStatusFilter === 'all' ||
+            (historyStatusFilter === 'active' && event.active) ||
+            (historyStatusFilter === 'resolved' && !event.active);
+
+        return matchesSearch && matchesStatus;
+    });
+
 
 
     if (isLoading && rules.length === 0) {
@@ -152,8 +182,8 @@ export const Alerts = () => {
             <Flex direction="column" gap={6} w="full">
 
                 {/* Header Actions */}
-                <Flex justify="space-between" align="center">
-                    <Flex gap={2}>
+                <Flex justify="space-between" align={{ base: "stretch", md: "center" }} direction={{ base: "column", md: "row" }} gap={{ base: 3, md: 0 }}>
+                    <Flex gap={2} wrap="wrap">
                         <Button
                             variant={activeTab === 'rules' ? 'solid' : 'ghost'}
                             colorScheme={activeTab === 'rules' ? 'green' : 'gray'}
@@ -177,8 +207,8 @@ export const Alerts = () => {
                     </Flex>
 
                     {/* RIGHT CONTROLS */}
-                    <Flex gap={4} align="center">
-                        <Box w="250px">
+                    <Flex gap={3} align="center" direction={{ base: "column", sm: "row" }} w={{ base: "full", md: "auto" }}>
+                        <Box w={{ base: "full", sm: "250px" }}>
                             <chakra.select
                                 w="full"
                                 h="36px"
@@ -205,6 +235,7 @@ export const Alerts = () => {
                                 color="white"
                                 _hover={{ bg: "green.600" }}
                                 onClick={() => handleOpenModal()}
+                                w={{ base: "full", sm: "auto" }}
                             >
                                 <Plus size={16} /> {t('alerts.add_rule')}
                             </Button>
@@ -216,10 +247,110 @@ export const Alerts = () => {
                     {/* RULES TAB CONTENT */}
                     {activeTab === 'rules' && (
                         <Box p={4}>
-                            {rules.length === 0 ? (
+                            <Flex gap={4} mb={4} direction={{ base: "column", md: "row" }} align="center">
+                                <Box flex={1} w="full">
+                                    <Input
+                                        placeholder={t('alerts.search_placeholder')}
+                                        value={rulesSearchTerm}
+                                        onChange={(e) => setRulesSearchTerm(e.target.value)}
+                                        bg="white"
+                                        borderRadius="xl"
+                                    />
+                                </Box>
+                                <Box w={{ base: "full", md: "200px" }}>
+                                    <chakra.select
+                                        w="full"
+                                        h="40px"
+                                        px={3}
+                                        value={rulesStatusFilter}
+                                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setRulesStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+                                        bg="white"
+                                        border="1px solid"
+                                        borderColor="neutral.border"
+                                        borderRadius="xl"
+                                        fontSize="sm"
+                                    >
+                                        <option value="all">{t('alerts.filter_all')}</option>
+                                        <option value="active">{t('alerts.filter_active')}</option>
+                                        <option value="inactive">{t('alerts.filter_inactive')}</option>
+                                    </chakra.select>
+                                </Box>
+                            </Flex>
+
+                            {filteredRules.length === 0 ? (
                                 <Text color="gray.500" textAlign="center" py={10}>{t('alerts.no_rules')}</Text>
                             ) : (
-                                <Box overflowX="auto">
+                                <>
+                                <Flex display={{ base: "flex", md: "none" }} direction="column" gap={3}>
+                                    {filteredRules.map(rule => (
+                                        <Box key={rule.id} borderWidth="1px" borderColor="gray.100" borderRadius="xl" p={4}>
+                                            <Flex justify="space-between" align="start" gap={3} mb={3}>
+                                                <Box>
+                                                    <Text fontWeight="bold">{rule.name}</Text>
+                                                    <Text fontSize="sm" color="gray.500">{rule.fieldName}</Text>
+                                                </Box>
+                                                <Badge colorPalette={rule.active ? "green" : "gray"}>
+                                                    {rule.active ? t('alerts.filter_active') : t('alerts.filter_inactive')}
+                                                </Badge>
+                                            </Flex>
+
+                                            <Flex direction="column" gap={1} mb={3}>
+                                                <Text fontSize="sm" color="gray.600">
+                                                    {t('alerts.col_condition')}: {formatMetric(rule.metric)} {getOperatorSymbol(rule.operator)} {rule.threshold}
+                                                </Text>
+                                                <Text fontSize="sm" color="gray.600">
+                                                    {t('alerts.col_duration')}: {rule.durationMinutes} min
+                                                </Text>
+                                            </Flex>
+
+                                            <Flex justify="space-between" align="center">
+                                                <Box
+                                                    w="44px" h="24px"
+                                                    bg={rule.active ? "green.500" : "gray.300"}
+                                                    borderRadius="full"
+                                                    position="relative"
+                                                    cursor="pointer"
+                                                    transition="background-color 0.2s"
+                                                    onClick={() => toggleRuleActive(rule)}
+                                                >
+                                                    <Box
+                                                        w="20px" h="20px" bg="white" borderRadius="full"
+                                                        position="absolute" top="2px" shadow="sm"
+                                                        left={rule.active ? "22px" : "2px"}
+                                                        transition="left 0.2s"
+                                                    />
+                                                </Box>
+
+                                                <Flex align="center" gap={2}>
+                                                    <IconButton
+                                                        aria-label={t('alerts.edit_rule_title')}
+                                                        title={t('alerts.edit_rule_title')}
+                                                        color="gray.500"
+                                                        bg="transparent"
+                                                        _hover={{ bg: "gray.100" }}
+                                                        size="sm"
+                                                        onClick={() => handleOpenModal(rule)}
+                                                    >
+                                                        <Edit size={16} />
+                                                    </IconButton>
+                                                    <IconButton
+                                                        aria-label={t('alerts.delete_rule_title')}
+                                                        title={t('alerts.delete_rule_title')}
+                                                        color="red.500"
+                                                        bg="transparent"
+                                                        _hover={{ bg: "red.50" }}
+                                                        size="sm"
+                                                        onClick={() => handleDeleteRule(rule.id)}
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </IconButton>
+                                                </Flex>
+                                            </Flex>
+                                        </Box>
+                                    ))}
+                                </Flex>
+
+                                <Box display={{ base: "none", md: "block" }} overflowX="auto">
                                     <Box as="table" w="full" style={{ borderCollapse: 'collapse' }}>
                                         <Box as="thead" bg="gray.50">
                                             <Box as="tr">
@@ -231,7 +362,7 @@ export const Alerts = () => {
                                             </Box>
                                         </Box>
                                         <Box as="tbody">
-                                            {rules.map(rule => (
+                                            {filteredRules.map(rule => (
                                                 <Box as="tr" key={rule.id} borderBottom="1px solid" borderColor="gray.100">
                                                     <Box as="td" p={4}>
                                                         <Text fontWeight="bold">{rule.name}</Text>
@@ -265,7 +396,8 @@ export const Alerts = () => {
                                                     </Box>
                                                     <Box as="td" p={4} textAlign="right">
                                                         <IconButton
-                                                            aria-label="Edit"
+                                                            aria-label={t('alerts.edit_rule_title')}
+                                                            title={t('alerts.edit_rule_title')}
                                                             color="gray.500"
                                                             bg="transparent"
                                                             _hover={{ bg: "gray.100" }}
@@ -276,7 +408,8 @@ export const Alerts = () => {
                                                             <Edit size={16} />
                                                         </IconButton>
                                                         <IconButton
-                                                            aria-label="Delete"
+                                                            aria-label={t('alerts.delete_rule_title')}
+                                                            title={t('alerts.delete_rule_title')}
                                                             color="red.500"
                                                             bg="transparent"
                                                             _hover={{ bg: "red.50" }}
@@ -291,6 +424,7 @@ export const Alerts = () => {
                                         </Box>
                                     </Box>
                                 </Box>
+                                </>
                             )}
                         </Box>
                     )}
@@ -298,7 +432,7 @@ export const Alerts = () => {
                     {/* HISTORY TAB CONTENT */}
                     {activeTab === 'history' && (
                         <Box p={4}>
-                            <Flex justify="space-between" align="center" mb={4}>
+                            <Flex justify="space-between" align={{ base: "start", md: "center" }} mb={4} direction={{ base: "column", md: "row" }} gap={3}>
                                 <Text color="gray.600" fontSize="sm">
                                     {t('alerts.history_desc')}
                                 </Text>
@@ -310,6 +444,7 @@ export const Alerts = () => {
                                         window.dispatchEvent(new Event('notificationsRead'));
                                         fetchData();
                                     }}
+                                    w={{ base: "full", md: "auto" }}
                                 >
                                     {t('alerts.mark_all_read')}
                                 </Button>
@@ -320,8 +455,8 @@ export const Alerts = () => {
                                 <Box flex={1} w="full">
                                     <Input
                                         placeholder={t('alerts.search_placeholder')}
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        value={historySearchTerm}
+                                        onChange={(e) => setHistorySearchTerm(e.target.value)}
                                         bg="white"
                                         borderRadius="xl"
                                     />
@@ -331,8 +466,8 @@ export const Alerts = () => {
                                         w="full"
                                         h="40px"
                                         px={3}
-                                        value={statusFilter}
-                                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatusFilter(e.target.value as any)}
+                                        value={historyStatusFilter}
+                                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setHistoryStatusFilter(e.target.value as any)}
                                         bg="white"
                                         border="1px solid"
                                         borderColor="neutral.border"
@@ -346,10 +481,38 @@ export const Alerts = () => {
                                 </Box>
                             </Flex>
 
-                            {events.length === 0 ? (
+                            {filteredEvents.length === 0 ? (
                                 <Text color="gray.500" textAlign="center" py={10}>{t('alerts.no_events')}</Text>
                             ) : (
-                                <Box overflowX="auto">
+                                <>
+                                <Flex display={{ base: "flex", md: "none" }} direction="column" gap={3}>
+                                    {filteredEvents.map(event => {
+                                        const triggered = parseBackendDate(event.triggeredAt);
+                                        return (
+                                            <Box key={event.id} borderWidth="1px" borderColor="gray.100" borderRadius="xl" p={4} bg={event.active ? "red.50" : "white"}>
+                                                <Flex justify="space-between" align="start" gap={3} mb={2}>
+                                                    <Box>
+                                                        <Text fontWeight="bold">{event.ruleName}</Text>
+                                                        <Text fontSize="sm" color="gray.600">{event.fieldName}</Text>
+                                                    </Box>
+                                                    <Badge bg={event.active ? "red.100" : "green.100"} color={event.active ? "red.700" : "green.700"}>
+                                                        {event.active ? t('alerts.active_breach') : t('alerts.filter_resolved')}
+                                                    </Badge>
+                                                </Flex>
+                                                <Text fontSize="sm" color="gray.500" mb={1}>{triggered.toLocaleString()}</Text>
+                                                <Text fontSize="sm" color="gray.700">
+                                                    {t('alerts.condition_text', {
+                                                        metric: formatMetric(event.metric),
+                                                        value: event.lastValue,
+                                                        threshold: event.threshold
+                                                    })}
+                                                </Text>
+                                            </Box>
+                                        );
+                                    })}
+                                </Flex>
+
+                                <Box display={{ base: "none", md: "block" }} overflowX="auto">
                                     <Box as="table" w="full" style={{ borderCollapse: 'collapse' }}>
                                         <Box as="thead" bg="gray.50">
                                             <Box as="tr">
@@ -361,22 +524,7 @@ export const Alerts = () => {
                                             </Box>
                                         </Box>
                                         <Box as="tbody">
-                                            {events
-                                                .filter(event => {
-                                                    // Search text filter
-                                                    const matchesSearch =
-                                                        event.ruleName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                                        event.fieldName.toLowerCase().includes(searchTerm.toLowerCase());
-
-                                                    // Status filter
-                                                    const matchesStatus =
-                                                        statusFilter === 'all' ||
-                                                        (statusFilter === 'active' && event.active) ||
-                                                        (statusFilter === 'resolved' && !event.active);
-
-                                                    return matchesSearch && matchesStatus;
-                                                })
-                                                .map(event => {
+                                            {filteredEvents.map(event => {
                                                     const triggered = parseBackendDate(event.triggeredAt);
                                                     return (
                                                         <Box as="tr" key={event.id} bg={event.active ? "red.50" : "transparent"} borderBottom="1px solid" borderColor="gray.100">
@@ -401,6 +549,7 @@ export const Alerts = () => {
                                         </Box>
                                     </Box>
                                 </Box>
+                                </>
                             )}
                         </Box>
                     )}
@@ -411,101 +560,150 @@ export const Alerts = () => {
             {open && (
                 <>
                     <Box position="fixed" inset={0} bg="blackAlpha.600" zIndex={50} onClick={onClose} />
-                    <Flex position="fixed" inset={0} zIndex={60} align="center" justify="center" p={4}>
-                        <Flex bg="white" p={6} borderRadius="xl" shadow="xl" direction="column" w="full" maxW="md" mx={4} position="relative">
-                            <Text fontSize="xl" fontWeight="bold" mb={4}>
-                                {editingRule ? t('alerts.edit_rule_title') : t('alerts.create_rule_title')}
-                            </Text>
-
-                            <Flex direction="column" gap={4}>
-                                <Box>
-                                    <Text fontSize="sm" fontWeight="bold" mb={1}>{t('alerts.rule_name')}</Text>
-                                    <Input
-                                        value={formData.name}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                                        placeholder="e.g. Low Moisture Alert"
-                                    />
-                                </Box>
-
-                                <Box>
-                                    <Text fontSize="sm" fontWeight="bold" mb={1}>{t('alerts.select_field')}</Text>
-                                    <chakra.select
-                                        value={formData.fieldId}
-                                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, fieldId: e.target.value })}
-                                        border="1px solid" borderColor="gray.200" borderRadius="md" p={2} w="full" bg="white"
-                                    >
-                                        {fields.map(f => (
-                                            <option key={f.id} value={f.id}>{f.name}</option>
-                                        ))}
-                                    </chakra.select>
-                                </Box>
-
-                                <Flex gap={4}>
-                                    <Box flex={1}>
-                                        <Text fontSize="sm" fontWeight="bold" mb={1}>{t('alerts.metric')}</Text>
-                                        <chakra.select
-                                            value={formData.metric}
-                                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, metric: e.target.value as AlertMetric })}
-                                            border="1px solid" borderColor="gray.200" borderRadius="md" p={2} w="full" bg="white"
-                                        >
-                                            <option value={AlertMetric.SOIL_HUMIDITY}>Soil Moisture</option>
-                                            <option value={AlertMetric.SOIL_TEMP}>Soil Temperature</option>
-                                            <option value={AlertMetric.AMBIENT_TEMP}>Air Temperature</option>
-                                            <option value={AlertMetric.AMBIENT_HUMIDITY}>Air Humidity</option>
-                                            <option value="BATTERY_PERCENTAGE">{t('alerts.metrics.BATTERY_PERCENTAGE')}</option>
-                                        </chakra.select>
-                                    </Box>
-                                    <Box flex={1}>
-                                        <Text fontSize="sm" fontWeight="bold" mb={1}>{t('alerts.operator')}</Text>
-                                        <chakra.select
-                                            value={formData.operator}
-                                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, operator: e.target.value as AlertOperator })}
-                                            border="1px solid" borderColor="gray.200" borderRadius="md" p={2} w="full" bg="white"
-                                        >
-                                            <option value={AlertOperator.BELOW}>Below &lt;</option>
-                                            <option value={AlertOperator.ABOVE}>Above &gt;</option>
-                                        </chakra.select>
-                                    </Box>
-                                </Flex>
-
-                                <Flex gap={4}>
-                                    <Box flex={1}>
-                                        <Text fontSize="sm" fontWeight="bold" mb={1}>{t('alerts.threshold')}</Text>
-                                        <Input
-                                            type="number"
-                                            value={formData.threshold}
-                                            onChange={(e) => setFormData(prev => ({ ...prev, threshold: Number(e.target.value) }))}
-                                        />
-                                    </Box>
-                                    <Box flex={1}>
-                                        <Text fontSize="sm" fontWeight="bold" mb={1}>{t('alerts.duration_min')}</Text>
-                                        <chakra.select
-                                            value={formData.durationMinutes}
-                                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, durationMinutes: parseInt(e.target.value) })}
-                                            border="1px solid" borderColor="gray.200" borderRadius="md" p={2} w="full" bg="white"
-                                        >
-                                            <option value={1}>1 Minute</option>
-                                            <option value={15}>15 Minutes</option>
-                                            <option value={30}>30 Minutes</option>
-                                            <option value={60}>1 Hour</option>
-                                        </chakra.select>
-                                    </Box>
-                                </Flex>
-
-                                <Box mt={2}>
-                                    <Flex align="center" gap={3}>
-                                        <Flex
-                                            w="36px" h="20px" bg={formData.notifyEmail ? "green.500" : "gray.300"}
-                                            borderRadius="full" p="2px" cursor="pointer" onClick={() => setFormData({ ...formData, notifyEmail: !formData.notifyEmail })}
-                                        >
-                                            <Box w={3} h={3} bg="white" borderRadius="full" transform={formData.notifyEmail ? "translateX(14px)" : "translateX(2px)"} transition="transform 0.2s" />
-                                        </Flex>
-                                        <Text fontSize="sm" fontWeight="medium">{t('alerts.send_email')}</Text>
-                                    </Flex>
-                                </Box>
+                    <Flex position="fixed" inset={0} zIndex={60} align={{ base: "flex-start", md: "center" }} justify="center" p={{ base: 3, md: 4 }} overflowY="auto">
+                        <Flex bg="white" p={{ base: 4, md: 6 }} borderRadius="xl" shadow="xl" direction="column" w="full" maxW="md" mx={0} mt={{ base: 3, md: 0 }} position="relative" maxH={{ base: "calc(100dvh - 1.5rem)", md: "90vh" }} overflow="hidden">
+                            <Flex justify="space-between" align="center" mb={4}>
+                                <Text fontSize="xl" fontWeight="bold">
+                                    {editingRule ? t('alerts.edit_rule_title') : t('alerts.create_rule_title')}
+                                </Text>
+                                <IconButton
+                                    aria-label={t('alerts.cancel')}
+                                    title={t('alerts.cancel')}
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={onClose}
+                                >
+                                    <X size={18} />
+                                </IconButton>
                             </Flex>
 
-                            <Flex justify="flex-end" gap={3} mt={8}>
+                            <Box flex={1} overflowY="auto" pr={{ base: 0, md: 1 }}>
+                                <Flex direction="column" gap={4}>
+                                    <Box>
+                                        <Text fontSize="sm" fontWeight="bold" mb={1}>{t('alerts.rule_name')}</Text>
+                                        <Input
+                                            value={formData.name}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                            placeholder={t('alerts.rule_name_placeholder')}
+                                        />
+                                    </Box>
+
+                                    <Box>
+                                        <Text fontSize="sm" fontWeight="bold" mb={1}>{t('alerts.select_field')}</Text>
+                                        <chakra.select
+                                            value={formData.fieldId}
+                                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, fieldId: e.target.value })}
+                                            border="1px solid" borderColor="gray.200" borderRadius="md" p={2} w="full" bg="white"
+                                        >
+                                            {fields.map(f => (
+                                                <option key={f.id} value={f.id}>{f.name}</option>
+                                            ))}
+                                        </chakra.select>
+                                    </Box>
+
+                                    <Flex gap={4} direction={{ base: "column", md: "row" }}>
+                                        <Box flex={1}>
+                                            <Text fontSize="sm" fontWeight="bold" mb={1}>{t('alerts.metric')}</Text>
+                                            <chakra.select
+                                                value={formData.metric}
+                                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, metric: e.target.value as AlertMetric })}
+                                                border="1px solid" borderColor="gray.200" borderRadius="md" p={2} w="full" bg="white"
+                                            >
+                                                <option value={AlertMetric.SOIL_HUMIDITY}>{t('alerts.metrics.SOIL_HUMIDITY')}</option>
+                                                <option value={AlertMetric.SOIL_TEMP}>{t('alerts.metrics.SOIL_TEMP')}</option>
+                                                <option value={AlertMetric.AMBIENT_TEMP}>{t('alerts.metrics.AMBIENT_TEMP')}</option>
+                                                <option value={AlertMetric.AMBIENT_HUMIDITY}>{t('alerts.metrics.AMBIENT_HUMIDITY')}</option>
+                                                <option value="BATTERY_PERCENTAGE">{t('alerts.metrics.BATTERY_PERCENTAGE')}</option>
+                                            </chakra.select>
+                                        </Box>
+                                        <Box flex={1}>
+                                            <Text fontSize="sm" fontWeight="bold" mb={1}>{t('alerts.operator')}</Text>
+                                            <chakra.select
+                                                value={formData.operator}
+                                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, operator: e.target.value as AlertOperator })}
+                                                border="1px solid" borderColor="gray.200" borderRadius="md" p={2} w="full" bg="white"
+                                            >
+                                                <option value={AlertOperator.BELOW}>{t('alerts.operator_below')}</option>
+                                                <option value={AlertOperator.ABOVE}>{t('alerts.operator_above')}</option>
+                                            </chakra.select>
+                                        </Box>
+                                    </Flex>
+
+                                    <Flex gap={4} direction={{ base: "column", md: "row" }}>
+                                        <Box flex={1}>
+                                            <Text fontSize="sm" fontWeight="bold" mb={1}>{t('alerts.threshold')}</Text>
+                                            <Input
+                                                type="number"
+                                                value={formData.threshold}
+                                                onChange={(e) => setFormData(prev => ({ ...prev, threshold: Number(e.target.value) }))}
+                                            />
+                                        </Box>
+                                        <Box flex={1}>
+                                            <Text fontSize="sm" fontWeight="bold" mb={1}>{t('alerts.duration_min')}</Text>
+                                            <chakra.select
+                                                value={formData.durationMinutes}
+                                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, durationMinutes: parseInt(e.target.value) })}
+                                                border="1px solid" borderColor="gray.200" borderRadius="md" p={2} w="full" bg="white"
+                                            >
+                                                <option value={1}>{t('alerts.duration_1m')}</option>
+                                                <option value={15}>{t('alerts.duration_15m')}</option>
+                                                <option value={30}>{t('alerts.duration_30m')}</option>
+                                                <option value={60}>{t('alerts.duration_60m')}</option>
+                                            </chakra.select>
+                                        </Box>
+                                    </Flex>
+
+                                    <Box mt={2}>
+                                        <Box
+                                            role="button"
+                                            tabIndex={0}
+                                            px={1}
+                                            py={1}
+                                            borderRadius="md"
+                                            cursor="pointer"
+                                            _hover={{ bg: "gray.50" }}
+                                            onClick={() => setFormData({ ...formData, notifyEmail: !formData.notifyEmail })}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter" || e.key === " ") {
+                                                    e.preventDefault();
+                                                    setFormData({ ...formData, notifyEmail: !formData.notifyEmail });
+                                                }
+                                            }}
+                                        >
+                                        <Flex align="center" gap={3}>
+                                            <Box
+                                                w="38px"
+                                                h="22px"
+                                                bg={formData.notifyEmail ? "green.500" : "gray.300"}
+                                                borderRadius="full"
+                                                border="1px solid"
+                                                borderColor={formData.notifyEmail ? "green.500" : "gray.300"}
+                                                position="relative"
+                                                transition="all 0.2s"
+                                            >
+                                                <Box
+                                                    position="absolute"
+                                                    top="2px"
+                                                    left="2px"
+                                                    w="16px"
+                                                    h="16px"
+                                                    bg="white"
+                                                    borderRadius="full"
+                                                    boxShadow="sm"
+                                                    transform={formData.notifyEmail ? "translateX(16px)" : "translateX(0)"}
+                                                    transition="transform 0.2s"
+                                                />
+                                            </Box>
+                                            <Text fontSize="sm" fontWeight="semibold" color="gray.700" lineHeight="short">
+                                                {t('alerts.send_email')}
+                                            </Text>
+                                        </Flex>
+                                        </Box>
+                                    </Box>
+                                </Flex>
+                            </Box>
+
+                            <Flex justify="flex-end" gap={3} mt={4} pt={4} borderTop="1px solid" borderColor="gray.100">
                                 <Button variant="ghost" onClick={onClose}>{t('alerts.cancel')}</Button>
                                 <Button
                                     bg="green.500"

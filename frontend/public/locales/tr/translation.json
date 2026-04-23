@@ -40,7 +40,7 @@
     },
     "step2": {
       "title": "Veri Toplama & İşleme",
-      "desc": "Sistem, sensör verilerini ve uydu kaynaklı toprak verilerini (SoilGrids) otomatik olarak birleştirir."
+      "desc": "Sistem, sensör verilerini analiz ve öneriler için otomatik olarak birleştirir ve işler."
     },
     "step3": {
       "title": "Öneri Raporu",
@@ -635,7 +635,14 @@
     "online_stat": "çevrimiçi",
     "offline_stat": "çevrimdışı",
     "online": "Çevrimiçi",
-    "offline": "Çevrimdışı"
+    "offline": "Çevrimdışı",
+    "inactive": "Pasif",
+    "waiting_for_data": "Eşleştirildi - Veri bekleniyor",
+    "last_seen": "Son görülme: {{value}}",
+    "time_just_now": "az önce",
+    "time_min_ago": "{{value}} dk önce",
+    "time_hour_ago": "{{value}} sa önce",
+    "time_day_ago": "{{value}} gün önce"
   },
   "alerts": {
     "title": "Akıllı Uyarılar",
@@ -648,6 +655,7 @@
     "col_condition": "Koşul",
     "filter_all": "Hepsi",
     "filter_active": "Aktif",
+    "filter_inactive": "Pasif",
     "filter_resolved": "Çözülmüş",
     "search_placeholder": "Kural veya tarla ara...",
     "col_duration": "Süre",
@@ -662,14 +670,22 @@
     "dismiss": "Kapat",
     "save_rule": "Kaydet",
     "cancel": "İptal",
+    "delete_rule_title": "Kuralı Sil",
     "create_rule_title": "Kural Oluştur",
     "edit_rule_title": "Kural Düzenle",
     "rule_name": "Kural Adı",
+    "rule_name_placeholder": "örn. Düşük Nem Uyarısı",
     "select_field": "Tarla Seç",
     "metric": "Metrik",
     "operator": "Koşul",
+    "operator_below": "Altında <",
+    "operator_above": "Üstünde >",
     "threshold": "Eşik Değeri",
     "duration_min": "Süre (Dakika)",
+    "duration_1m": "1 Dakika",
+    "duration_15m": "15 Dakika",
+    "duration_30m": "30 Dakika",
+    "duration_60m": "1 Saat",
     "send_email": "E-Posta Bildirimi Gönder",
     "col_time": "Zaman (Tetiklendi)",
     "col_field": "Tarla",

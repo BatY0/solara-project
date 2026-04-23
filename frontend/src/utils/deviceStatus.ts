@@ -19,14 +19,14 @@ export function getDeviceStatus(field: Field, t: (key: string, options?: any) =>
         };
     }
 
-    // Default basic text if no translation, but uses translation key if it existed
     const baseOnlineText = t('fields_page.online');
+    const baseInactiveText = t('fields_page.inactive');
     
     if (!field.deviceLastSeenAt) {
         return {
             status: 'inactive',
             colorScheme: 'yellow',
-            text: `Paired - Waiting for data`
+            text: t('fields_page.waiting_for_data')
         };
     }
 
@@ -51,13 +51,13 @@ export function getDeviceStatus(field: Field, t: (key: string, options?: any) =>
 
     let timeAgoText = '';
     if (diffMins < 1) {
-        timeAgoText = 'just now';
+        timeAgoText = t('fields_page.time_just_now');
     } else if (diffMins < 60) {
-        timeAgoText = `${diffMins} min${diffMins === 1 ? '' : 's'} ago`;
+        timeAgoText = t('fields_page.time_min_ago', { value: diffMins });
     } else if (diffHours < 24) {
-        timeAgoText = `${diffHours} hr${diffHours === 1 ? '' : 's'} ago`;
+        timeAgoText = t('fields_page.time_hour_ago', { value: diffHours });
     } else {
-        timeAgoText = `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+        timeAgoText = t('fields_page.time_day_ago', { value: diffDays });
     }
 
     // Threshold of >= 24 hours (1 day) is considered inactive.
@@ -65,7 +65,7 @@ export function getDeviceStatus(field: Field, t: (key: string, options?: any) =>
         return {
             status: 'inactive',
             colorScheme: 'yellow',
-            text: `${baseOnlineText} - Last seen ${timeAgoText}`,
+            text: `${baseInactiveText} - ${t('fields_page.last_seen', { value: timeAgoText })}`,
             timeAgo: timeAgoText
         };
     }
@@ -73,7 +73,7 @@ export function getDeviceStatus(field: Field, t: (key: string, options?: any) =>
     return {
         status: 'online',
         colorScheme: 'green',
-        text: `${baseOnlineText} - Last seen ${timeAgoText}`,
+        text: `${baseOnlineText} - ${t('fields_page.last_seen', { value: timeAgoText })}`,
         timeAgo: timeAgoText
     };
 }

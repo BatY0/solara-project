@@ -14,17 +14,11 @@ import {
 } from "@chakra-ui/react"
 import { Link as RouterLink } from "react-router-dom"
 import { useTranslation } from "react-i18next"
-import { Sprout, Wifi, BarChart2, ArrowDown, Database, Layers, Cpu, CheckCircle, LogIn } from "lucide-react"
+import { Sprout, Wifi, BarChart2, ArrowDown, Cpu, CheckCircle, LogIn } from "lucide-react"
 import { FaGithub } from "react-icons/fa"
 import { Logo } from "../../components/ui/Logo"
 import { LanguageSwitcher } from "../../components/ui/LanguageSwitcher"
 import { keyframes } from "@emotion/react"
-
-const pulse = keyframes`
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
-  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
-`
 
 const bounceSlow = keyframes`
   0%, 100% { transform: translateY(-5%); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); }
@@ -77,6 +71,7 @@ export const Home = () => {
               <LanguageSwitcher />
               <Button
                 asChild
+                display={{ base: "none", md: "inline-flex" }}
                 bg="brand.500"
                 color="white"
                 _hover={{ bg: "brand.600", transform: "translateY(-2px)" }}
@@ -144,26 +139,6 @@ export const Home = () => {
 
         <Container maxW="container.xl" position="relative" textAlign="center" px={{ base: 4, md: 8 }}>
 
-          {/* Badge */}
-          <Box
-            display="inline-flex"
-            alignItems="center"
-            gap={2}
-            px={4}
-            py={2}
-            borderRadius="full"
-            bg="white/10"
-            borderWidth="1px"
-            borderColor="white/20"
-            color="accent.500"
-            fontSize="sm"
-            fontWeight="medium"
-            mb={8}
-          >
-            <Box w={2} h={2} borderRadius="full" bg="accent.500" animation={`${pulse} 2s infinite`} />
-            {t('hero.badge')}
-          </Box>
-
           {/* Heading */}
           <Heading
             size={{ base: "4xl", md: "6xl", lg: "7xl" }}
@@ -194,6 +169,28 @@ export const Home = () => {
           </Text>
 
           <Flex direction={{ base: "column", sm: "row" }} justify="center" gap={4}>
+            <Button
+              asChild
+              display={{ base: "inline-flex", md: "none" }}
+              size="xl"
+              bg="brand.500"
+              color="white"
+              _hover={{ bg: "brand.600" }}
+              px={8}
+              py={4}
+              h="auto"
+              borderRadius="xl"
+              fontWeight="bold"
+              shadow="lg"
+              shadowColor="green.900/30"
+            >
+              <RouterLink to="/login">
+                <Icon asChild color="currentColor" fontSize="20px" mr={2}>
+                  <LogIn />
+                </Icon>
+                {t('navbar.login')}
+              </RouterLink>
+            </Button>
             <Button
               asChild
               size="xl"
@@ -250,18 +247,6 @@ export const Home = () => {
             transition="all 0.5s"
             wrap="wrap"
           >
-            <Flex align="center" gap={2} color="whiteAlpha.800" fontWeight="semibold">
-              <Icon asChild boxSize={5}>
-                <Database size={20} />
-              </Icon>
-              NASA Power API
-            </Flex>
-            <Flex align="center" gap={2} color="whiteAlpha.800" fontWeight="semibold">
-              <Icon asChild boxSize={5}>
-                <Layers size={20} />
-              </Icon>
-              SoilGrids
-            </Flex>
             <Flex align="center" gap={2} color="whiteAlpha.800" fontWeight="semibold">
               <Icon asChild boxSize={5}>
                 <Cpu size={20} />
@@ -534,7 +519,6 @@ export const Home = () => {
             <Logo iconBg="white/10" iconColor="brand.500" textColor="white" />
             <Box textAlign={{ base: "center", md: "right" }} fontSize="sm">
               <Text color="whiteAlpha.800">{t('footer.copyright')}</Text>
-              <Text mt={1} color="whiteAlpha.600">{t('footer.tubitak')}</Text>
             </Box>
           </Flex>
         </Container>

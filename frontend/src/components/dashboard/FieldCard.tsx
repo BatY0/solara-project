@@ -45,11 +45,16 @@ export const FieldCard = ({ field, onDetailsClick }: FieldCardProps) => {
 
     const deviceStatus = getDeviceStatus(field, t);
     const status: 'online' | 'inactive' | 'offline' = deviceStatus.status;
+    const compactStatusText = {
+        online: t('fields_page.online'),
+        inactive: t('fields_page.inactive'),
+        offline: t('fields_page.offline')
+    }[status];
 
     const statusConfig = {
-        online:   { bg: 'brand.50',  color: 'green.700',  border: 'brand.100', dot: 'green.500',  pulse: true,  label: deviceStatus.text },
-        inactive: { bg: 'yellow.50', color: 'yellow.700', border: 'yellow.100', dot: 'yellow.500', pulse: false, label: deviceStatus.text },
-        offline:  { bg: 'red.50',    color: 'red.700',    border: 'red.100',    dot: 'red.500',    pulse: false, label: deviceStatus.text },
+        online:   { bg: 'brand.50',  color: 'green.700',  border: 'brand.100', dot: 'green.500',  pulse: true },
+        inactive: { bg: 'yellow.50', color: 'yellow.700', border: 'yellow.100', dot: 'yellow.500', pulse: false },
+        offline:  { bg: 'red.50',    color: 'red.700',    border: 'red.100',    dot: 'red.500',    pulse: false },
     }[status];
 
     return (
@@ -62,12 +67,21 @@ export const FieldCard = ({ field, onDetailsClick }: FieldCardProps) => {
             shadow="sm"
             transition="all 0.3s"
             _hover={{ shadow: "lg" }}
+            overflow="hidden"
             css={{
                 "&:hover .icon-box": { backgroundColor: "var(--chakra-colors-brand-100)" }
             }}
         >
-            <Flex p={5} justify="space-between" align="start" borderBottom="1px solid" borderColor="gray.50">
-                <Flex gap={4}>
+            <Flex
+                p={{ base: 4, md: 4 }}
+                align="flex-start"
+                justify={{ base: "flex-start", md: "space-between" }}
+                direction={{ base: "column", md: "row" }}
+                gap={{ base: 2, md: 3 }}
+                borderBottom="1px solid"
+                borderColor="gray.50"
+            >
+                <Flex gap={4} minW={0} flex={1} w="full" maxW="full">
                     <Flex
                         className="icon-box"
                         w={14}
@@ -80,45 +94,75 @@ export const FieldCard = ({ field, onDetailsClick }: FieldCardProps) => {
                     >
                         <Sprout size={28} color="#059669" />
                     </Flex>
-                    <Box>
-                        <Text fontSize="lg" fontWeight="bold" color="gray.800">
+                    <Box minW={0} flex={1} overflow="hidden" maxW="full">
+                        <Text
+                            fontSize="lg"
+                            fontWeight="bold"
+                            color="gray.800"
+                            display="block"
+                            w="full"
+                            maxW="full"
+                            overflow="hidden"
+                            whiteSpace={{ base: "normal", md: "nowrap" }}
+                            textOverflow={{ base: "clip", md: "ellipsis" }}
+                            overflowWrap="anywhere"
+                            wordBreak="break-word"
+                        >
                             {field.name}
                         </Text>
-                        <Flex align="center" gap={1} mt={1} color="gray.500">
-                            <MapPin size={14} />
-                            <Text fontSize="sm">{t('dashboard.location_info')}</Text>
+                        <Flex
+                            mt={1.5}
+                            align={{ base: "flex-start", sm: "center" }}
+                            justify="space-between"
+                            direction={{ base: "column", sm: "row" }}
+                            gap={{ base: 1.5, sm: 2 }}
+                            minW={0}
+                        >
+                            <Flex align="center" gap={1} color="gray.500" minW={0}>
+                                <MapPin size={14} />
+                                <Text fontSize="sm" truncate>
+                                    {field.areaHa} {t('field_details.hectares').toLowerCase()}
+                                </Text>
+                            </Flex>
                         </Flex>
                     </Box>
                 </Flex>
 
-                <Flex
-                    px={3}
-                    py={1}
-                    borderRadius="full"
-                    fontSize="xs"
-                    fontWeight="bold"
-                    border="1px solid"
-                    align="center"
-                    gap={1.5}
-                    bg={statusConfig.bg}
-                    color={statusConfig.color}
-                    borderColor={statusConfig.border}
-                >
-                    <Circle size={2} bg={statusConfig.dot} animation={statusConfig.pulse ? "pulse 2s infinite" : undefined} />
-                    {statusConfig.label}
+                <Flex align="center" gap={2} flexShrink={0} alignSelf={{ base: "flex-end", md: "auto" }}>
+                    <Flex
+                        px={3}
+                        py={1}
+                        borderRadius="full"
+                        fontSize="xs"
+                        fontWeight="bold"
+                        border="1px solid"
+                        align="center"
+                        gap={1.5}
+                        bg={statusConfig.bg}
+                        color={statusConfig.color}
+                        borderColor={statusConfig.border}
+                        maxW="fit-content"
+                        whiteSpace="nowrap"
+                        lineHeight="short"
+                        flexShrink={0}
+                        title={deviceStatus.text}
+                    >
+                        <Circle size={2} bg={statusConfig.dot} animation={statusConfig.pulse ? "pulse 2s infinite" : undefined} />
+                        {compactStatusText}
+                    </Flex>
                 </Flex>
             </Flex>
 
-            <Box display="grid" gridTemplateColumns="repeat(3, 1fr)" gap={4} p={5} flex={1}>
+            <Box display="grid" gridTemplateColumns={{ base: "repeat(2, 1fr)", md: "repeat(3, 1fr)" }} gap={{ base: 2, md: 3 }} p={{ base: 4, md: 4 }} flex={1}>
                 {isLoading ? (
                     <>
                         <Skeleton height="60px" borderRadius="lg" />
                         <Skeleton height="60px" borderRadius="lg" />
-                        <Skeleton height="60px" borderRadius="lg" />
+                        <Skeleton height="60px" borderRadius="lg" gridColumn={{ base: "span 2", md: "span 1" }} />
                     </>
                 ) : (
                     <>
-                        <Flex direction="column" bg="gray.50" p={3} borderRadius="lg" border="1px solid" borderColor="gray.100" align="center">
+                        <Flex direction="column" bg="gray.50" p={{ base: 3, md: 2.5 }} borderRadius="lg" border="1px solid" borderColor="gray.100" align="center">
                             <Text fontSize="xs" color="gray.500" mb={1}>{t('dashboard.moisture')}</Text>
                             <Flex align="center" justify="center" gap={1.5}>
                                 <Droplets size={16} color="#3b82f6" />
@@ -128,7 +172,7 @@ export const FieldCard = ({ field, onDetailsClick }: FieldCardProps) => {
                             </Flex>
                         </Flex>
 
-                        <Flex direction="column" bg="gray.50" p={3} borderRadius="lg" border="1px solid" borderColor="gray.100" align="center">
+                        <Flex direction="column" bg="gray.50" p={{ base: 3, md: 2.5 }} borderRadius="lg" border="1px solid" borderColor="gray.100" align="center">
                             <Text fontSize="xs" color="gray.500" mb={1}>{t('dashboard.temperature')}</Text>
                             <Flex align="center" justify="center" gap={1.5}>
                                 <Thermometer size={16} color="#f97316" />
@@ -138,7 +182,7 @@ export const FieldCard = ({ field, onDetailsClick }: FieldCardProps) => {
                             </Flex>
                         </Flex>
 
-                        <Flex direction="column" bg="gray.50" p={3} borderRadius="lg" border="1px solid" borderColor="gray.100" align="center">
+                        <Flex direction="column" bg="gray.50" p={{ base: 3, md: 2.5 }} borderRadius="lg" border="1px solid" borderColor="gray.100" align="center" gridColumn={{ base: "span 2", md: "span 1" }}>
                             <Text fontSize="xs" color="gray.500" mb={1}>{t('dashboard.air_temp')}</Text>
                             <Flex align="center" justify="center" gap={1.5}>
                                 <Thermometer size={16} color="#0ea5e9" />
@@ -151,7 +195,7 @@ export const FieldCard = ({ field, onDetailsClick }: FieldCardProps) => {
                 )}
             </Box>
 
-            <Box p={4} pt={0}>
+            <Box p={{ base: 4, md: 4 }} pt={0}>
                 <Button
                     w="full"
                     bg="gray.50"
