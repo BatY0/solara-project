@@ -1,4 +1,5 @@
 import api from '../../lib/axios';
+import { parseBackendDate } from '../../utils/dateTime';
 import type {
     Field,
     FieldProperties,
@@ -11,6 +12,21 @@ import type {
     AnalysisRequest,
     AnalysisResult
 } from './types';
+
+const CSV_ISO_TIMESTAMP_PATTERN = /\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+\-]\d{2}:\d{2})?\b/g;
+
+function formatLocalDateTime(value: string): string {
+    const date = parseBackendDate(value);
+    if (isNaN(date.getTime())) return value;
+
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const hh = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    const sec = String(date.getSeconds()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}:${sec}`;
+}
 
 export interface UpdateFieldRequest {
     name: string;
@@ -93,6 +109,32 @@ export const fieldsService = {
             params: { interval, start, end }
         });
         return response.data;
+    },
+
+    // Export telemetry data as CSV and trigger browser download
+    exportTelemetryCsv: async (fieldId: string, fallbackName = 'field-telemetry'): Promise<void> => {
+        const response = await api.get('/sensor/export/csv', {
+            params: { fieldId },
+            responseType: 'blob',
+        });
+
+        const disposition = response.headers['content-disposition'] as string | undefined;
+        const filenameMatch = disposition?.match(/filename\*?=(?:UTF-8''|")?([^\";]+)/i);
+        const rawName = filenameMatch?.[1]?.trim();
+        const decodedName = rawName ? decodeURIComponent(rawName.replace(/"/g, '')) : null;
+        const filename = decodedName && decodedName.length > 0 ? decodedName : `${fallbackName}.csv`;
+
+        const csvRaw = await response.data.text();
+        const csvPretty = csvRaw.replace(CSV_ISO_TIMESTAMP_PATTERN, (timestamp: string) => formatLocalDateTime(timestamp));
+        const blob = new Blob([csvPretty], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
     },
 
     // Run an ML crop analysis (Scenario A / B / C)

@@ -357,7 +357,7 @@ export const MapSelector = ({ value, onChange, onAreaCalculated, mapHeight = 'cl
             <MapContainer
                 center={center}
                 zoom={points.length > 0 ? 14 : 6}
-                style={{ height: mapHeight, width: '100%', cursor: finished ? 'default' : 'crosshair' }}
+                style={{ height: mapHeight, width: '100%', cursor: finished ? 'default' : 'crosshair', touchAction: 'none' }}
                 scrollWheelZoom
             >
                 {/* Esri Satellite base layer */}

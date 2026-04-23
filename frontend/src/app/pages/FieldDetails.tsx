@@ -2,10 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
     Box, Flex, Text, Spinner, Button, IconButton,
-    Dialog, Portal, CloseButton, Input, Field as ChakraField, Circle,
-    Tabs, Slider,
+    Input, Circle,
 } from "@chakra-ui/react"
-import { Sprout, Trash2, BrainCircuit, Leaf, Pencil, X, Save, AlertTriangle, Thermometer, Droplets, Wind, CloudRain, Battery, LocateFixed } from "lucide-react"
+import { Sprout, Trash2, BrainCircuit, Pencil, X, Save, AlertTriangle, Thermometer, Droplets, Wind, CloudRain, Battery, LocateFixed, Download } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { MapContainer, TileLayer, Polygon, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -18,6 +17,10 @@ import { fieldsService } from "../../features/fields/fields.service"
 import type { UpdateFieldRequest } from "../../features/fields/fields.service"
 import { normalizeCropName, toCropSlug } from "../../features/crop-guides/normalizeCropName"
 import MapSelector from "../../components/map/MapSelector"
+import { MetricCard } from "../../components/field-details/MetricCard"
+import { DeleteFieldDialog, PairDeviceDialog, UnpairDeviceDialog } from "../../components/field-details/FieldDetailsDialogs"
+import { FieldDetailsAnalysisModal } from "../../components/field-details/FieldDetailsAnalysisModal"
+import { FieldDetailsRecommendations } from "../../components/field-details/FieldDetailsRecommendations"
 import { parseBackendDate, toLocalDateInputValue, toUtcIsoNoZone } from "../../utils/dateTime"
 import type {
     Field as FieldType,
@@ -51,12 +54,6 @@ function scenarioBadgeColor(scenario: string): string {
     return '#718096';
 }
 
-function probBadgeColor(prob: number): 'green' | 'orange' | 'gray' {
-    if (prob >= 70) return 'green';
-    if (prob >= 40) return 'orange';
-    return 'gray';
-}
-
 // Haversine distance between two lat/lng points in km
 function getPolygonCenter(pts: number[][]): { lat: number; lng: number } {
     if (!pts || pts.length === 0) return { lat: 0, lng: 0 };
@@ -70,36 +67,6 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-const MonthSelect = ({ value, onChange, labels }: { value: number; onChange: (v: number) => void; labels: string[] }) => (
-    <select value={value} onChange={e => onChange(Number(e.currentTarget.value))}
-        style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #E2E8F0', background: 'white', fontSize: '14px', cursor: 'pointer' }}>
-        {labels.map((name, idx) => <option key={idx + 1} value={idx + 1}>{name}</option>)}
-    </select>
-);
-
-/* ── Telemetry metric card ─────────────────────────────────────────────────── */
-function MetricCard({ label, value, unit, icon, accent }: { label: string; value: string | number | null | undefined; unit: string; icon: React.ReactNode; accent: string }) {
-    const display = value != null
-        ? (typeof value === 'number' ? value.toFixed(2) : String(value))
-        : '--';
-    return (
-        <Box
-            flex="1" minW={{ base: "100%", sm: "140px" }} p={5} borderRadius="2xl" border="1px solid"
-            borderColor="gray.100" bg="white"
-            style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
-            transition="transform 0.2s, box-shadow 0.2s"
-            _hover={{ transform: 'translateY(-2px)', boxShadow: '0 6px 20px rgba(0,0,0,0.10)' }}
-        >
-            <Flex align="center" gap={3} mb={3}>
-                <Flex w={9} h={9} borderRadius="xl" bg={`${accent}.50`} align="center" justify="center" color={`${accent}.500`}>{icon}</Flex>
-                <Text fontSize="xs" fontWeight="semibold" color="gray.500" textTransform="uppercase" letterSpacing="wide">{label}</Text>
-            </Flex>
-            <Text fontSize="2xl" fontWeight="bold" color="gray.800" lineHeight={1}>{display}</Text>
-            {value != null && <Text fontSize="sm" color="gray.400" mt={0.5}>{unit}</Text>}
-        </Box>
-    );
 }
 
 /* ── Inline edit form state ─────────────────────────────────────────────── */
@@ -117,10 +84,12 @@ interface EditState {
 /* ── Map Recenter Control ── */
 const RecenterControl = ({ bounds }: { bounds: number[][] }) => {
     const map = useMap();
+    const { t } = useTranslation();
     if (!bounds || bounds.length === 0) return null;
     return (
         <IconButton
-            aria-label="Return to Field" title="Return to Field"
+            aria-label={t('field_details.map_editor.recenter')}
+            title={t('field_details.map_editor.recenter')}
             position="absolute" bottom={4} right={4} zIndex={400}
             variant="solid" bg="white" color="green.600" size="sm" borderRadius="md"
             boxShadow="0 2px 6px rgba(0,0,0,0.2)" border="1px solid" borderColor="gray.200"
@@ -136,97 +105,11 @@ const RecenterControl = ({ bounds }: { bounds: number[][] }) => {
     );
 };
 
-/* ── Override Slider Component ── */
-const OverrideSlider = ({
-    label,
-    themeColor,
-    min,
-    max,
-    step,
-    defaultValue,
-    unit,
-    precision = 0,
-    onValueChangeEnd,
-    isChecked,
-    onToggle,
-    accentHex
-}: {
-    label: string,
-    themeColor: string,
-    min: number,
-    max: number,
-    step: number,
-    defaultValue: number,
-    unit: string,
-    precision?: number,
-    onValueChangeEnd: (val: number) => void,
-    isChecked: boolean,
-    onToggle: (checked: boolean) => void,
-    accentHex: string
-}) => {
-    const [liveVal, setLiveVal] = useState<number | string>(defaultValue);
-
-    const handleInputBlur = () => {
-        let v = typeof liveVal === 'string' ? parseFloat(liveVal) : liveVal;
-        if (isNaN(v)) v = min;
-        v = Math.min(max, Math.max(min, v));
-        setLiveVal(v);
-        onValueChangeEnd(v);
-    };
-
-    const formatVal = (v: number) => `${v.toFixed(precision)} ${unit}`;
-    const parsedVal = typeof liveVal === 'string' ? parseFloat(liveVal) : liveVal;
-    const sliderVal = isNaN(parsedVal) ? min : parsedVal;
-
-    return (
-        <Slider.Root
-            min={min} max={max} step={step}
-            value={[sliderVal]}
-            colorPalette={themeColor}
-            onValueChange={e => { setLiveVal(e.value[0]); }}
-            onValueChangeEnd={e => onValueChangeEnd(e.value[0])}
-        >
-            <Flex justify="space-between" align="center" mb={3}>
-                <Flex align="center" gap={2}>
-                    <input type="checkbox" checked={isChecked} onChange={e => onToggle(e.target.checked)} style={{ width: 16, height: 16, accentColor: accentHex, cursor: 'pointer' }} />
-                    <Slider.Label fontSize="sm" fontWeight="medium" color="gray.800">{label}</Slider.Label>
-                </Flex>
-                <Flex align="center" gap={1}>
-                    <Input
-                        type="number" min={min} max={max} step={step}
-                        value={liveVal}
-                        onChange={e => setLiveVal(e.target.value)}
-                        onBlur={handleInputBlur}
-                        onKeyDown={e => e.key === 'Enter' && handleInputBlur()}
-                        size="sm" width="50px" textAlign="right" fontWeight="bold"
-                        color={`${themeColor}.600`} bg="transparent"
-                        border="none" borderBottom="2px solid" borderColor={`${themeColor}.300`}
-                        borderRadius="0" px={0} py={0}
-                        _focus={{ outline: 'none', borderColor: `${themeColor}.600` }}
-                    />
-                    <Text fontSize="sm" fontWeight="bold" color={`${themeColor}.600`}>{unit}</Text>
-                </Flex>
-            </Flex>
-            <Slider.Control><Slider.Track><Slider.Range /></Slider.Track><Slider.Thumbs /></Slider.Control>
-            <Flex justify="space-between" mt={1}>
-                <Text fontSize="xs" color="gray.400">{formatVal(min)}</Text>
-                <Text fontSize="xs" color="gray.400">{formatVal(max)}</Text>
-            </Flex>
-        </Slider.Root>
-    );
-};
-
 export const FieldDetails = () => {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
     const { t, i18n } = useTranslation()
 
-    const monthLabels = [
-        t('field_details.ai.months.jan'), t('field_details.ai.months.feb'), t('field_details.ai.months.mar'),
-        t('field_details.ai.months.apr'), t('field_details.ai.months.may'), t('field_details.ai.months.jun'),
-        t('field_details.ai.months.jul'), t('field_details.ai.months.aug'), t('field_details.ai.months.sep'),
-        t('field_details.ai.months.oct'), t('field_details.ai.months.nov'), t('field_details.ai.months.dec'),
-    ];
     const soilTypeLabel = (value?: string) => value ? t(`add_field.${value}`, { defaultValue: value }) : '-';
 
     /* ── Core data ── */
@@ -264,6 +147,8 @@ export const FieldDetails = () => {
     const [isPairDialogOpen, setIsPairDialogOpen] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
     const [isUnpairing, setIsUnpairing] = useState(false)
+    const [isExporting, setIsExporting] = useState(false)
+    const [exportError, setExportError] = useState<string | null>(null)
     const macInputRef = useRef<HTMLInputElement>(null)
 
     /* ── ML Analysis ── */
@@ -428,7 +313,7 @@ export const FieldDetails = () => {
             await fieldsService.pairDevice(id, macInput.trim());
             setIsPairDialogOpen(false); setMacInput(''); window.location.reload();
         } catch (err: any) {
-            setPairError(err.response?.data?.message || 'Failed to pair device.');
+            setPairError(err.response?.data?.message || t('field_details.pair_error'));
         } finally { setIsPairing(false); }
     };
 
@@ -475,8 +360,22 @@ export const FieldDetails = () => {
             }
             setLastAnalysis(result); setIsAnalysisModalOpen(false);
         } catch (err: any) {
-            setAnalysisError(err.response?.data?.message || err.message || 'Analysis failed.');
+            setAnalysisError(err.response?.data?.message || err.message || t('field_details.analysis_failed'));
         } finally { setIsAnalyzing(false); }
+    };
+
+    const handleExportCsv = async () => {
+        if (!id || !field) return;
+        setIsExporting(true);
+        setExportError(null);
+        try {
+            const safeName = field.name.trim().toLowerCase().replace(/\s+/g, '-');
+            await fieldsService.exportTelemetryCsv(id, safeName || 'field-telemetry');
+        } catch (err) {
+            setExportError(t('field_details.export_error'));
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     /* ── Label helpers ── */
@@ -488,7 +387,7 @@ export const FieldDetails = () => {
     const status: 'online' | 'paired' | 'offline' = field?.deviceId && telemetry ? 'online' : field?.deviceId ? 'paired' : 'offline';
     const statusConfig = {
         online: { bg: 'brand.50', color: 'green.700', border: 'brand.100', dot: 'green.500', pulse: true, label: t('dashboard.online') },
-        paired: { bg: 'yellow.50', color: 'yellow.700', border: 'yellow.100', dot: 'yellow.500', pulse: false, label: t('dashboard.paired', 'Paired') },
+        paired: { bg: 'yellow.50', color: 'yellow.700', border: 'yellow.100', dot: 'yellow.500', pulse: false, label: t('dashboard.paired') },
         offline: { bg: 'red.50', color: 'red.700', border: 'red.100', dot: 'red.500', pulse: false, label: t('dashboard.offline') },
     }[status];
 
@@ -535,173 +434,91 @@ export const FieldDetails = () => {
     return (
         <>
             {/* ── Delete Dialog ── */}
-            <Dialog.Root role="alertdialog" open={isDeleteDialogOpen} onOpenChange={e => setIsDeleteDialogOpen(e.open)} placement="center">
-                <Portal>
-                    <Dialog.Backdrop backdropFilter="auto" backdropBlur="sm" />
-                    <Dialog.Positioner><Dialog.Content>
-                        <Dialog.Header><Dialog.Title>{t('field_details.delete_title')}</Dialog.Title></Dialog.Header>
-                        <Dialog.Body><Text>{t('field_details.delete_desc', { name: field.name })}</Text></Dialog.Body>
-                        <Dialog.Footer>
-                            <Dialog.ActionTrigger asChild><Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>{t('field_details.cancel')}</Button></Dialog.ActionTrigger>
-                            <Button colorPalette="red" onClick={handleConfirmDelete} loading={isDeleting}>{t('field_details.delete_btn')}</Button>
-                        </Dialog.Footer>
-                        <Dialog.CloseTrigger asChild><CloseButton size="sm" /></Dialog.CloseTrigger>
-                    </Dialog.Content></Dialog.Positioner>
-                </Portal>
-            </Dialog.Root>
+            <DeleteFieldDialog
+                open={isDeleteDialogOpen}
+                onOpenChange={setIsDeleteDialogOpen}
+                title={t('field_details.delete_title')}
+                description={t('field_details.delete_desc', { name: field.name })}
+                cancelLabel={t('field_details.cancel')}
+                confirmLabel={t('field_details.delete_btn')}
+                isDeleting={isDeleting}
+                onConfirm={handleConfirmDelete}
+            />
 
             {/* ── Unpair Dialog ── */}
-            <Dialog.Root role="alertdialog" open={isUnpairDialogOpen} onOpenChange={e => setIsUnpairDialogOpen(e.open)} placement="center">
-                <Portal>
-                    <Dialog.Backdrop backdropFilter="auto" backdropBlur="sm" />
-                    <Dialog.Positioner><Dialog.Content>
-                        <Dialog.Header><Dialog.Title>{t('field_details.unpair_title')}</Dialog.Title></Dialog.Header>
-                        <Dialog.Body><Text>{t('field_details.unpair_desc', { id: field.deviceId })}</Text></Dialog.Body>
-                        <Dialog.Footer>
-                            <Dialog.ActionTrigger asChild><Button variant="outline" onClick={() => setIsUnpairDialogOpen(false)}>{t('field_details.cancel')}</Button></Dialog.ActionTrigger>
-                            <Button colorPalette="red" onClick={handleConfirmUnpair} loading={isUnpairing}>{t('field_details.unpair_btn')}</Button>
-                        </Dialog.Footer>
-                        <Dialog.CloseTrigger asChild><CloseButton size="sm" /></Dialog.CloseTrigger>
-                    </Dialog.Content></Dialog.Positioner>
-                </Portal>
-            </Dialog.Root>
+            <UnpairDeviceDialog
+                open={isUnpairDialogOpen}
+                onOpenChange={setIsUnpairDialogOpen}
+                title={t('field_details.unpair_title')}
+                description={t('field_details.unpair_desc', { id: field.deviceId })}
+                cancelLabel={t('field_details.cancel')}
+                confirmLabel={t('field_details.unpair_btn')}
+                isUnpairing={isUnpairing}
+                onConfirm={handleConfirmUnpair}
+            />
 
             {/* ── Pair Dialog ── */}
-            <Dialog.Root open={isPairDialogOpen} onOpenChange={e => { setIsPairDialogOpen(e.open); if (!e.open) { setMacInput(''); setPairError(null); } }} placement="center" initialFocusEl={() => macInputRef.current}>
-                <Portal>
-                    <Dialog.Backdrop backdropFilter="auto" backdropBlur="sm" />
-                    <Dialog.Positioner><Dialog.Content>
-                        <Dialog.Header><Dialog.Title>{t('field_details.pair_title')}</Dialog.Title></Dialog.Header>
-                        <Dialog.Body pb={4}>
-                            <ChakraField.Root invalid={!!pairError}>
-                                <ChakraField.Label>{t('field_details.mac_address')}</ChakraField.Label>
-                                <Input ref={macInputRef} placeholder={t('field_details.mac_ph')} value={macInput} onChange={e => { setMacInput(e.target.value); setPairError(null); }} onKeyDown={e => e.key === 'Enter' && handleConfirmPair()} />
-                                {pairError ? <ChakraField.ErrorText>{pairError}</ChakraField.ErrorText> : <ChakraField.HelperText>{t('field_details.mac_helper')}</ChakraField.HelperText>}
-                            </ChakraField.Root>
-                        </Dialog.Body>
-                        <Dialog.Footer>
-                            <Dialog.ActionTrigger asChild><Button variant="outline" onClick={() => setIsPairDialogOpen(false)}>{t('field_details.cancel')}</Button></Dialog.ActionTrigger>
-                            <Button colorPalette="brand" onClick={handleConfirmPair} loading={isPairing} disabled={!macInput.trim()}>{t('field_details.pair_btn')}</Button>
-                        </Dialog.Footer>
-                        <Dialog.CloseTrigger asChild><CloseButton size="sm" /></Dialog.CloseTrigger>
-                    </Dialog.Content></Dialog.Positioner>
-                </Portal>
-            </Dialog.Root>
+            <PairDeviceDialog
+                open={isPairDialogOpen}
+                onOpenChange={(open) => {
+                    setIsPairDialogOpen(open);
+                    if (!open) {
+                        setMacInput('');
+                        setPairError(null);
+                    }
+                }}
+                initialFocusEl={() => macInputRef.current}
+                macLabel={t('field_details.mac_address')}
+                macPlaceholder={t('field_details.mac_ph')}
+                macHelper={t('field_details.mac_helper')}
+                pairTitle={t('field_details.pair_title')}
+                cancelLabel={t('field_details.cancel')}
+                pairLabel={t('field_details.pair_btn')}
+                macInput={macInput}
+                pairError={pairError}
+                isPairing={isPairing}
+                inputRef={macInputRef}
+                onMacChange={(value) => {
+                    setMacInput(value);
+                    setPairError(null);
+                }}
+                onConfirm={handleConfirmPair}
+            />
 
-            {/* ── AI Analysis Modal ── */}
-            <Dialog.Root open={isAnalysisModalOpen} onOpenChange={e => { setIsAnalysisModalOpen(e.open); if (!e.open) setAnalysisError(null); }} placement="center" size="lg">
-                <Portal>
-                    <Dialog.Backdrop backdropFilter="auto" backdropBlur="sm" />
-                    <Dialog.Positioner><Dialog.Content maxW={{ base: "calc(100vw - 2rem)", md: "560px" }}>
-                        <Dialog.Header pb={0}>
-                            <Dialog.Title>
-                                <Flex align="center" gap={2}><BrainCircuit size={20} color="#059669" />{t('field_details.ai.modal_title')}</Flex>
-                            </Dialog.Title>
-                            <Text fontSize="sm" color="gray.500" mt={1}>{t('field_details.ai.modal_subtitle')}</Text>
-                        </Dialog.Header>
-                        <Dialog.Body pt={4} pb={6}>
-                            <Tabs.Root value={activeScenario} onValueChange={d => { setActiveScenario(d.value as 'range' | 'future' | 'whatif'); setAnalysisError(null); }} variant="line">
-                                <Tabs.List mb={5} flexWrap="wrap" gap={1}>
-                                    <Tabs.Trigger value="range">{t('field_details.ai.tab_range')}</Tabs.Trigger>
-                                    <Tabs.Trigger value="future">{t('field_details.ai.tab_future')}</Tabs.Trigger>
-                                    <Tabs.Trigger value="whatif">{t('field_details.ai.tab_whatif')}</Tabs.Trigger>
-                                    <Tabs.Indicator />
-                                </Tabs.List>
-                                <Tabs.Content value="range">
-                                    <Flex direction="column" gap={4}>
-                                        <Box bg="green.50" border="1px solid" borderColor="green.100" borderRadius="lg" p={3}><Text fontSize="sm" color="green.700">{t('field_details.ai.range_info')}</Text></Box>
-                                        <Flex gap={4} direction={{ base: "column", md: "row" }}>
-                                            <ChakraField.Root flex={1}><ChakraField.Label>{t('field_details.ai.start_date')}</ChakraField.Label><Input type="date" lang={i18n.language === 'tr' ? 'tr-TR' : 'en-US'} value={rangeStart} onChange={e => setRangeStart(e.target.value)} max={rangeEnd} /></ChakraField.Root>
-                                            <ChakraField.Root flex={1}><ChakraField.Label>{t('field_details.ai.end_date')}</ChakraField.Label><Input type="date" lang={i18n.language === 'tr' ? 'tr-TR' : 'en-US'} value={rangeEnd} onChange={e => setRangeEnd(e.target.value)} min={rangeStart} max={formatDate(new Date())} /></ChakraField.Root>
-                                        </Flex>
-                                    </Flex>
-                                </Tabs.Content>
-                                <Tabs.Content value="future">
-                                    <Flex direction="column" gap={4}>
-                                        <Box bg="blue.50" border="1px solid" borderColor="blue.100" borderRadius="lg" p={3}><Text fontSize="sm" color="blue.700">{t('field_details.ai.future_info')}</Text></Box>
-                                        <Flex gap={4} direction={{ base: "column", md: "row" }}>
-                                            <ChakraField.Root flex={1}><ChakraField.Label>{t('field_details.ai.season_start')}</ChakraField.Label><MonthSelect value={monthStart} onChange={setMonthStart} labels={monthLabels} /></ChakraField.Root>
-                                            <ChakraField.Root flex={1}><ChakraField.Label>{t('field_details.ai.season_end')}</ChakraField.Label><MonthSelect value={monthEnd} onChange={setMonthEnd} labels={monthLabels} /></ChakraField.Root>
-                                        </Flex>
-                                    </Flex>
-                                </Tabs.Content>
-                                <Tabs.Content value="whatif">
-                                    <Flex direction="column" gap={5}>
-                                        <Box bg="purple.50" border="1px solid" borderColor="purple.100" borderRadius="lg" p={3}><Text fontSize="sm" color="purple.700">{t('field_details.ai.whatif_info')}</Text></Box>
-                                        <Flex gap={4} direction={{ base: "column", md: "row" }}>
-                                            <ChakraField.Root flex={1}><ChakraField.Label>{t('field_details.ai.season_start')}</ChakraField.Label><MonthSelect value={monthStart} onChange={setMonthStart} labels={monthLabels} /></ChakraField.Root>
-                                            <ChakraField.Root flex={1}><ChakraField.Label>{t('field_details.ai.season_end')}</ChakraField.Label><MonthSelect value={monthEnd} onChange={setMonthEnd} labels={monthLabels} /></ChakraField.Root>
-                                        </Flex>
-                                        {/* ─ Temperature Override ─ */}
-                                        <Box p={3} borderRadius="lg" border="1px solid" borderColor={useOverrideTemp ? 'orange.200' : 'gray.100'} bg={useOverrideTemp ? 'orange.50' : 'gray.50'} transition="all 0.2s">
-                                            {!useOverrideTemp ? (
-                                                <Flex align="center" gap={2}>
-                                                    <input id="toggle-temp" type="checkbox" checked={false} onChange={e => setUseOverrideTemp(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#DD6B20', cursor: 'pointer' }} />
-                                                    <Text fontSize="sm" fontWeight="medium" color="gray.400" cursor="pointer" onClick={() => setUseOverrideTemp(true)}>{t('field_details.ai.temp_override')}</Text>
-                                                </Flex>
-                                            ) : (
-                                                <OverrideSlider
-                                                    label={t('field_details.ai.temp_override')}
-                                                    themeColor="orange" accentHex="#DD6B20"
-                                                    min={0} max={50} step={0.5}
-                                                    defaultValue={overrideTemp}
-                                                    unit="°C" precision={1}
-                                                    onValueChangeEnd={setOverrideTemp}
-                                                    isChecked={true} onToggle={setUseOverrideTemp}
-                                                />
-                                            )}
-                                        </Box>
-                                        {/* ─ Humidity Override ─ */}
-                                        <Box p={3} borderRadius="lg" border="1px solid" borderColor={useOverrideHum ? 'blue.200' : 'gray.100'} bg={useOverrideHum ? 'blue.50' : 'gray.50'} transition="all 0.2s">
-                                            {!useOverrideHum ? (
-                                                <Flex align="center" gap={2}>
-                                                    <input id="toggle-hum" type="checkbox" checked={false} onChange={e => setUseOverrideHum(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#3182CE', cursor: 'pointer' }} />
-                                                    <Text fontSize="sm" fontWeight="medium" color="gray.400" cursor="pointer" onClick={() => setUseOverrideHum(true)}>{t('field_details.ai.hum_override')}</Text>
-                                                </Flex>
-                                            ) : (
-                                                <OverrideSlider
-                                                    label={t('field_details.ai.hum_override')}
-                                                    themeColor="blue" accentHex="#3182CE"
-                                                    min={0} max={100} step={1}
-                                                    defaultValue={overrideHum}
-                                                    unit="%" precision={0}
-                                                    onValueChangeEnd={setOverrideHum}
-                                                    isChecked={true} onToggle={setUseOverrideHum}
-                                                />
-                                            )}
-                                        </Box>
-                                        {/* ─ Rainfall Override ─ */}
-                                        <Box p={3} borderRadius="lg" border="1px solid" borderColor={useOverrideRain ? 'teal.200' : 'gray.100'} bg={useOverrideRain ? 'teal.50' : 'gray.50'} transition="all 0.2s">
-                                            {!useOverrideRain ? (
-                                                <Flex align="center" gap={2}>
-                                                    <input id="toggle-rain" type="checkbox" checked={false} onChange={e => setUseOverrideRain(e.target.checked)} style={{ width: 16, height: 16, accentColor: '#319795', cursor: 'pointer' }} />
-                                                    <Text fontSize="sm" fontWeight="medium" color="gray.400" cursor="pointer" onClick={() => setUseOverrideRain(true)}>{t('field_details.ai.rain_override')}</Text>
-                                                </Flex>
-                                            ) : (
-                                                <OverrideSlider
-                                                    label={t('field_details.ai.rain_override')}
-                                                    themeColor="teal" accentHex="#319795"
-                                                    min={0} max={1000} step={5}
-                                                    defaultValue={overrideRain}
-                                                    unit="mm" precision={0}
-                                                    onValueChangeEnd={setOverrideRain}
-                                                    isChecked={true} onToggle={setUseOverrideRain}
-                                                />
-                                            )}
-                                        </Box>
-                                    </Flex>
-                                </Tabs.Content>
-                            </Tabs.Root>
-                            {analysisError && <Box mt={4} p={3} bg="red.50" border="1px solid" borderColor="red.200" borderRadius="lg"><Text fontSize="sm" color="red.700">{analysisError}</Text></Box>}
-                        </Dialog.Body>
-                        <Dialog.Footer>
-                            <Dialog.ActionTrigger asChild><Button variant="outline" onClick={() => setIsAnalysisModalOpen(false)}>{t('field_details.cancel')}</Button></Dialog.ActionTrigger>
-                            <Button colorPalette="brand" onClick={handleRunAnalysis} loading={isAnalyzing} loadingText={t('field_details.ai.analyzing')}><BrainCircuit size={16} />{t('field_details.ai.analyze')}</Button>
-                        </Dialog.Footer>
-                        <Dialog.CloseTrigger asChild><CloseButton size="sm" /></Dialog.CloseTrigger>
-                    </Dialog.Content></Dialog.Positioner>
-                </Portal>
-            </Dialog.Root>
+            <FieldDetailsAnalysisModal
+                open={isAnalysisModalOpen}
+                onOpenChange={(open) => {
+                    setIsAnalysisModalOpen(open);
+                    if (!open) setAnalysisError(null);
+                }}
+                analysisError={analysisError}
+                activeScenario={activeScenario}
+                setActiveScenario={setActiveScenario}
+                rangeStart={rangeStart}
+                setRangeStart={setRangeStart}
+                rangeEnd={rangeEnd}
+                setRangeEnd={setRangeEnd}
+                maxDate={formatDate(new Date())}
+                monthStart={monthStart}
+                setMonthStart={setMonthStart}
+                monthEnd={monthEnd}
+                setMonthEnd={setMonthEnd}
+                overrideTemp={overrideTemp}
+                setOverrideTemp={setOverrideTemp}
+                useOverrideTemp={useOverrideTemp}
+                setUseOverrideTemp={setUseOverrideTemp}
+                overrideHum={overrideHum}
+                setOverrideHum={setOverrideHum}
+                useOverrideHum={useOverrideHum}
+                setUseOverrideHum={setUseOverrideHum}
+                overrideRain={overrideRain}
+                setOverrideRain={setOverrideRain}
+                useOverrideRain={useOverrideRain}
+                setUseOverrideRain={setUseOverrideRain}
+                isAnalyzing={isAnalyzing}
+                onRunAnalysis={handleRunAnalysis}
+                onResetAnalysisError={() => setAnalysisError(null)}
+            />
 
             {/* ── Page ── */}
             <DashboardLayout title={isEditing ? t('field_details.edit_field') : field.name} subtitle={t('field_details.subtitle')}>
@@ -714,7 +531,7 @@ export const FieldDetails = () => {
                 )}
 
                 {/* ══════════════ FIELD IDENTITY CARD ══════════════ */}
-                <Box bg="white" p={6} borderRadius="2xl" borderWidth="1px" borderColor="gray.200" mb={6} style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
+                <Box bg="white" p={{ base: 4, md: 6 }} borderRadius="2xl" borderWidth="1px" borderColor="gray.200" mb={6} style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
                     <Flex align="flex-start" justify="space-between" gap={4} wrap="wrap">
                         {/* Left: identity info */}
                         <Flex align="center" gap={4} flex={1} minW={{ base: 0, md: "280px" }}>
@@ -765,14 +582,14 @@ export const FieldDetails = () => {
                                             ].map(({ key, label }) => (
                                                 <Box key={key} flex="1" minW={{ base: "48%", md: "60px" }}>
                                                     <Text fontSize="xs" color="gray.400" fontWeight="bold" mb={1}>{label}</Text>
-                                                    <Input type="number" step="0.1" min={0} placeholder="Auto" value={editState[key]} onChange={e => setEditState(s => s ? { ...s, [key]: e.target.value } : s)} size="xs" borderRadius="md" />
+                                                    <Input type="number" step="0.1" min={0} placeholder={t('add_field.auto')} value={editState[key]} onChange={e => setEditState(s => s ? { ...s, [key]: e.target.value } : s)} size="xs" borderRadius="md" />
                                                 </Box>
                                             ))}
                                         </Flex>
                                     </Flex>
                                 ) : (
                                     <>
-                                        <Flex align="center" gap={3} mb={1}>
+                                        <Flex align={{ base: "flex-start", sm: "center" }} direction={{ base: "column", sm: "row" }} gap={2} mb={1}>
                                             <Text fontSize="2xl" fontWeight="bold">{field.name}</Text>
                                             <Flex px={3} py={1} borderRadius="full" fontSize="xs" fontWeight="bold" border="1px solid" align="center" gap={1.5}
                                                 bg={statusConfig.bg} color={statusConfig.color} borderColor={statusConfig.border}>
@@ -780,7 +597,7 @@ export const FieldDetails = () => {
                                                 {statusConfig.label}
                                             </Flex>
                                         </Flex>
-                                        <Text color="gray.500" fontSize="sm">
+                                        <Text color="gray.500" fontSize="sm" lineHeight="tall">
                                             {t('field_details.area')}: <strong>{field.areaHa} {t('field_details.hectares')}</strong>
                                             {' • '}
                                             {t('field_details.soil')}: <strong>{soilTypeLabel(field.soilType)}</strong>
@@ -805,34 +622,45 @@ export const FieldDetails = () => {
                         </Flex>
 
                         {/* Right: action buttons */}
-                        <Flex gap={2} align="center" wrap="wrap" flexShrink={0} w={{ base: "full", md: "auto" }}>
+                        <Flex gap={2} align="center" wrap="wrap" flexShrink={0} w={{ base: "full", md: "auto" }} direction={{ base: "column", sm: "row" }}>
                             {isEditing ? (
                                 <>
-                                    <Button size="sm" variant="ghost" colorPalette="gray" onClick={handleCancelEdit}>
+                                    <Button w={{ base: "full", sm: "auto" }} size="sm" variant="ghost" colorPalette="gray" onClick={handleCancelEdit} title={t('field_details.cancel_edit')}>
                                         <X size={16} /> {t('field_details.cancel_edit')}
                                     </Button>
-                                    <Button size="sm" colorPalette="brand" onClick={handleSaveEdit} loading={isSaving}>
+                                    <Button w={{ base: "full", sm: "auto" }} size="sm" colorPalette="brand" onClick={handleSaveEdit} loading={isSaving} title={t('field_details.save_changes')}>
                                         <Save size={16} /> {t('field_details.save_changes')}
                                     </Button>
                                 </>
                             ) : (
                                 <>
-                                    <Button colorPalette="brand" variant="solid" size="sm" onClick={() => setIsAnalysisModalOpen(true)}>
+                                    <Button w={{ base: "full", sm: "auto" }} colorPalette="brand" variant="solid" size="sm" onClick={() => setIsAnalysisModalOpen(true)} title={t('field_details.ai.button')}>
                                         <BrainCircuit size={16} />{t('field_details.ai.button')}
                                     </Button>
+                                    <Button w={{ base: "full", sm: "auto" }} colorPalette="gray" variant="outline" size="sm" onClick={handleExportCsv} loading={isExporting} title={t('field_details.export_csv')}>
+                                        <Download size={16} />{t('field_details.export_csv')}
+                                    </Button>
                                     {field.deviceId ? (
-                                        <Button colorPalette="red" variant="outline" size="sm" onClick={() => setIsUnpairDialogOpen(true)}>
+                                        <Button w={{ base: "full", sm: "auto" }} colorPalette="red" variant="outline" size="sm" onClick={() => setIsUnpairDialogOpen(true)} title={t('field_details.unpair_short', { id: field.deviceId })}>
                                             {t('field_details.unpair_short', { id: field.deviceId })}
                                         </Button>
                                     ) : (
-                                        <Button colorPalette="brand" variant="outline" size="sm" onClick={() => setIsPairDialogOpen(true)} loading={isPairing}>
+                                        <Button w={{ base: "full", sm: "auto" }} colorPalette="brand" variant="outline" size="sm" onClick={() => setIsPairDialogOpen(true)} loading={isPairing} title={t('field_details.pair_hardware')}>
                                             {t('field_details.pair_hardware')}
                                         </Button>
                                     )}
-                                    <IconButton aria-label="Edit field" colorPalette="blue" variant="ghost" size="sm" onClick={handleStartEdit}>
+                                    <Flex display={{ base: "flex", sm: "none" }} w="full" gap={2}>
+                                        <Button flex={1} variant="ghost" colorPalette="blue" size="sm" onClick={handleStartEdit} title={t('field_details.edit_field')}>
+                                            <Pencil size={16} /> {t('field_details.edit_field')}
+                                        </Button>
+                                        <Button flex={1} variant="outline" colorPalette="red" size="sm" onClick={() => setIsDeleteDialogOpen(true)} title={t('field_details.delete_btn')}>
+                                            <Trash2 size={16} /> {t('field_details.delete_btn')}
+                                        </Button>
+                                    </Flex>
+                                    <IconButton display={{ base: "none", sm: "inline-flex" }} aria-label={t('field_details.edit_field')} title={t('field_details.edit_field')} colorPalette="blue" variant="ghost" size="sm" onClick={handleStartEdit}>
                                         <Pencil size={18} />
                                     </IconButton>
-                                    <IconButton aria-label="Delete field" colorPalette="red" variant="ghost" size="sm" onClick={() => setIsDeleteDialogOpen(true)}>
+                                    <IconButton display={{ base: "none", sm: "inline-flex" }} aria-label={t('field_details.delete_btn')} title={t('field_details.delete_btn')} colorPalette="red" variant="ghost" size="sm" onClick={() => setIsDeleteDialogOpen(true)}>
                                         <Trash2 size={18} />
                                     </IconButton>
                                 </>
@@ -844,6 +672,11 @@ export const FieldDetails = () => {
                     {editError && (
                         <Box mt={4} p={3} bg="red.50" border="1px solid" borderColor="red.200" borderRadius="lg">
                             <Text fontSize="sm" color="red.700">{editError}</Text>
+                        </Box>
+                    )}
+                    {exportError && (
+                        <Box mt={4} p={3} bg="red.50" border="1px solid" borderColor="red.200" borderRadius="lg">
+                            <Text fontSize="sm" color="red.700">{exportError}</Text>
                         </Box>
                     )}
 
@@ -870,11 +703,14 @@ export const FieldDetails = () => {
                                     <Flex align="center" gap={2}>
                                         <Pencil size={14} color="#059669" />
                                         <Text fontSize="xs" fontWeight="semibold" color="brand.700">
-                                            Editing boundary — drag the numbered corners to reshape your field
+                                            {t('field_details.map_editor.editing_boundary')}
                                         </Text>
                                     </Flex>
                                     <Text fontSize="xs" color="brand.500">
-                                        Use <strong>Edit</strong> on the map to add points · <strong>Clear</strong> to redraw from scratch
+                                        {t('field_details.map_editor.editing_hint', {
+                                            edit: t('map.edit'),
+                                            clear: t('map.clear'),
+                                        })}
                                     </Text>
                                 </Flex>
                                 <MapSelector
@@ -884,11 +720,11 @@ export const FieldDetails = () => {
                                 />
                             </Box>
                         ) : (
-                            <Box h="280px" w="100%" borderRadius="2xl" overflow="hidden" border="1px solid" borderColor="gray.200" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
+                            <Box h={{ base: "220px", sm: "260px", md: "280px" }} w="100%" borderRadius="2xl" overflow="hidden" border="1px solid" borderColor="gray.200" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
                                 <MapContainer
                                     bounds={field.location.map((c: number[]) => [c[1], c[0]])}
                                     zoom={14}
-                                    style={{ height: '100%', width: '100%' }}
+                                    style={{ height: '100%', width: '100%', touchAction: 'none' }}
                                     scrollWheelZoom
                                 >
                                     <TileLayer url={ESRI_SATELLITE} attribution="Esri World Imagery" maxZoom={19} />
@@ -905,7 +741,7 @@ export const FieldDetails = () => {
                 )}
 
                 {/* ══════════════ REGIONAL WEATHER ══════════════ */}
-                <Box bg="white" p={6} borderRadius="2xl" border="1px solid" borderColor="gray.200" mb={6} style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
+                <Box bg="white" p={{ base: 4, md: 6 }} borderRadius="2xl" border="1px solid" borderColor="gray.200" mb={6} style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
                     <Text fontSize="lg" fontWeight="bold" mb={4} color="gray.800">{t('field_details.regional_weather')}</Text>
                     <Flex gap={4} wrap="wrap">
                         {[
@@ -924,7 +760,7 @@ export const FieldDetails = () => {
                         <Text fontSize="lg" fontWeight="bold" color="gray.800">{t('field_details.live_telemetry')}</Text>
                         {getDeviceStatus(field, t).timeAgo && (
                             <Text fontSize="sm" color="gray.500" fontWeight="medium">
-                                (updated {getDeviceStatus(field, t).timeAgo})
+                                ({t('field_details.updated', { timeAgo: getDeviceStatus(field, t).timeAgo })})
                             </Text>
                         )}
                     </Flex>
@@ -940,21 +776,21 @@ export const FieldDetails = () => {
                 </Box>
 
                 {/* ══════════════ HISTORICAL CHART ══════════════ */}
-                <Box bg="white" p={6} borderRadius="2xl" border="1px solid" borderColor="gray.200" mb={6} style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
+                <Box bg="white" p={{ base: 4, md: 6 }} borderRadius="2xl" border="1px solid" borderColor="gray.200" mb={6} style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
                     <Flex align="center" justify="space-between" mb={5} wrap="wrap" gap={3}>
                         <Text fontSize="lg" fontWeight="bold" color="gray.800">{t('field_details.historical_trends')}</Text>
 
-                        <Flex gap={3} wrap="wrap">
+                        <Flex gap={3} wrap="wrap" w={{ base: "full", md: "auto" }}>
                             {/* Metric Toggle Pills */}
-                            <Flex bg="gray.50" p={1} borderRadius="lg" border="1px solid" borderColor="gray.200" gap={1}>
-                                <Button size="xs" variant={visibleMetrics.soilTemp ? 'solid' : 'ghost'} colorPalette="orange" onClick={() => setVisibleMetrics(s => ({ ...s, soilTemp: !s.soilTemp }))}>{t('field_details.soil_temp')}</Button>
-                                <Button size="xs" variant={visibleMetrics.soilHumidity ? 'solid' : 'ghost'} colorPalette="blue" onClick={() => setVisibleMetrics(s => ({ ...s, soilHumidity: !s.soilHumidity }))}>{t('field_details.soil_moisture')}</Button>
-                                <Button size="xs" variant={visibleMetrics.ambientTemp ? 'solid' : 'ghost'} colorPalette="green" onClick={() => setVisibleMetrics(s => ({ ...s, ambientTemp: !s.ambientTemp }))}>{t('field_details.ambient_temp')}</Button>
-                                <Button size="xs" variant={visibleMetrics.ambientHumidity ? 'solid' : 'ghost'} colorPalette="purple" onClick={() => setVisibleMetrics(s => ({ ...s, ambientHumidity: !s.ambientHumidity }))}>{t('field_details.ambient_humidity')}</Button>
+                            <Flex bg="gray.50" p={1} borderRadius="lg" border="1px solid" borderColor="gray.200" gap={1} overflowX="auto" maxW="100%">
+                                <Button size="xs" variant={visibleMetrics.soilTemp ? 'solid' : 'ghost'} colorPalette="orange" title={t('field_details.soil_temp')} onClick={() => setVisibleMetrics(s => ({ ...s, soilTemp: !s.soilTemp }))}>{t('field_details.soil_temp')}</Button>
+                                <Button size="xs" variant={visibleMetrics.soilHumidity ? 'solid' : 'ghost'} colorPalette="blue" title={t('field_details.soil_moisture')} onClick={() => setVisibleMetrics(s => ({ ...s, soilHumidity: !s.soilHumidity }))}>{t('field_details.soil_moisture')}</Button>
+                                <Button size="xs" variant={visibleMetrics.ambientTemp ? 'solid' : 'ghost'} colorPalette="green" title={t('field_details.ambient_temp')} onClick={() => setVisibleMetrics(s => ({ ...s, ambientTemp: !s.ambientTemp }))}>{t('field_details.ambient_temp')}</Button>
+                                <Button size="xs" variant={visibleMetrics.ambientHumidity ? 'solid' : 'ghost'} colorPalette="purple" title={t('field_details.ambient_humidity')} onClick={() => setVisibleMetrics(s => ({ ...s, ambientHumidity: !s.ambientHumidity }))}>{t('field_details.ambient_humidity')}</Button>
                             </Flex>
 
                             {/* Timeframe pills */}
-                            <Flex gap={2}>
+                            <Flex gap={2} overflowX="auto" maxW="100%">
                                 {(['today', 7, 14, 30] as const).map(d => (
                                     <Button
                                         key={String(d)}
@@ -963,9 +799,10 @@ export const FieldDetails = () => {
                                         variant={timeframe === d ? 'solid' : 'outline'}
                                         colorPalette={timeframe === d ? 'brand' : 'gray'}
                                         onClick={() => setTimeframe(d)}
+                                        title={d === 'today' ? t('field_details.timeframe_today') : t(`field_details.timeframe_${d}`)}
                                         px={4}
                                     >
-                                        {d === 'today' ? t('field_details.timeframe_today', 'Today') : t(`field_details.timeframe_${d}`)}
+                                        {d === 'today' ? t('field_details.timeframe_today') : t(`field_details.timeframe_${d}`)}
                                     </Button>
                                 ))}
                             </Flex>
@@ -973,11 +810,11 @@ export const FieldDetails = () => {
                     </Flex>
 
                     {history.length > 0 ? (
-                        <ResponsiveContainer width="100%" height={280}>
+                        <ResponsiveContainer width="100%" height={260}>
                             <RechartsAreaChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                                 <ChartGradients />
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 11 }} />
+                                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 11 }} minTickGap={28} />
                                 <YAxis yAxisId="moisture" axisLine={false} tickLine={false} tick={{ fill: '#3182CE', fontSize: 11 }} domain={[0, 100]} unit="%" width={52} />
                                 <YAxis yAxisId="temp" orientation="right" axisLine={false} tickLine={false} tick={{ fill: '#DD6B20', fontSize: 11 }} unit="°" width={32} />
                                 <Tooltip
@@ -1004,64 +841,24 @@ export const FieldDetails = () => {
                     )}
                 </Box>
 
-                {/* ══════════════ AI RECOMMENDATIONS ══════════════ */}
-                {lastAnalysis ? (
-                    <Box bg="white" p={6} borderRadius="2xl" border="1px solid" borderColor="gray.200" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
-                        <Flex align="center" justify="space-between" mb={4} direction={{ base: "column", md: "row" }} gap={3}>
-                            <Flex align="center" gap={3} wrap="wrap">
-                                <Flex bg="green.50" p={2} borderRadius="lg"><BrainCircuit size={20} color="#059669" /></Flex>
-                                <Box>
-                                    <Text fontSize="lg" fontWeight="semibold">{t('field_details.ai.results_title')}</Text>
-                                    <Text fontSize="xs" color="gray.500">{parseBackendDate(lastAnalysis.timestamp).toLocaleString()}</Text>
-                                </Box>
-                                <Flex px={2} py={0.5} borderRadius="full" fontSize="xs" fontWeight="bold" color="white" bg={scenarioBadgeColor(lastAnalysis.scenario)}>
-                                    {scenarioLabel(lastAnalysis.scenario)}
-                                </Flex>
-                            </Flex>
-                            <Button size="xs" variant="outline" colorPalette="brand" onClick={() => setIsAnalysisModalOpen(true)} w={{ base: "full", md: "auto" }}>{t('field_details.ai.reanalyze')}</Button>
-                        </Flex>
-                        <Box p={3} mb={4} bg="green.50" border="1px solid" borderColor="green.100" borderRadius="lg">
-                            <Text fontSize="sm" color="green.800">{weatherSourceLabel(lastAnalysis.weatherSource)}</Text>
-                        </Box>
-                        {lastAnalysis.recommendations.length === 0 ? (
-                            <Box p={6} bg="gray.50" borderRadius="xl" textAlign="center"><Text color="gray.500" fontSize="sm">{t('field_details.ai.no_recommendations')}</Text></Box>
-                        ) : (
-                            <Flex gap={4} direction="column">
-                                {lastAnalysis.recommendations.map((rec, idx) => {
-                                    const badge = probBadgeColor(rec.probability);
-                                    const barColor = badge === 'green' ? '#38a169' : badge === 'orange' ? '#dd6b20' : '#a0aec0';
-                                    return (
-                                        <Box key={rec.crop} p={4} bg={idx === 0 ? 'green.50' : 'gray.50'} borderRadius="xl" border="1px solid" borderColor={idx === 0 ? 'green.200' : 'gray.200'}>
-                                            <Flex align="center" justify="space-between" mb={2}>
-                                                <Flex align="center" gap={2}>
-                                                    <Leaf size={16} color={idx === 0 ? '#059669' : '#718096'} />
-                                                    <Text as="button" fontWeight="semibold" fontSize="md" textTransform="capitalize" cursor="pointer" _hover={{ textDecoration: "underline", color: "brand.700" }} onClick={() => navigate(`/guide/${toCropSlug(rec.crop)}`)}>
-                                                        {cropLabel(rec.crop)}
-                                                    </Text>
-                                                    {idx === 0 && <Flex px={2} py={0.5} borderRadius="full" fontSize="10px" fontWeight="bold" bg="green.500" color="white">{t('field_details.ai.top_pick')}</Flex>}
-                                                </Flex>
-                                                <Flex align="center" gap={2}>
-                                                    <Flex px={2} py={0.5} borderRadius="full" fontSize="xs" fontWeight="bold" bg={`${badge}.100`} color={`${badge}.800`}>{confidenceLabel(badge)}</Flex>
-                                                    <Text fontWeight="bold" fontSize="md" style={{ color: barColor }}>{rec.probability.toFixed(1)}%</Text>
-                                                </Flex>
-                                            </Flex>
-                                            <Box bg="gray.200" borderRadius="full" h="6px" overflow="hidden">
-                                                <Box h="100%" borderRadius="full" bg={barColor} style={{ width: `${Math.min(rec.probability, 100).toFixed(1)}%`, transition: 'width 0.6s ease' }} />
-                                            </Box>
-                                        </Box>
-                                    );
-                                })}
-                            </Flex>
-                        )}
-                    </Box>
-                ) : (
-                    <Box p={6} bg="gray.50" borderRadius="2xl" border="1px dashed" borderColor="gray.300" textAlign="center">
-                        <Flex justify="center" mb={3}><Flex bg="green.50" p={3} borderRadius="xl"><BrainCircuit size={28} color="#059669" /></Flex></Flex>
-                        <Text fontWeight="semibold" mb={1}>{t('field_details.ai.empty_title')}</Text>
-                        <Text fontSize="sm" color="gray.500" mb={4}>{t('field_details.ai.empty_desc')}</Text>
-                        <Button colorPalette="brand" size="sm" onClick={() => setIsAnalysisModalOpen(true)}><BrainCircuit size={15} />{t('field_details.ai.button')}</Button>
-                    </Box>
-                )}
+                <FieldDetailsRecommendations
+                    lastAnalysis={lastAnalysis}
+                    resultsTitle={t('field_details.ai.results_title')}
+                    topPickLabel={t('field_details.ai.top_pick')}
+                    reanalyzeLabel={t('field_details.ai.reanalyze')}
+                    emptyTitle={t('field_details.ai.empty_title')}
+                    emptyDescription={t('field_details.ai.empty_desc')}
+                    analyzeButtonLabel={t('field_details.ai.button')}
+                    noRecommendationsLabel={t('field_details.ai.no_recommendations')}
+                    scenarioLabel={scenarioLabel}
+                    weatherSourceLabel={weatherSourceLabel}
+                    confidenceLabel={confidenceLabel}
+                    cropLabel={cropLabel}
+                    scenarioBadgeColor={scenarioBadgeColor}
+                    formatTimestamp={(timestamp) => parseBackendDate(timestamp).toLocaleString()}
+                    onOpenAnalysis={() => setIsAnalysisModalOpen(true)}
+                    onNavigateGuide={(crop) => navigate(`/guide/${toCropSlug(crop)}`)}
+                />
             </DashboardLayout>
         </>
     )
