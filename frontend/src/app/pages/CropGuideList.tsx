@@ -138,6 +138,9 @@ export const CropGuideList = () => {
                                 borderRadius="2xl"
                                 overflow="hidden"
                                 shadow="sm"
+                                display="flex"
+                                flexDirection="column"
+                                h="100%"
                             >
                                 {guide.image ? (
                                     <Image
@@ -153,7 +156,7 @@ export const CropGuideList = () => {
                                     </Flex>
                                 )}
 
-                                <Flex p={4} direction="column" gap={3}>
+                                <Flex p={4} direction="column" gap={3} flex="1">
                                     <Box>
                                         <Text fontWeight="bold" fontSize="lg" lineClamp={1}>
                                             {cropLabel(guide.name)}
@@ -183,7 +186,7 @@ export const CropGuideList = () => {
                                         {guide.description || t("crop_guide.no_data")}
                                     </Text>
 
-                                    <Flex justify="space-between" align="center" mt={1}>
+                                    <Flex justify="space-between" align="center" mt="auto" pt={1}>
                                         <Text fontSize="xs" color="gray.500">
                                             {guide.family || t("crop_guide.family_unknown")}
                                         </Text>
