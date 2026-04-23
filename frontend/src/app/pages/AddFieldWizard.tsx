@@ -35,6 +35,17 @@ const initialFormData: FormData = {
     useDefaultPh: true,
 };
 
+const COMMON_SOIL_TYPES = [
+    'alluvial',
+    'colluvial',
+    'brown_steppe',
+    'chestnut_steppe',
+    'terra_rossa',
+    'brown_forest',
+    'vertisol',
+    'chernozem',
+] as const;
+
 export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardProps) => {
     const { t } = useTranslation();
     const [step, setStep] = useState(1);
@@ -63,7 +74,7 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
                 name: formData.name,
                 location: formData.location || [[30.7133, 36.8969], [30.7143, 36.8969], [30.7143, 36.8979], [30.7133, 36.8979], [30.7133, 36.8969]],
                 areaHa: parseFloat(formData.areaHa) || 0.0,
-                soilType: formData.soilType || 'loam',
+                soilType: formData.soilType || 'alluvial',
             });
 
             await fieldsService.updateFieldProperties(createRes.id, {
@@ -87,6 +98,7 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
 
     // pH color computed from live phDraft so it updates during drag
     const phColor = phDraft < 4 ? '#ef4444' : phDraft < 6 ? '#f97316' : phDraft <= 8 ? '#22c55e' : phDraft <= 10 ? '#3b82f6' : '#7c3aed';
+    const soilTypeLabel = (value?: string) => value ? t(`add_field.${value}`, { defaultValue: value }) : '-';
 
     const validateStep = (s: number): boolean => {
         const newErrors: Record<string, string> = {};
@@ -130,26 +142,26 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
                 zIndex={51}
                 align="center"
                 justify="center"
-                p={4}
+                p={{ base: 2, md: 4 }}
                 pointerEvents="none"
             >
                 <Flex
                     direction="column"
                     bg="white"
                     w="full"
-                    maxW="4xl"
-                    borderRadius="3xl"
+                    maxW={{ base: "full", md: "4xl" }}
+                    borderRadius={{ base: "2xl", md: "3xl" }}
                     shadow="2xl"
                     border="1px solid"
                     borderColor="gray.100"
                     overflow="hidden"
                     pointerEvents="auto"
-                    h="90vh"
+                    h={{ base: "calc(100dvh - 1rem)", md: "90vh" }}
                 >
                     {/* HEADER */}
-                    <Flex bg="neutral.dark" p={6} color="white" justify="space-between" align="center" flexShrink={0}>
+                    <Flex bg="neutral.dark" p={{ base: 4, md: 6 }} color="white" justify="space-between" align="center" flexShrink={0}>
                         <Box>
-                            <Text fontSize="xl" fontWeight="bold" letterSpacing="wide">{t('add_field.title')}</Text>
+                            <Text fontSize={{ base: "lg", md: "xl" }} fontWeight="bold" letterSpacing="wide">{t('add_field.title')}</Text>
                             <Text color="gray.400" fontSize="sm" mt={0.5}>{t('add_field.step_1_3', { step })}</Text>
                         </Box>
                         <Flex gap={2}>
@@ -160,10 +172,10 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
                     </Flex>
 
                     {/* BODY — scrollable */}
-                    <Flex p={8} flex={1} overflowY="auto" direction="column">
+                    <Flex p={{ base: 4, md: 8 }} flex={1} overflowY="auto" direction="column">
                         {/* ─── STEP 1 ─── */}
                         {step === 1 && (
-                            <Flex direction="column" gap={6} flex={1}>
+                            <Flex direction="column" gap={{ base: 4, md: 6 }} flex={1}>
                                 {/* Field Name */}
                                 <Box>
                                     <Flex align="center" gap={1.5} mb={1}>
@@ -190,7 +202,7 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
                                 </Box>
 
                                 {/* Area + Soil Type */}
-                                <Box display="grid" gridTemplateColumns="1fr 1fr" gap={4}>
+                                <Box display="grid" gridTemplateColumns={{ base: "1fr", sm: "1fr 1fr" }} gap={4}>
                                     <Box>
                                         <Flex align="center" gap={1.5} mb={1}>
                                             <Ruler size={16} color="#3b82f6" />
@@ -225,20 +237,18 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
                                             }}
                                         >
                                             <option value="">{t('add_field.soil_type_ph')}</option>
-                                            <option value="alluvial_loam">{t('add_field.alluvial_loam')}</option>
-                                            <option value="clay_loam">{t('add_field.clay_loam')}</option>
-                                            <option value="light_sandy_loam">{t('add_field.light_sandy_loam')}</option>
-                                            <option value="loam">{t('add_field.loam')}</option>
-                                            <option value="rich_loam">{t('add_field.rich_loam')}</option>
-                                            <option value="sandy_loam">{t('add_field.sandy_loam')}</option>
-                                            <option value="well_drained_loam">{t('add_field.well_drained_loam')}</option>
+                                            {COMMON_SOIL_TYPES.map((soil) => (
+                                                <option key={soil} value={soil}>
+                                                    {t(`add_field.${soil}`)}
+                                                </option>
+                                            ))}
                                         </chakra.select>
                                         {errors.soilType && <Text fontSize="xs" color="red.500" mt={1} fontWeight="medium">⚠ {errors.soilType}</Text>}
                                     </Box>
                                 </Box>
 
                                 {/* Map Selector */}
-                                <Flex direction="column" flex={1} minH="240px">
+                                <Flex direction="column" flex={1} minH={{ base: "340px", md: "240px" }}>
                                     <Flex align="center" gap={1.5} mb={2}>
                                         <MapIcon size={16} color="#059669" />
                                         <Text fontSize="sm" fontWeight="semibold" color="gray.700">{t('add_field.draw_boundaries')}</Text>
@@ -268,20 +278,20 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
 
                         {/* ─── STEP 2 ─── */}
                         {step === 2 && (
-                            <Flex direction="column" gap={6}>
-                                <Flex bg="blue.50" p={4} borderRadius="xl" gap={3} border="1px solid" borderColor="blue.100">
+                            <Flex direction="column" gap={{ base: 3, md: 6 }}>
+                                <Flex bg="blue.50" p={{ base: 3, md: 4 }} borderRadius="xl" gap={3} border="1px solid" borderColor="blue.100">
                                     <AlertCircle color="#3b82f6" size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
                                     <Text fontSize="sm" color="blue.800" lineHeight="tall">{t('add_field.lab_alert')}</Text>
                                 </Flex>
 
-                                <Box display="grid" gridTemplateColumns="1fr 1fr 1fr" gap={4} pt={2}>
+                                <Box display="grid" gridTemplateColumns={{ base: "1fr", md: "1fr 1fr 1fr" }} gap={{ base: 3, md: 4 }} pt={{ base: 1, md: 2 }}>
                                     {/* Nitrogen */}
-                                    <Box bg="gray.50" p={4} borderRadius="xl" border="1px solid" borderColor={errors.nitrogen ? 'red.400' : 'gray.200'}>
+                                    <Box bg="gray.50" p={{ base: 3, md: 4 }} borderRadius="xl" border="1px solid" borderColor={errors.nitrogen ? 'red.400' : 'gray.200'}>
                                         <Text fontSize="xs" fontWeight="bold" color={errors.nitrogen ? 'red.400' : 'gray.400'} textTransform="uppercase" mb={1}>{t('add_field.nitrogen')}</Text>
                                         <Flex align="center" gap={2}>
                                             <Input
                                                 type="number" step="0.1" min={0} placeholder={t('add_field.auto')} variant="flushed"
-                                                fontSize="lg" fontWeight="bold" color="gray.700"
+                                                fontSize={{ base: "md", md: "lg" }} fontWeight="bold" color="gray.700"
                                                 value={formData.nitrogen}
                                                 onChange={(e) => {
                                                     setField('nitrogen', e.target.value);
@@ -294,12 +304,12 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
                                     </Box>
 
                                     {/* Phosphorus */}
-                                    <Box bg="gray.50" p={4} borderRadius="xl" border="1px solid" borderColor={errors.phosphorus ? 'red.400' : 'gray.200'}>
+                                    <Box bg="gray.50" p={{ base: 3, md: 4 }} borderRadius="xl" border="1px solid" borderColor={errors.phosphorus ? 'red.400' : 'gray.200'}>
                                         <Text fontSize="xs" fontWeight="bold" color={errors.phosphorus ? 'red.400' : 'gray.400'} textTransform="uppercase" mb={1}>{t('add_field.phosphorus')}</Text>
                                         <Flex align="center" gap={2}>
                                             <Input
                                                 type="number" step="0.1" min={0} placeholder={t('add_field.auto')} variant="flushed"
-                                                fontSize="lg" fontWeight="bold" color="gray.700"
+                                                fontSize={{ base: "md", md: "lg" }} fontWeight="bold" color="gray.700"
                                                 value={formData.phosphorus}
                                                 onChange={(e) => {
                                                     setField('phosphorus', e.target.value);
@@ -312,12 +322,12 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
                                     </Box>
 
                                     {/* Potassium */}
-                                    <Box bg="gray.50" p={4} borderRadius="xl" border="1px solid" borderColor={errors.potassium ? 'red.400' : 'gray.200'}>
+                                    <Box bg="gray.50" p={{ base: 3, md: 4 }} borderRadius="xl" border="1px solid" borderColor={errors.potassium ? 'red.400' : 'gray.200'}>
                                         <Text fontSize="xs" fontWeight="bold" color={errors.potassium ? 'red.400' : 'gray.400'} textTransform="uppercase" mb={1}>{t('add_field.potassium')}</Text>
                                         <Flex align="center" gap={2}>
                                             <Input
                                                 type="number" step="0.1" min={0} placeholder={t('add_field.auto')} variant="flushed"
-                                                fontSize="lg" fontWeight="bold" color="gray.700"
+                                                fontSize={{ base: "md", md: "lg" }} fontWeight="bold" color="gray.700"
                                                 value={formData.potassium}
                                                 onChange={(e) => {
                                                     setField('potassium', e.target.value);
@@ -331,7 +341,7 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
                                 </Box>
 
                                 {/* pH — Full width card with opt-in toggle */}
-                                <Box bg="gray.50" p={4} borderRadius="xl" border="1px solid" borderColor={formData.useDefaultPh ? 'gray.200' : phColor} transition="border-color 0.2s">
+                                <Box bg="gray.50" p={{ base: 3, md: 4 }} borderRadius="xl" border="1px solid" borderColor={formData.useDefaultPh ? 'gray.200' : phColor} transition="border-color 0.2s">
                                     {/* Header row: label + default toggle */}
                                     <Flex justify="space-between" align="center" mb={formData.useDefaultPh ? 0 : 3}>
                                         <Text fontSize="xs" fontWeight="bold" color="gray.400" textTransform="uppercase">{t('add_field.ph_value')}</Text>
@@ -456,7 +466,7 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
                                     </Flex>
                                     <Flex justify="space-between" align="center" borderBottom="1px solid" borderColor="gray.200" pb={2}>
                                         <Text color="gray.500" fontSize="sm" fontWeight="medium">{t('add_field.area_and_soil')}</Text>
-                                        <Text color="gray.800" fontSize="sm" fontWeight="bold">{formData.areaHa ? `${formData.areaHa} Ha` : '-'} / {formData.soilType || '-'}</Text>
+                                        <Text color="gray.800" fontSize="sm" fontWeight="bold">{formData.areaHa ? `${formData.areaHa} Ha` : '-'} / {soilTypeLabel(formData.soilType)}</Text>
                                     </Flex>
                                     <Flex justify="space-between" align="center" borderBottom="1px solid" borderColor="gray.200" pb={2}>
                                         <Text color="gray.500" fontSize="sm" fontWeight="medium">{t('add_field.location')}</Text>
@@ -477,12 +487,19 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
                     </Flex>
 
                     {/* FOOTER */}
-                    <Flex p={6} borderTop="1px solid" borderColor="gray.100" justify="space-between" bg="gray.50" flexShrink={0}>
+                    <Flex
+                        p={{ base: 4, md: 6 }}
+                        borderTop="1px solid"
+                        borderColor="gray.100"
+                        justify="space-between"
+                        bg="gray.50"
+                        flexShrink={0}
+                    >
                         {step > 1 ? (
                             <Button
                                 variant="ghost"
                                 onClick={() => setStep(s => s - 1)}
-                                display="flex" alignItems="center" gap={2} px={6} py={6} borderRadius="xl" color="gray.600" fontWeight="bold"
+                                display="flex" alignItems="center" gap={2} px={{ base: 4, md: 6 }} py={{ base: 3, md: 6 }} borderRadius="xl" color="gray.600" fontWeight="bold"
                             >
                                 <ArrowLeft size={18} /> {t('add_field.back')}
                             </Button>
@@ -490,7 +507,7 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
                             <Button
                                 variant="ghost"
                                 onClick={handleClose}
-                                px={6} py={6} borderRadius="xl" color="gray.500"
+                                px={{ base: 4, md: 6 }} py={{ base: 3, md: 6 }} borderRadius="xl" color="gray.500"
                             >
                                 {t('add_field.back')}
                             </Button>
@@ -499,7 +516,7 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
                         {step < 3 ? (
                             <Button
                                 onClick={() => { if (validateStep(step)) setStep(s => s + 1); }}
-                                display="flex" alignItems="center" gap={2} px={8} py={3} borderRadius="xl" bg="accent.500" color="white" fontWeight="bold"
+                                display="flex" alignItems="center" gap={2} px={{ base: 6, md: 8 }} py={3} borderRadius="xl" bg="accent.500" color="white" fontWeight="bold"
                                 _hover={{ bg: 'accent.600' }} shadow="lg" transition="all 0.2s"
                             >
                                 {t('add_field.next')} <ArrowRight size={18} />
@@ -508,7 +525,7 @@ export const AddFieldWizard = ({ isOpen, onClose, onSuccess }: AddFieldWizardPro
                             <Button
                                 onClick={handleSaveAndFinish}
                                 loading={isLoading}
-                                display="flex" alignItems="center" gap={2} px={8} py={3} borderRadius="xl" bg="brand.500" color="white" fontWeight="bold"
+                                display="flex" alignItems="center" gap={2} px={{ base: 6, md: 8 }} py={3} borderRadius="xl" bg="brand.500" color="white" fontWeight="bold"
                                 _hover={{ bg: 'brand.600' }} shadow="lg" transition="all 0.2s"
                             >
                                 {t('add_field.save')} <CheckCircle size={18} />

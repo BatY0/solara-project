@@ -31,6 +31,16 @@ import { getDeviceStatus } from "../../utils/deviceStatus"
 
 const ESRI_SATELLITE = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 const ESRI_LABELS = 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
+const COMMON_SOIL_TYPES = [
+    'alluvial',
+    'colluvial',
+    'brown_steppe',
+    'chestnut_steppe',
+    'terra_rossa',
+    'brown_forest',
+    'vertisol',
+    'chernozem',
+] as const;
 
 function formatDate(d: Date): string { return toLocalDateInputValue(d); }
 
@@ -217,6 +227,7 @@ export const FieldDetails = () => {
         t('field_details.ai.months.jul'), t('field_details.ai.months.aug'), t('field_details.ai.months.sep'),
         t('field_details.ai.months.oct'), t('field_details.ai.months.nov'), t('field_details.ai.months.dec'),
     ];
+    const soilTypeLabel = (value?: string) => value ? t(`add_field.${value}`, { defaultValue: value }) : '-';
 
     /* ── Core data ── */
     const [field, setField] = useState<FieldType | null>(null)
@@ -731,13 +742,16 @@ export const FieldDetails = () => {
                                                     onChange={e => setEditState(s => s ? { ...s, soilType: e.target.value } : s)}
                                                     style={{ width: '100%', padding: '6px 10px', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '14px', background: 'white' }}
                                                 >
-                                                    <option value="alluvial_loam">{t('add_field.alluvial_loam')}</option>
-                                                    <option value="clay_loam">{t('add_field.clay_loam')}</option>
-                                                    <option value="light_sandy_loam">{t('add_field.light_sandy_loam')}</option>
-                                                    <option value="loam">{t('add_field.loam')}</option>
-                                                    <option value="rich_loam">{t('add_field.rich_loam')}</option>
-                                                    <option value="sandy_loam">{t('add_field.sandy_loam')}</option>
-                                                    <option value="well_drained_loam">{t('add_field.well_drained_loam')}</option>
+                                                    {COMMON_SOIL_TYPES.map((soil) => (
+                                                        <option key={soil} value={soil}>
+                                                            {t(`add_field.${soil}`)}
+                                                        </option>
+                                                    ))}
+                                                    {!COMMON_SOIL_TYPES.includes(editState.soilType as (typeof COMMON_SOIL_TYPES)[number]) && (
+                                                        <option value={editState.soilType}>
+                                                            {soilTypeLabel(editState.soilType)}
+                                                        </option>
+                                                    )}
                                                 </select>
                                             </Box>
                                         </Flex>
@@ -769,7 +783,7 @@ export const FieldDetails = () => {
                                         <Text color="gray.500" fontSize="sm">
                                             {t('field_details.area')}: <strong>{field.areaHa} {t('field_details.hectares')}</strong>
                                             {' • '}
-                                            {t('field_details.soil')}: <strong style={{ textTransform: 'capitalize' }}>{field.soilType}</strong>
+                                            {t('field_details.soil')}: <strong>{soilTypeLabel(field.soilType)}</strong>
                                         </Text>
                                         {fieldProps && (
                                             <Flex gap={2} mt={2} wrap="wrap">

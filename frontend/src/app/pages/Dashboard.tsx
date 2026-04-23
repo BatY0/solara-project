@@ -213,17 +213,35 @@ export const Dashboard = () => {
                 {t('dashboard.registered_fields')}
               </Text>
               <Flex
-                align="center"
+                align={{ base: "stretch", sm: "center" }}
+                direction={{ base: "column", sm: "row" }}
                 gap={3}
                 wrap="wrap"
                 w={{ base: "full", md: "auto" }}
-                justify={{ base: "space-between", md: "flex-end" }}
+                justify={{ base: "flex-start", md: "flex-end" }}
               >
                 {fields.length > 0 && (
                   <Text fontSize="sm" color="neutral.subtext" fontWeight="medium">
                     {fields.length} {t('dashboard.total_fields').toLowerCase()}
                   </Text>
                 )}
+                <Button
+                  display={{ base: "inline-flex", md: "none" }}
+                  alignItems="center"
+                  justifyContent="center"
+                  gap={2}
+                  bg="brand.500"
+                  _hover={{ bg: "brand.600" }}
+                  color="white"
+                  size="sm"
+                  borderRadius="xl"
+                  fontWeight="bold"
+                  shadow="sm"
+                  w={{ base: "full", sm: "auto" }}
+                  onClick={handleAddNewField}
+                >
+                  <Plus size={16} /> {t('dashboard.new_field')}
+                </Button>
                 {fields.length > 4 && (
                   <Button variant="outline" size={{ base: "xs", md: "sm" }} onClick={() => navigate('/fields')}>
                     {t('dashboard.view_all_fields', { count: fields.length })}
