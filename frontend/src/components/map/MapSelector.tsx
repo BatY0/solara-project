@@ -141,8 +141,8 @@ function LocateButton({ title }: { title: string }) {
             ref={containerRef}
             style={{
                 position: 'absolute',
-                bottom: '80px',
-                right: '10px',
+                bottom: '10px',
+                left: '10px',
                 zIndex: 1000,
             }}
         >
@@ -179,11 +179,12 @@ function LocateButton({ title }: { title: string }) {
 // ── Main MapSelector component ────────────────────────────────────────────────
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Flex, Text, Button } from '@chakra-ui/react';
+import { Box, Flex, Text, Button, useBreakpointValue } from '@chakra-ui/react';
 import { Trash2, CheckCheck, Undo2, MapPin, LocateFixed, Ruler } from 'lucide-react';
 
 export const MapSelector = ({ value, onChange, onAreaCalculated, mapHeight = 'clamp(240px, 35vh, 360px)' }: Props) => {
     const { t } = useTranslation();
+    const isMobile = useBreakpointValue({ base: true, md: false }) ?? false;
     const [points, setPoints] = useState<[number, number][]>(
         value ? fromBackend(value) : []
     );
@@ -236,6 +237,17 @@ export const MapSelector = ({ value, onChange, onAreaCalculated, mapHeight = 'cl
         points.length > 0 ? points[0] : [38.9637, 35.2433];
 
     const liveAreaHa = points.length >= 3 ? computeAreaHa(points) : null;
+    const statusText = finished
+        ? (isMobile
+            ? t('map.status_locked_short', { area: liveAreaHa != null ? liveAreaHa.toFixed(2) : '?' })
+            : t('map.status_locked', { area: liveAreaHa != null ? liveAreaHa.toFixed(2) : '?' }))
+        : points.length === 0
+            ? t('map.status_tap_to_draw')
+            : points.length < 3
+                ? t('map.status_add_points', { count: points.length })
+                : (isMobile
+                    ? t('map.status_ready_short', { count: points.length })
+                    : t('map.status_ready', { count: points.length, area: liveAreaHa?.toFixed(2) ?? '0.00' }));
 
     return (
         <Box
@@ -249,13 +261,25 @@ export const MapSelector = ({ value, onChange, onAreaCalculated, mapHeight = 'cl
             flexDirection="column"
             h="full"
         >
+            <style>{`
+                .leaflet-control-attribution {
+                    font-size: 10px !important;
+                    max-width: 72% !important;
+                    line-height: 1.2 !important;
+                    background: rgba(255, 255, 255, 0.85) !important;
+                    backdrop-filter: blur(2px);
+                }
+                .leaflet-control-attribution a {
+                    color: #4b5563 !important;
+                }
+            `}</style>
             {/* ── Toolbar ───────────────────────────────────────────────── */}
             <Flex
                 position="absolute"
                 top="10px"
                 right="10px"
                 zIndex={1000}
-                gap={2}
+                gap={{ base: 3, md: 2 }}
                 direction="column"
                 align="flex-end"
             >
@@ -270,19 +294,15 @@ export const MapSelector = ({ value, onChange, onAreaCalculated, mapHeight = 'cl
                     align="center"
                     gap={1.5}
                     backdropFilter="blur(6px)"
+                    maxW={{ base: "170px", md: "unset" }}
+                    whiteSpace="nowrap"
                 >
                     <MapPin size={12} />
-                    {finished
-                        ? `Boundary locked — ${liveAreaHa != null ? liveAreaHa.toFixed(2) : '?'} ha`
-                        : points.length === 0
-                            ? 'Click map to start drawing'
-                            : points.length < 3
-                                ? `${points.length} / 3 min. points`
-                                : `${points.length} pts — ~${liveAreaHa?.toFixed(2)} ha`}
+                    {statusText}
                 </Flex>
 
                 {/* Buttons */}
-                <Flex gap={2}>
+                <Flex gap={2} direction="column" align="flex-end" display={{ base: "none", md: "flex" }}>
                     {points.length > 0 && (
                         <Button
                             size="xs"
@@ -295,7 +315,7 @@ export const MapSelector = ({ value, onChange, onAreaCalculated, mapHeight = 'cl
                             gap={1}
                         >
                             <Undo2 size={13} />
-                            {finished ? 'Edit' : 'Undo'}
+                            {finished ? t('map.edit') : t('map.undo')}
                         </Button>
                     )}
                     {/* Always show Clear when polygon exists so users know they can redraw */}
@@ -311,7 +331,7 @@ export const MapSelector = ({ value, onChange, onAreaCalculated, mapHeight = 'cl
                             gap={1}
                         >
                             <Trash2 size={13} />
-                            Clear
+                            {t('map.clear')}
                         </Button>
                     )}
                     {points.length >= 3 && !finished && (
@@ -326,7 +346,7 @@ export const MapSelector = ({ value, onChange, onAreaCalculated, mapHeight = 'cl
                             gap={1}
                         >
                             <CheckCheck size={13} />
-                            Finish
+                            {t('map.finish')}
                         </Button>
                     )}
                 </Flex>
@@ -337,13 +357,13 @@ export const MapSelector = ({ value, onChange, onAreaCalculated, mapHeight = 'cl
             <MapContainer
                 center={center}
                 zoom={points.length > 0 ? 14 : 6}
-                style={{ height: mapHeight, width: '100%', cursor: finished ? 'default' : 'crosshair' }}
+                style={{ height: mapHeight, width: '100%', cursor: finished ? 'default' : 'crosshair', touchAction: 'none' }}
                 scrollWheelZoom
             >
                 {/* Esri Satellite base layer */}
                 <TileLayer
                     url={ESRI_SATELLITE}
-                    attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
+                    attribution="Esri World Imagery"
                     maxZoom={19}
                 />
                 {/* Esri label overlay */}
@@ -399,6 +419,62 @@ export const MapSelector = ({ value, onChange, onAreaCalculated, mapHeight = 'cl
                 ))}
             </MapContainer>
 
+            {/* Mobile action row (keeps map area clear on small screens) */}
+            <Flex
+                display={{ base: "flex", md: "none" }}
+                px={2}
+                py={2}
+                gap={2}
+                justify="flex-end"
+                align="center"
+                bg={finished ? '#ecfdf5' : '#f8fafc'}
+                borderTop="1px solid"
+                borderColor={finished ? '#a7f3d0' : 'gray.200'}
+            >
+                {points.length > 0 && (
+                    <Button
+                        size="xs"
+                        onClick={handleUndo}
+                        bg="gray.700"
+                        color="white"
+                        _hover={{ bg: 'gray.800' }}
+                        borderRadius="lg"
+                        gap={1}
+                    >
+                        <Undo2 size={13} />
+                        {finished ? t('map.edit') : t('map.undo')}
+                    </Button>
+                )}
+                {points.length > 0 && (
+                    <Button
+                        size="xs"
+                        onClick={handleClear}
+                        bg="red.500"
+                        color="white"
+                        _hover={{ bg: 'red.600' }}
+                        borderRadius="lg"
+                        gap={1}
+                    >
+                        <Trash2 size={13} />
+                        {t('map.clear')}
+                    </Button>
+                )}
+                {points.length >= 3 && !finished && (
+                    <Button
+                        size="xs"
+                        onClick={handleFinish}
+                        bg="#059669"
+                        color="white"
+                        _hover={{ bg: '#047857' }}
+                        borderRadius="lg"
+                        gap={1}
+                    >
+                        <CheckCheck size={13} />
+                        {t('map.finish')}
+                    </Button>
+                )}
+            </Flex>
+
             {/* Bottom hint bar */}
             <Flex
                 bg={finished ? '#ecfdf5' : '#f8fafc'}
@@ -406,18 +482,19 @@ export const MapSelector = ({ value, onChange, onAreaCalculated, mapHeight = 'cl
                 borderColor={finished ? '#a7f3d0' : 'gray.200'}
                 px={4}
                 py={2}
-                align="center"
+                align={{ base: "flex-start", md: "center" }}
                 justify="space-between"
                 gap={2}
+                direction={{ base: "column", md: "row" }}
             >
                 {finished ? (
                     <>
                         <Flex align="center" gap={2}>
                             <CheckCheck size={14} color="#059669" />
                             <Text fontSize="xs" color="#059669" fontWeight="medium">
-                                Boundary saved — {points.length} points. Drag any corner to adjust, or use
-                                {' '}<strong>Edit</strong> to add more points /{' '}
-                                <strong>Clear</strong> to redraw.
+                                {isMobile
+                                    ? t('map.footer_saved_short')
+                                    : `${t('map.boundary_saved', { count: points.length })} ${t('map.footer_edit_hint', { edit: t('map.edit'), clear: t('map.clear') })}`}
                             </Text>
                         </Flex>
                         {liveAreaHa != null && (
@@ -433,10 +510,10 @@ export const MapSelector = ({ value, onChange, onAreaCalculated, mapHeight = 'cl
                     <>
                         <Text fontSize="xs" color="gray.500">
                             {points.length === 0
-                                ? 'Click on the satellite map to place your first field corner.'
+                                ? t('map.click_hint_few')
                                 : points.length < 3
-                                    ? `${points.length} point${points.length > 1 ? 's' : ''} placed — add at least ${3 - points.length} more to form a polygon.`
-                                    : `${points.length} points placed. Add more corners or press “Finish” to lock the boundary.`
+                                    ? t('map.footer_points_needed', { count: points.length, needed: 3 - points.length })
+                                    : t('map.click_hint_enough')
                             }
                         </Text>
                         {liveAreaHa != null && (

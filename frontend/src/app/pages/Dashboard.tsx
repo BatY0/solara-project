@@ -138,9 +138,9 @@ export const Dashboard = () => {
           </Button>
         }
       >
-        <Flex direction="column" gap={8} w="full">
+        <Flex direction="column" gap={{ base: 6, md: 6 }} w="full">
           {/* STATS ROW */}
-          <Box display={{ base: "grid", md: "grid" }} gridTemplateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }} gap={6}>
+          <Box display={{ base: "grid", md: "grid" }} gridTemplateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }} gap={{ base: 4, md: 5 }}>
             <StatCard
               title={t('dashboard.total_fields')}
               value={fields.length}
@@ -202,25 +202,55 @@ export const Dashboard = () => {
 
           {/* FIELDS LIST */}
           <Box>
-            <Flex align="center" justify="space-between" mb={6}>
+            <Flex
+              align={{ base: "stretch", md: "center" }}
+              justify="space-between"
+              direction={{ base: "column", md: "row" }}
+              gap={{ base: 3, md: 0 }}
+              mb={{ base: 4, md: 5 }}
+            >
               <Text fontSize="lg" fontWeight="bold" color="neutral.dark">
                 {t('dashboard.registered_fields')}
               </Text>
-              <Flex align="center" gap={4}>
+              <Flex
+                align={{ base: "stretch", sm: "center" }}
+                direction={{ base: "column", sm: "row" }}
+                gap={3}
+                wrap="wrap"
+                w={{ base: "full", md: "auto" }}
+                justify={{ base: "flex-start", md: "flex-end" }}
+              >
                 {fields.length > 0 && (
                   <Text fontSize="sm" color="neutral.subtext" fontWeight="medium">
                     {fields.length} {t('dashboard.total_fields').toLowerCase()}
                   </Text>
                 )}
+                <Button
+                  display={{ base: "inline-flex", md: "none" }}
+                  alignItems="center"
+                  justifyContent="center"
+                  gap={2}
+                  bg="brand.500"
+                  _hover={{ bg: "brand.600" }}
+                  color="white"
+                  size="sm"
+                  borderRadius="xl"
+                  fontWeight="bold"
+                  shadow="sm"
+                  w={{ base: "full", sm: "auto" }}
+                  onClick={handleAddNewField}
+                >
+                  <Plus size={16} /> {t('dashboard.new_field')}
+                </Button>
                 {fields.length > 4 && (
-                  <Button variant="outline" size="sm" onClick={() => navigate('/fields')}>
+                  <Button variant="outline" size={{ base: "xs", md: "sm" }} onClick={() => navigate('/fields')}>
                     {t('dashboard.view_all_fields', { count: fields.length })}
                   </Button>
                 )}
               </Flex>
             </Flex>
 
-            <Box display="grid" gridTemplateColumns={{ base: "1fr", xl: "repeat(2, 1fr)" }} gap={6}>
+            <Box display="grid" gridTemplateColumns={{ base: "1fr", xl: "repeat(2, 1fr)" }} gap={{ base: 4, md: 5 }}>
               {fields.slice(0, 4).map(field => (
                 <FieldCard
                   key={field.id}

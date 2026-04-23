@@ -27,7 +27,6 @@ export interface CropGuide {
     id: string;
     slug: string;
     name: string;
-    commonNames?: string;
     scientificName?: string;
     family?: string;
     growthHabit?: string;

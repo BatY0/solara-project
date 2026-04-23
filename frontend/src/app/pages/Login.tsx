@@ -4,6 +4,7 @@ import { Link as RouterLink, useNavigate } from "react-router-dom"
 import { useAuth } from "../../features/auth/useAuth"
 
 import { LanguageSwitcher } from "../../components/ui/LanguageSwitcher"
+import { Logo } from "../../components/ui/Logo"
 import { useTranslation } from "react-i18next"
 import { Mail, Lock, ArrowRight, Sprout, AlertCircle, Eye, EyeOff, ArrowLeft } from "lucide-react"
 
@@ -52,7 +53,7 @@ export const Login = () => {
         flex="1"
         bg="brand.600"
         position="relative"
-        display="flex"
+        display={{ base: "none", md: "flex" }}
         alignItems="center"
         justifyContent="center"
         p={{ base: 8, md: 12 }}
@@ -109,13 +110,13 @@ export const Login = () => {
       </Box>
 
       {/* RIGHT SIDE (FORM) */}
-      <Box flex="1" bg="neutral.canvas" display="flex" alignItems="center" justifyContent="center" p={8} position="relative">
+      <Box flex="1" bg="neutral.canvas" display="flex" alignItems="center" justifyContent="center" p={{ base: 4, md: 8 }} position="relative">
         <Link
           asChild
           position="absolute"
           top={8}
           left={8}
-          display="flex"
+          display={{ base: "none", md: "flex" }}
           alignItems="center"
           gap={2}
           color="neutral.subtext"
@@ -128,26 +129,40 @@ export const Login = () => {
             Home
           </RouterLink>
         </Link>
-        <Box position="absolute" top={8} right={8}>
+        <Box position="absolute" top={8} right={8} display={{ base: "none", md: "block" }}>
           <LanguageSwitcher />
         </Box>
 
-        <Box w="full" maxW="md" bg="white" p={{ base: 8, md: 10 }} borderRadius="2xl" shadow="xl" borderWidth="1px" borderColor="neutral.border">
+        <Box w="full" maxW="md">
+          <Flex display={{ base: "flex", md: "none" }} justify="space-between" align="center" mb={4} px={1}>
+            <Link asChild color="neutral.subtext" _hover={{ color: "brand.600" }} fontSize="sm" fontWeight="medium">
+              <RouterLink to="/">
+                <Icon asChild size="sm" mr={1}><ArrowLeft size={16} /></Icon>
+                Home
+              </RouterLink>
+            </Link>
+            <LanguageSwitcher />
+          </Flex>
 
-          <Box textAlign="center" mb={8}>
-            <Heading size="2xl" fontWeight="bold" color="neutral.dark">{t('login.title')}</Heading>
-            <Text color="neutral.subtext" fontSize="sm" mt={2}>{t('login.subtitle')}</Text>
-          </Box>
+          <Box bg="white" p={{ base: 6, md: 10 }} borderRadius="2xl" shadow="xl" borderWidth="1px" borderColor="neutral.border">
+            <Flex display={{ base: "flex", md: "none" }} justify="center" mb={4}>
+              <Logo />
+            </Flex>
 
-          {error && (
-            <Box mb={6} p={4} bg="red.50" borderWidth="1px" borderColor="red.200" borderRadius="xl" display="flex" alignItems="center" gap={3} color="red.700" fontSize="sm">
-              <Icon asChild size="sm"><AlertCircle size={18} /></Icon>
-              {error}
+            <Box textAlign="center" mb={8}>
+              <Heading size="2xl" fontWeight="bold" color="neutral.dark">{t('login.title')}</Heading>
+              <Text color="neutral.subtext" fontSize="sm" mt={2}>{t('login.subtitle')}</Text>
             </Box>
-          )}
 
-          <form onSubmit={handleSubmit}>
-            <VStack gap={5} align="stretch">
+            {error && (
+              <Box mb={6} p={4} bg="red.50" borderWidth="1px" borderColor="red.200" borderRadius="xl" display="flex" alignItems="center" gap={3} color="red.700" fontSize="sm">
+                <Icon asChild size="sm"><AlertCircle size={18} /></Icon>
+                {error}
+              </Box>
+            )}
+
+            <form onSubmit={handleSubmit}>
+              <VStack gap={5} align="stretch">
               <Box>
                 <Text mb={2} fontSize="sm" fontWeight="semibold" color="neutral.text" ml={1}>{t('login.email_label')}</Text>
                 <Box position="relative">
@@ -220,58 +235,59 @@ export const Login = () => {
                 </Box>
               </Box>
 
-              <Button
-                type="submit"
-                disabled={isLoading}
-                bg="brand.500"
-                color="white"
-                _hover={{ bg: "brand.600" }}
-                size="xl"
-                w="full"
-                borderRadius="xl"
-                shadow="lg"
-                shadowColor="brand.200"
-                py="3.5"
-                h="auto"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                gap={2}
-                _disabled={{ opacity: 0.7, cursor: "not-allowed" }}
-              >
-                {isLoading ? t('login.loading') : <>{t('login.submit')} <Icon asChild><ArrowRight size={20} /></Icon></>}
-              </Button>
-            </VStack>
-          </form>
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  bg="brand.500"
+                  color="white"
+                  _hover={{ bg: "brand.600" }}
+                  size="xl"
+                  w="full"
+                  borderRadius="xl"
+                  shadow="lg"
+                  shadowColor="brand.200"
+                  py="3.5"
+                  h="auto"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  gap={2}
+                  _disabled={{ opacity: 0.7, cursor: "not-allowed" }}
+                >
+                  {isLoading ? t('login.loading') : <>{t('login.submit')} <Icon asChild><ArrowRight size={20} /></Icon></>}
+                </Button>
+              </VStack>
+            </form>
 
-          <Box mt={8} pt={6} borderTopWidth="1px" borderColor="neutral.canvas" textAlign="center" fontSize="sm" color="neutral.subtext">
-            {t('login.no_account')}{' '}
-            <Link asChild color="brand.600" fontWeight="bold" _hover={{ color: "brand.700" }}>
-              <RouterLink to="/register">
-                {t('login.register_link')}
-              </RouterLink>
-            </Link>
-          </Box>
-
-          {isDev && (
-            <Box mt={4} textAlign="center">
-              <Button
-                onClick={handleDevLogin}
-                variant="ghost"
-                size="xs"
-                bg="neutral.canvas"
-                px={2}
-                py={1}
-                borderRadius="md"
-                color="neutral.subtext"
-                fontFamily="mono"
-                fontWeight="normal"
-                h="auto"
-              >
-                DEV MODE: demo@solara.com / 123456
-              </Button>
+            <Box mt={8} pt={6} borderTopWidth="1px" borderColor="neutral.canvas" textAlign="center" fontSize="sm" color="neutral.subtext">
+              {t('login.no_account')}{' '}
+              <Link asChild color="brand.600" fontWeight="bold" _hover={{ color: "brand.700" }}>
+                <RouterLink to="/register">
+                  {t('login.register_link')}
+                </RouterLink>
+              </Link>
             </Box>
-          )}
+
+            {isDev && (
+              <Box mt={4} textAlign="center">
+                <Button
+                  onClick={handleDevLogin}
+                  variant="ghost"
+                  size="xs"
+                  bg="neutral.canvas"
+                  px={2}
+                  py={1}
+                  borderRadius="md"
+                  color="neutral.subtext"
+                  fontFamily="mono"
+                  fontWeight="normal"
+                  h="auto"
+                >
+                  DEV MODE: demo@solara.com / 123456
+                </Button>
+              </Box>
+            )}
+          </Box>
         </Box>
       </Box>
     </Box>

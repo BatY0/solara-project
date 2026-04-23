@@ -11,8 +11,7 @@ import type { CropGuide } from "../../features/crop-guides/types";
 
 export const CropGuideList = () => {
     const navigate = useNavigate();
-    const { t, i18n } = useTranslation();
-    const isTurkish = i18n.language.toLowerCase().startsWith("tr");
+    const { t } = useTranslation();
 
     const [guides, setGuides] = useState<CropGuide[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -26,21 +25,10 @@ export const CropGuideList = () => {
         return t(`crop_guide.values.${group}.${valueKey(value)}`, { defaultValue: value });
     };
 
-    const pickPreferredCommonName = (commonNames?: string) => {
-        if (!commonNames) return "";
-        const parts = commonNames.split(",").map((x) => x.trim()).filter(Boolean);
-        if (parts.length === 0) return "";
-        if (isTurkish && parts.length > 1) return parts[1];
-        return parts[0];
-    };
-
-    const cropLabel = (name?: string, commonNames?: string) => {
+    const cropLabel = (name?: string) => {
         if (!name) return "";
         const translated = t(`crop_names.${normalizeCropName(name)}`, { defaultValue: "" });
-        if (translated) return translated;
-        const commonName = pickPreferredCommonName(commonNames);
-        if (commonName) return commonName;
-        return isTurkish ? "" : name;
+        return translated || name;
     };
 
     useEffect(() => {
@@ -70,11 +58,10 @@ export const CropGuideList = () => {
         if (!q) return guides;
 
         return guides.filter((guide) => {
-            const localizedName = cropLabel(guide.name, guide.commonNames);
+            const localizedName = cropLabel(guide.name);
             const haystack = [
                 guide.name,
                 localizedName,
-                guide.commonNames ?? "",
                 guide.scientificName ?? "",
                 guide.description ?? "",
             ]
@@ -151,6 +138,9 @@ export const CropGuideList = () => {
                                 borderRadius="2xl"
                                 overflow="hidden"
                                 shadow="sm"
+                                display="flex"
+                                flexDirection="column"
+                                h="100%"
                             >
                                 {guide.image ? (
                                     <Image
@@ -166,10 +156,10 @@ export const CropGuideList = () => {
                                     </Flex>
                                 )}
 
-                                <Flex p={4} direction="column" gap={3}>
+                                <Flex p={4} direction="column" gap={3} flex="1">
                                     <Box>
                                         <Text fontWeight="bold" fontSize="lg" lineClamp={1}>
-                                            {cropLabel(guide.name, guide.commonNames) || guide.commonNames || guide.name}
+                                            {cropLabel(guide.name)}
                                         </Text>
                                         {guide.scientificName && (
                                             <Text color="neutral.subtext" fontSize="sm" lineClamp={1}>
@@ -196,7 +186,7 @@ export const CropGuideList = () => {
                                         {guide.description || t("crop_guide.no_data")}
                                     </Text>
 
-                                    <Flex justify="space-between" align="center" mt={1}>
+                                    <Flex justify="space-between" align="center" mt="auto" pt={1}>
                                         <Text fontSize="xs" color="gray.500">
                                             {guide.family || t("crop_guide.family_unknown")}
                                         </Text>
