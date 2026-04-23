@@ -25,7 +25,6 @@ export interface CropGuideTranslationAdmin {
 
 export interface CropGuideAdminRequest {
     name: string;
-    commonNames?: string;
     scientificName?: string;
     family?: string;
     growthHabit?: string;

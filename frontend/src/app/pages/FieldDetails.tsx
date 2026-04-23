@@ -384,10 +384,15 @@ export const FieldDetails = () => {
     const confidenceLabel = (c: 'green' | 'orange' | 'gray') => c === 'green' ? t('field_details.ai.confidence_high') : c === 'orange' ? t('field_details.ai.confidence_moderate') : t('field_details.ai.confidence_low');
     const cropLabel = (crop: string) => t(`crop_names.${normalizeCropName(crop)}`, { defaultValue: crop });
 
-    const status: 'online' | 'paired' | 'offline' = field?.deviceId && telemetry ? 'online' : field?.deviceId ? 'paired' : 'offline';
+    const deviceStatus = field ? getDeviceStatus(field, t) : null;
+    const status: 'online' | 'paired' | 'inactive' | 'offline' =
+        !field?.deviceId ? 'offline'
+            : !field.deviceLastSeenAt ? 'paired'
+                : (deviceStatus?.status ?? 'offline');
     const statusConfig = {
         online: { bg: 'brand.50', color: 'green.700', border: 'brand.100', dot: 'green.500', pulse: true, label: t('dashboard.online') },
         paired: { bg: 'yellow.50', color: 'yellow.700', border: 'yellow.100', dot: 'yellow.500', pulse: false, label: t('dashboard.paired') },
+        inactive: { bg: 'yellow.50', color: 'yellow.700', border: 'yellow.100', dot: 'yellow.500', pulse: false, label: t('fields_page.inactive') },
         offline: { bg: 'red.50', color: 'red.700', border: 'red.100', dot: 'red.500', pulse: false, label: t('dashboard.offline') },
     }[status];
 
@@ -758,9 +763,9 @@ export const FieldDetails = () => {
                 <Box mb={6}>
                     <Flex align="center" gap={3} mb={4}>
                         <Text fontSize="lg" fontWeight="bold" color="gray.800">{t('field_details.live_telemetry')}</Text>
-                        {getDeviceStatus(field, t).timeAgo && (
+                        {deviceStatus?.timeAgo && (
                             <Text fontSize="sm" color="gray.500" fontWeight="medium">
-                                ({t('field_details.updated', { timeAgo: getDeviceStatus(field, t).timeAgo })})
+                                ({t('field_details.updated', { timeAgo: deviceStatus?.timeAgo })})
                             </Text>
                         )}
                     </Flex>

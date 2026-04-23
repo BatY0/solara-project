@@ -106,22 +106,11 @@ export const CropGuideDetails = () => {
         return t(`crop_guide.values.${group}.${valueKey(value)}`, { defaultValue: value });
     };
 
-    const pickPreferredCommonName = (commonNames?: string) => {
-        if (!commonNames) return "";
-        const parts = commonNames.split(",").map((x) => x.trim()).filter(Boolean);
-        if (parts.length === 0) return "";
-        if (isTurkish && parts.length > 1) return parts[1];
-        return parts[0];
-    };
-
     const localizedGuideName = () => {
         if (!guide?.name) return "";
         const key = normalizeCropName(guide.name);
         const translated = t(`crop_names.${key}`, { defaultValue: "" });
-        if (translated) return translated;
-        const commonName = pickPreferredCommonName(guide.commonNames);
-        if (commonName) return commonName;
-        return isTurkish ? "" : guide.name;
+        return translated || guide.name;
     };
 
     const pestDiseaseItems =
@@ -211,11 +200,6 @@ export const CropGuideDetails = () => {
                             <Text fontSize="2xl" fontWeight="bold">
                                 {localizedGuideName() || guide.name}
                             </Text>
-                            {guide.commonNames && (
-                                <Text fontSize="sm" color="neutral.subtext">
-                                    {t("crop_guide.common_names")}: {guide.commonNames}
-                                </Text>
-                            )}
                             {guide.scientificName && (
                                 <Text fontSize="sm" color="neutral.subtext">
                                     {guide.scientificName}

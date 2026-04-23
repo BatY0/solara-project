@@ -193,7 +193,6 @@ export const CropGuideAdminEditor = () => {
                         <Input placeholder={t("admin_crop_guides.fields.family")} value={form.family ?? ""} onChange={(e) => setField("family", e.target.value)} />
                         <Input placeholder={t("admin_crop_guides.fields.growth_habit")} value={form.growthHabit ?? ""} onChange={(e) => setField("growthHabit", e.target.value)} />
                         <Input placeholder={t("admin_crop_guides.fields.lifespan")} value={form.lifespan ?? ""} onChange={(e) => setField("lifespan", e.target.value)} />
-                        <Input placeholder={t("admin_crop_guides.fields.common_names")} value={form.commonNames ?? ""} onChange={(e) => setField("commonNames", e.target.value)} />
                         <Input placeholder={t("admin_crop_guides.fields.soil_type")} value={form.soilType ?? ""} onChange={(e) => setField("soilType", e.target.value)} />
                         <Input placeholder={t("admin_crop_guides.fields.expected_yield")} value={form.expectedYield ?? ""} onChange={(e) => setField("expectedYield", e.target.value)} />
                         <Input
@@ -527,7 +526,6 @@ const removePostRow = (
 
 const fromApi = (input: CropGuideAdminResponse): CropGuideAdminRequest => ({
     name: input.core.name ?? "",
-    commonNames: input.core.commonNames,
     scientificName: input.core.scientificName,
     family: input.core.family,
     growthHabit: input.core.growthHabit,
