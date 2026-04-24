@@ -48,7 +48,7 @@ export default {
         lng: 'Longitude',
         lat_ph: 'e.g. 36.8969',
         lng_ph: 'e.g. 30.7133',
-        lab_alert: 'If you have a recent laboratory analysis, enter values below. Blank values will be auto-filled by the system based on your location (SoilGrids).',
+        lab_alert: 'If you have a recent laboratory analysis, enter values below. Blank values will be auto filled.',
         nitrogen: 'Nitrogen (N)',
         phosphorus: 'Phosphorus (P)',
         potassium: 'Potassium (K)',

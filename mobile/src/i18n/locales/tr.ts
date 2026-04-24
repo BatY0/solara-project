@@ -48,7 +48,7 @@ export default {
         lng: 'Boylam',
         lat_ph: 'Örn: 36.8969',
         lng_ph: 'Örn: 30.7133',
-        lab_alert: 'Güncel bir laboratuvar analiziniz varsa değerleri girebilirsiniz. Boş bıraktığınız değerler sistem tarafından konumunuza göre otomatik doldurulacaktır.',
+        lab_alert: 'Güncel bir laboratuvar analiziniz varsa değerleri girebilirsiniz. Boş bıraktığınız değerler otomatik doldurulacaktır.',
         nitrogen: 'Azot (N)',
         phosphorus: 'Fosfor (P)',
         potassium: 'Potasyum (K)',
