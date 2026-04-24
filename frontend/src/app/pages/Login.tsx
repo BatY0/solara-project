@@ -26,7 +26,6 @@ export const Login = () => {
     setIsLoading(true)
     try {
       await login({ email, password })
-      navigate("/dashboard")
     } catch (err) {
       const error = err as Error & { type?: string; email?: string };
       if (error.type === 'EMAIL_NOT_VERIFIED') {
@@ -42,7 +41,6 @@ export const Login = () => {
 
   const handleDevLogin = async () => {
     await mockLogin();
-    navigate("/dashboard");
   }
 
   return (

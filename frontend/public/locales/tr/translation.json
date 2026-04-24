@@ -266,6 +266,7 @@
     "dashboard": "Panelim",
     "fields": "Tarlalarım",
     "guide": "Bitki Rehberi",
+    "admin_users": "Kullanıcı Yönetimi",
     "crop_guide_admin": "Bitki Rehberi Admin",
     "settings": "Ayarlar",
     "admin": "Yönetici",
@@ -297,6 +298,66 @@
     "disconnect": "Bağlantıyı Kes",
     "assign_field": "Tarlaya Ata",
     "owner_id": "Sahip Kimliği"
+  },
+  "admin_dashboard": {
+    "title": "Yönetici Paneli",
+    "subtitle": "Kullanıcıları, yetkileri ve sistem geneli istatistikleri yönetin.",
+    "stats": {
+      "total_users": "Toplam Kullanıcı",
+      "total_fields": "Toplam Tarla",
+      "total_devices": "Toplam Cihaz",
+      "total_analysis_logs": "Toplam Analiz Kaydı",
+      "total_sensor_logs": "Toplam Sensör Kaydı"
+    },
+    "filters": {
+      "search_placeholder": "Ad, soyad veya e-posta ile ara...",
+      "all_roles": "Tüm Roller",
+      "sort_created_at": "Sırala: Oluşturulma Tarihi",
+      "sort_name": "Sırala: İsim",
+      "sort_fields": "Sırala: Tarla Sayısı",
+      "sort_devices": "Sırala: Cihaz Sayısı",
+      "sort_analysis": "Sırala: Analiz Sayısı",
+      "sort_sensor_logs": "Sırala: Sensör Log Sayısı",
+      "asc": "Artan",
+      "desc": "Azalan"
+    },
+    "users": {
+      "title": "Kullanıcılar",
+      "total": "{{count}} kullanıcı",
+      "empty": "Bu sayfadaki filtrelere uyan kullanıcı bulunamadı.",
+      "meta": "Rol: {{role}} • Tarla: {{fields}} • Cihaz: {{devices}}"
+    },
+    "details": {
+      "title": "Kullanıcı Detayı",
+      "empty": "Detay bilgilerini görmek için listeden bir kullanıcı seçin.",
+      "member_since": "Katılım tarihi: {{value}}",
+      "role_management": "Rol Yönetimi",
+      "fields_title": "Tarlalar ve Cihaz Eşleşmeleri",
+      "no_fields": "Bu kullanıcıya ait kayıtlı tarla yok.",
+      "field_meta": "Toprak: {{soilType}} • Alan: {{areaHa}} ha",
+      "device_attached": "Cihaz: {{serialNumber}}",
+      "no_device": "Eşleşmiş cihaz yok"
+    },
+    "actions": {
+      "update_role": "Rolü Güncelle",
+      "delete_user": "Kullanıcıyı Sil",
+      "cancel": "İptal"
+    },
+    "delete": {
+      "title": "Kullanıcıyı Sil",
+      "confirm": "{{name}} {{surname}} ({{email}}) kullanıcısını silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
+    },
+    "pagination": {
+      "previous": "Önceki",
+      "next": "Sonraki",
+      "page": "Sayfa {{current}} / {{total}}"
+    },
+    "errors": {
+      "users_load": "Kullanıcılar yüklenemedi.",
+      "details_load": "Kullanıcı detayları yüklenemedi.",
+      "role_update": "Kullanıcı rolü güncellenemedi.",
+      "user_delete": "Kullanıcı silinemedi."
+    }
   },
   "admin_crop_guides": {
     "title": "Bitki Rehberi Admin",
