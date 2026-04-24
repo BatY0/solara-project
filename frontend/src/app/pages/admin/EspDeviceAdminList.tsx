@@ -216,9 +216,9 @@ export const EspDeviceAdminList = () => {
             </Dialog.Root>
 
             <Flex direction="column" gap={4}>
-                <Flex justify="space-between" align="center">
+                <Flex justify="space-between" align={{ base: "flex-start", sm: "center" }} direction={{ base: "column", sm: "row" }} gap={3}>
                     <Text fontWeight="semibold">{t("admin_devices.registry")}</Text>
-                    <Button colorPalette="green" onClick={() => setIsRegisterOpen(true)}>
+                    <Button colorPalette="green" onClick={() => setIsRegisterOpen(true)} w={{ base: "full", sm: "auto" }}>
                         <Plus size={14} />
                         {t("admin_devices.new_device")}
                     </Button>
@@ -235,11 +235,16 @@ export const EspDeviceAdminList = () => {
                         )}
                         {items.map((item) => (
                             <Box key={item.id} bg="white" border="1px solid" borderColor="neutral.border" borderRadius="xl" p={4}>
-                                <Flex align="center" justify="space-between" gap={4}>
-                                    <Box>
-                                        <Text fontWeight="bold">{item.serialNumber}</Text>
+                                <Flex
+                                    align={{ base: "stretch", md: "center" }}
+                                    justify="space-between"
+                                    direction={{ base: "column", md: "row" }}
+                                    gap={3}
+                                >
+                                    <Box minW={0}>
+                                        <Text fontWeight="bold" wordBreak="break-word">{item.serialNumber}</Text>
                                         {item.pairedFieldName ? (
-                                            <Text color="green.600" fontSize="sm" fontWeight="medium">
+                                            <Text color="green.600" fontSize="sm" fontWeight="medium" wordBreak="break-word">
                                                 {t("admin_devices.tracking")}: {item.pairedFieldName} (ID: {item.pairedFieldId})
                                             </Text>
                                         ) : (
@@ -249,13 +254,25 @@ export const EspDeviceAdminList = () => {
                                         )}
                                     </Box>
 
-                                    <Flex gap={2}>
+                                    <Flex gap={2} wrap="wrap" justify={{ base: "stretch", md: "flex-end" }}>
                                         {item.pairedFieldName ? (
-                                            <Button size="sm" variant="outline" colorPalette="orange" onClick={() => onDisconnect(item.id)}>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                colorPalette="orange"
+                                                onClick={() => onDisconnect(item.id)}
+                                                w={{ base: "full", sm: "auto" }}
+                                            >
                                                 <Unplug size={14} /> {t("admin_devices.disconnect")}
                                             </Button>
                                         ) : (
-                                            <Button size="sm" variant="outline" colorPalette="blue" onClick={() => openAssignDialog(item.id)}>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                colorPalette="blue"
+                                                onClick={() => openAssignDialog(item.id)}
+                                                w={{ base: "full", sm: "auto" }}
+                                            >
                                                 <Link size={14} /> {t("admin_devices.assign_field")}
                                             </Button>
                                         )}
@@ -263,6 +280,7 @@ export const EspDeviceAdminList = () => {
                                             size="sm"
                                             colorPalette="red"
                                             onClick={() => openDeleteDialog(item.id, item.serialNumber)}
+                                            w={{ base: "full", sm: "auto" }}
                                         >
                                             <Trash2 size={14} />
                                             {t("admin_devices.delete_btn")}

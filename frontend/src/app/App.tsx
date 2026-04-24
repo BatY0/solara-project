@@ -15,6 +15,7 @@ import { CropGuideDetails } from './pages/CropGuideDetails'
 import { CropGuideAdminList } from './pages/admin/CropGuideAdminList'
 import { CropGuideAdminEditor } from './pages/admin/CropGuideAdminEditor'
 import { EspDeviceAdminList } from './pages/admin/EspDeviceAdminList'
+import { AdminUserDashboard } from './pages/admin/AdminUserDashboard'
 
 // Protected Route Component
 const ProtectedRoute = () => {
@@ -31,16 +32,45 @@ const ProtectedRoute = () => {
   return <Outlet />;
 };
 
+const AdminRoute = () => {
+  const { token, user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Wait for profile hydration after token is set to avoid role-race redirects.
+  if (!user) {
+    return <div>Loading...</div>;
+  }
+
+  const isAdmin = String(user?.role ?? "").toUpperCase().includes("ADMIN");
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Outlet />;
+};
+
 // Public-only Route Component (redirect signed-in users)
 const PublicOnlyRoute = () => {
-  const { token, isLoading } = useAuth();
+  const { token, user, isLoading } = useAuth();
 
   if (isLoading) {
     return <div>Loading...</div>;
   }
 
   if (token) {
-    return <Navigate to="/dashboard" replace />;
+    // Token can be available slightly before user profile/role arrives.
+    if (!user) {
+      return <div>Loading...</div>;
+    }
+    const isAdmin = String(user?.role ?? "").toUpperCase().includes("ADMIN");
+    return <Navigate to={isAdmin ? "/admin/users" : "/dashboard"} replace />;
   }
 
   return <Outlet />;
@@ -68,11 +98,15 @@ function App() {
             <Route path="/guide" element={<CropGuideList />} />
             <Route path="/guide/:slug" element={<CropGuideDetails />} />
             <Route path="/alerts" element={<Alerts />} />
-            <Route path="/admin/crop-guides" element={<CropGuideAdminList />} />
-            <Route path="/admin/devices" element={<EspDeviceAdminList />} />
-            <Route path="/admin/crop-guides/new" element={<CropGuideAdminEditor />} />
-            <Route path="/admin/crop-guides/:id/edit" element={<CropGuideAdminEditor />} />
             <Route path="/settings" element={<Settings />} />
+
+            <Route element={<AdminRoute />}>
+              <Route path="/admin/users" element={<AdminUserDashboard />} />
+              <Route path="/admin/crop-guides" element={<CropGuideAdminList />} />
+              <Route path="/admin/devices" element={<EspDeviceAdminList />} />
+              <Route path="/admin/crop-guides/new" element={<CropGuideAdminEditor />} />
+              <Route path="/admin/crop-guides/:id/edit" element={<CropGuideAdminEditor />} />
+            </Route>
           </Route>
         </Routes>
       </BrowserRouter>

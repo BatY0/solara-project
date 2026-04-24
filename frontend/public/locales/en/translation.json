@@ -266,6 +266,7 @@
     "dashboard": "Dashboard",
     "fields": "My Fields",
     "guide": "Crop Guide",
+    "admin_users": "User Management",
     "crop_guide_admin": "Crop Guide Admin",
     "settings": "Settings",
     "admin": "Admin",
@@ -297,6 +298,66 @@
     "disconnect": "Disconnect",
     "assign_field": "Assign Field",
     "owner_id": "Owner ID"
+  },
+  "admin_dashboard": {
+    "title": "Admin Dashboard",
+    "subtitle": "Manage users, permissions, and system-level stats.",
+    "stats": {
+      "total_users": "Total Users",
+      "total_fields": "Total Fields",
+      "total_devices": "Total Devices",
+      "total_analysis_logs": "Total Analysis Logs",
+      "total_sensor_logs": "Total Sensor Logs"
+    },
+    "filters": {
+      "search_placeholder": "Search by name, surname, or email...",
+      "all_roles": "All Roles",
+      "sort_created_at": "Sort: Created Date",
+      "sort_name": "Sort: Name",
+      "sort_fields": "Sort: Field Count",
+      "sort_devices": "Sort: Device Count",
+      "sort_analysis": "Sort: Analysis Count",
+      "sort_sensor_logs": "Sort: Sensor Log Count",
+      "asc": "Ascending",
+      "desc": "Descending"
+    },
+    "users": {
+      "title": "Users",
+      "total": "{{count}} users",
+      "empty": "No users matched your filters on this page.",
+      "meta": "Role: {{role}} • Fields: {{fields}} • Devices: {{devices}}"
+    },
+    "details": {
+      "title": "User Details",
+      "empty": "Select a user from the list to see detailed information.",
+      "member_since": "Member since: {{value}}",
+      "role_management": "Role Management",
+      "fields_title": "Fields and Device Pairings",
+      "no_fields": "This user has no registered fields.",
+      "field_meta": "Soil: {{soilType}} • Area: {{areaHa}} ha",
+      "device_attached": "Device: {{serialNumber}}",
+      "no_device": "No paired device"
+    },
+    "actions": {
+      "update_role": "Update Role",
+      "delete_user": "Delete User",
+      "cancel": "Cancel"
+    },
+    "delete": {
+      "title": "Delete User",
+      "confirm": "Are you sure you want to delete {{name}} {{surname}} ({{email}})? This action cannot be undone."
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {{current}} / {{total}}"
+    },
+    "errors": {
+      "users_load": "Failed to load users.",
+      "details_load": "Failed to load user details.",
+      "role_update": "Failed to update user role.",
+      "user_delete": "Failed to delete user."
+    }
   },
   "admin_crop_guides": {
     "title": "Crop Guide Admin",
