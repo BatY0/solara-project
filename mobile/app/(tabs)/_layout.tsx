@@ -22,7 +22,7 @@ export default function TabsLayout() {
         void fetchUnreadCount();
         const interval = setInterval(() => {
             void fetchUnreadCount();
-        }, 10000);
+        }, 60000);
 
         let appState: AppStateStatus = AppState.currentState;
         const sub = AppState.addEventListener('change', (nextState) => {

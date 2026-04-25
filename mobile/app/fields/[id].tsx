@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Slider from '@react-native-community/slider';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Thermometer, Droplet, Wind, CloudRain, Cpu, Link, Unlink, Wifi, Map as MapIcon, Trash2, BrainCircuit, Leaf, Settings, Activity, MessageCircle, Zap, LocateFixed } from 'lucide-react-native';
+import { ArrowLeft, Thermometer, Droplet, Wind, CloudRain, Cpu, Link, Unlink, Wifi, Map as MapIcon, Trash2, BrainCircuit, Leaf, Settings, Activity, MessageCircle, Zap, LocateFixed, Download } from 'lucide-react-native';
 import MapView, { Polygon, PROVIDER_GOOGLE, type Region } from 'react-native-maps';
 import { LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
@@ -95,6 +95,7 @@ export default function FieldDetailsScreen() {
         useDefaultPh: false
     });
     const [isSavingProps, setIsSavingProps] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
 
     useEffect(() => {
         if (!id) return;
@@ -351,6 +352,25 @@ export default function FieldDetailsScreen() {
         }
     };
 
+    const handleExportCsv = async () => {
+        if (!id || !field) return;
+        setIsExporting(true);
+        try {
+            const safeName = field.name.trim().toLowerCase().replace(/\s+/g, '-');
+            await fieldsService.exportTelemetryCsv(id, safeName || 'field-telemetry');
+        } catch (err: unknown) {
+            console.error('Failed to export CSV', err);
+            const message = axios.isAxiosError(err)
+                ? (err.response?.data as { message?: string } | undefined)?.message
+                : err instanceof Error
+                    ? err.message
+                    : t('fields.export_error');
+            Alert.alert(t('common.error'), message || t('fields.export_error'));
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     const handleAskAiForField = async () => {
         const firstRecommendation = analysis?.recommendations?.[0]?.crop;
         const translatedCropName = firstRecommendation ? t(`crop_names.${firstRecommendation}`, firstRecommendation) : field?.name;
@@ -439,9 +459,16 @@ export default function FieldDetailsScreen() {
                     <ArrowLeft color={theme.colors.neutral.dark} size={24} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>{field.name}</Text>
-                <TouchableOpacity onPress={handleDeleteField} style={styles.backButton}>
-                    <Trash2 color="#ef4444" size={24} />
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                    <TouchableOpacity onPress={handleExportCsv} style={styles.backButton} disabled={isExporting}>
+                        {isExporting
+                            ? <ActivityIndicator size={20} color={theme.colors.brand[500]} />
+                            : <Download color={theme.colors.brand[600]} size={22} />}
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={handleDeleteField} style={styles.backButton}>
+                        <Trash2 color="#ef4444" size={24} />
+                    </TouchableOpacity>
+                </View>
             </View>
 
             <ScrollView contentContainerStyle={styles.content}>

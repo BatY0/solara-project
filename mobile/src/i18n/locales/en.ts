@@ -132,6 +132,8 @@ export default {
         ai_override_hum: 'Override Humidity (%):',
         ai_override_rain: 'Override Rain (mm):',
         ai_analyze: 'Analyze',
+        export_csv: 'Export CSV',
+        export_error: 'Failed to export CSV. Please try again.',
     },
     settings: {
         title: 'Settings',

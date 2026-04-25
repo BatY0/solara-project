@@ -132,6 +132,8 @@ export default {
         ai_override_hum: 'Nemi Değiştir (%):',
         ai_override_rain: 'Yağışı Değiştir (mm):',
         ai_analyze: 'Analiz Et',
+        export_csv: 'CSV Dışa Aktar',
+        export_error: 'CSV dışa aktarılamadı. Lütfen tekrar deneyin.',
     },
     settings: {
         title: 'Ayarlar',
