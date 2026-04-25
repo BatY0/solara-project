@@ -20,6 +20,10 @@ export default {
         everything_good: 'Bugün her şey yolunda görünüyor.',
         area: 'Alan',
         soil: 'Toprak',
+        admin_header: 'Solara Yönetici',
+        admin_visit_web_prefix: 'Lütfen yönetici paneline ulaşmak için',
+        admin_visit_web_suffix: 'adresini ziyaret edin',
+        admin_go_to_normal: 'Normal Panele Git',
     },
     add_field: {
         title: 'Yeni Tarla Tanımla',

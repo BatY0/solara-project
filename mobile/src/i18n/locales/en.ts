@@ -20,6 +20,10 @@ export default {
         everything_good: "Everything's looking green today.",
         area: 'Area',
         soil: 'Soil',
+        admin_header: 'Solara Admin',
+        admin_visit_web_prefix: 'Please visit',
+        admin_visit_web_suffix: 'to reach the admin dashboard',
+        admin_go_to_normal: 'Go to Normal Dashboard',
     },
     add_field: {
         title: 'Define New Field',
