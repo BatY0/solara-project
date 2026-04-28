@@ -99,7 +99,7 @@ export default function AlertsScreen() {
             void fetchData(true);
             const interval = setInterval(() => {
                 void fetchData(true);
-            }, 10000);
+            }, 60000);
             return () => clearInterval(interval);
         }, [fetchData])
     );

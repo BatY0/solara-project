@@ -8,8 +8,7 @@ import {
     ActivityIndicator,
     RefreshControl,
     Alert,
-    AppState,
-    type AppStateStatus,
+    Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -21,7 +20,6 @@ import { theme } from '../../src/theme/theme';
 import { fieldsService } from '../../src/services/fieldsService';
 import type { Field } from '../../src/types/fields';
 import AddFieldModal from '../../src/components/AddFieldModal';
-import { alertsService } from '../../src/services/alertsService';
 import { getDeviceStatus } from '../../src/utils/deviceStatus';
 
 export default function DashboardScreen() {
@@ -33,7 +31,7 @@ export default function DashboardScreen() {
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isWizardOpen, setIsWizardOpen] = useState(false);
-    const [unreadCount, setUnreadCount] = useState(0);
+    const [showNormalDashboard, setShowNormalDashboard] = useState(false);
 
     const fetchFields = useCallback(async (isRefresh = false) => {
         if (!isRefresh) setIsLoading(true);
@@ -53,33 +51,7 @@ export default function DashboardScreen() {
         fetchFields();
     }, [fetchFields]);
 
-    useEffect(() => {
-        const fetchUnread = async () => {
-            try {
-                const count = await alertsService.getUnreadCount();
-                setUnreadCount(count);
-            } catch (error) {
-                console.error('Error fetching unread alerts:', error);
-            }
-        };
-        void fetchUnread();
-        const interval = setInterval(() => {
-            void fetchUnread();
-        }, 10000);
 
-        let appState: AppStateStatus = AppState.currentState;
-        const sub = AppState.addEventListener('change', nextState => {
-            if ((appState === 'background' || appState === 'inactive') && nextState === 'active') {
-                void fetchUnread();
-            }
-            appState = nextState;
-        });
-
-        return () => {
-            clearInterval(interval);
-            sub.remove();
-        };
-    }, []);
 
     const handleLogout = () => {
         Alert.alert(
@@ -110,6 +82,43 @@ export default function DashboardScreen() {
 
     const onlineCount = fields.filter(field => getDeviceStatus(field, t).status === 'online').length;
 
+    if (user?.role === 'ADMIN' && !showNormalDashboard) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.header}>
+                    <View style={styles.logoRow}>
+                        <Sprout color={theme.colors.brand[500]} size={26} />
+                        <Text style={styles.brandText}>{t('dashboard.admin_header')}</Text>
+                    </View>
+                    <View style={styles.headerActions}>
+                        <TouchableOpacity style={styles.headerIcon} onPress={handleLogout}>
+                            <LogOut color={theme.colors.chart.danger} size={20} />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+                <View style={[styles.content, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
+                    <Text style={{ fontSize: 18, textAlign: 'center', marginBottom: 20, color: theme.colors.neutral.dark, lineHeight: 26 }}>
+                        {t('dashboard.admin_visit_web_prefix')}{' '}
+                        <Text 
+                            style={{ color: theme.colors.brand[500], textDecorationLine: 'underline', fontWeight: 'bold' }} 
+                            onPress={() => Linking.openURL('https://solaraapp.com.tr')}
+                        >
+                            solaraapp.com.tr
+                        </Text>
+                        {' '}{t('dashboard.admin_visit_web_suffix')}
+                    </Text>
+                    
+                    <TouchableOpacity 
+                        style={{ backgroundColor: theme.colors.brand[500], paddingHorizontal: 24, paddingVertical: 14, borderRadius: 12 }} 
+                        onPress={() => setShowNormalDashboard(true)}
+                    >
+                        <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>{t('dashboard.admin_go_to_normal')}</Text>
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
     return (
         <SafeAreaView style={styles.container}>
             {/* HEADER */}
@@ -121,11 +130,6 @@ export default function DashboardScreen() {
                 <View style={styles.headerActions}>
                     <TouchableOpacity style={styles.headerIcon} onPress={() => router.push({ pathname: '/(tabs)/alerts', params: { tab: 'history' } })}>
                         <Bell color={theme.colors.neutral.subtext} size={20} />
-                        {unreadCount > 0 && (
-                            <View style={styles.headerBadge}>
-                                <Text style={styles.headerBadgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
-                            </View>
-                        )}
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.headerIcon} onPress={handleLogout}>
                         <LogOut color={theme.colors.chart.danger} size={20} />
