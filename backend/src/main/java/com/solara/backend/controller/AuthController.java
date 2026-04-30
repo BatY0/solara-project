@@ -1,11 +1,9 @@
 package com.solara.backend.controller;
 
-import java.util.UUID;
-
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,6 +13,8 @@ import com.solara.backend.dto.request.LoginDTO;
 import com.solara.backend.dto.request.RegisterDTO;
 import com.solara.backend.dto.response.AuthResponse;
 import com.solara.backend.service.AuthService;
+import com.solara.backend.service.AuthService.AuthResult;
+import com.solara.backend.service.CookieService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,28 +24,65 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthService authService;
+    private final CookieService cookieService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterDTO registerDTO) {
-        try {
-            return ResponseEntity.ok(authService.registerUser(registerDTO));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(
-                    AuthResponse.builder().message(e.getMessage()).build());
-        }
+        AuthResult result = authService.registerUser(registerDTO);
+
+        // Convert raw token strings to secure Cookie headers
+        ResponseCookie accessCookie = cookieService.buildAccessCookie(result.accessToken());
+        ResponseCookie refreshCookie = cookieService.buildRefreshCookie(result.refreshToken());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .body(result.authResponse()); 
     }
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginDTO loginDTO) {
-        return ResponseEntity.ok(authService.login(loginDTO));
+        AuthResult result = authService.login(loginDTO);
+
+        // Provide early return for unverified email where no token is generated
+        if (result.accessToken() == null) {
+            return ResponseEntity.ok(result.authResponse());
+        }
+
+        // Convert raw token strings to secure Cookie headers
+        ResponseCookie accessCookie = cookieService.buildAccessCookie(result.accessToken());
+        ResponseCookie refreshCookie = cookieService.buildRefreshCookie(result.refreshToken());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .body(result.authResponse()); 
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/admin/delete-user/{id}")
-    public ResponseEntity<AuthResponse> deleteUser(@PathVariable("id") UUID id) {
-        authService.deleteUser(id);
-        return ResponseEntity.ok(AuthResponse.builder().message("User deleted successfully.").build());
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh(@CookieValue(name = "refreshToken", required = false) String refreshToken) {
+        String[] newTokens = authService.refreshTokens(refreshToken);
+
+        ResponseCookie newAccessCookie = cookieService.buildAccessCookie(newTokens[0]);
+        ResponseCookie newRefreshCookie = cookieService.buildRefreshCookie(newTokens[1]);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, newAccessCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, newRefreshCookie.toString())
+                .body("Tokens refreshed");
     }
 
-    
+    @PostMapping("/logout")
+    public ResponseEntity<AuthResponse> logout(@CookieValue(name = "refreshToken", required = false) String refreshToken) {
+        AuthResult result = authService.logout(refreshToken);
+
+        ResponseCookie clearAccessCookie = cookieService.clearAccessCookie();
+        ResponseCookie clearRefreshCookie = cookieService.clearRefreshCookie();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, clearAccessCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, clearRefreshCookie.toString())
+                .body(result.authResponse());
+            
+    }
 }

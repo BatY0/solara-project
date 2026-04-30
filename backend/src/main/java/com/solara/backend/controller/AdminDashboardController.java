@@ -5,7 +5,9 @@ import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.solara.backend.dto.response.ApiResponse;
+import com.solara.backend.dto.response.AuthResponse;
 import com.solara.backend.dto.response.EspDeviceResponseDTO;
 import com.solara.backend.dto.response.FieldResponseDTO;
 import com.solara.backend.dto.response.UserDTO;
@@ -25,6 +28,7 @@ import com.solara.backend.service.AnalysisService;
 import com.solara.backend.service.FieldService;
 import com.solara.backend.service.SensorLogsService;
 import com.solara.backend.service.UserService;
+import com.solara.backend.service.AuthService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -74,6 +78,7 @@ public class AdminDashboardController {
     private final EspDeviceRepository espDeviceRepository;
     private final AnalysisService analysisService;
     private final SensorLogsService sensorLogsService;
+    private final AuthService authService;
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/list-users")
@@ -162,5 +167,13 @@ public class AdminDashboardController {
 
         return ApiResponse.success(stats, HttpStatus.OK.value(), "Statistics retrieved successfully.");
     } 
+
+    
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/admin/delete-user/{id}")
+    public ResponseEntity<AuthResponse> deleteUser(@PathVariable("id") UUID id) {
+        authService.deleteUser(id);
+        return ResponseEntity.ok(AuthResponse.builder().message("User deleted successfully.").build());
+    }
     
 }

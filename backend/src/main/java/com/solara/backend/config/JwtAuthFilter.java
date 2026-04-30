@@ -2,6 +2,8 @@ package com.solara.backend.config;
 
 import java.io.IOException;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.solara.backend.service.JwtService;
+import jakarta.servlet.http.Cookie;
 
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.FilterChain;
@@ -32,21 +35,43 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             @Nonnull HttpServletResponse response,
             @Nonnull FilterChain filterChain
     ) throws ServletException, IOException {
-        final String authHeader = request.getHeader("Authorization");
-        final String jwt;
-        final String userEmail;
-
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        String path = request.getServletPath();
+        if (path.startsWith("/api/v1/auth/")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        jwt = authHeader.substring(7);
+        String jwt = null;
+        String userEmail;
+
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("accessToken".equals(cookie.getName())) {
+                    jwt = cookie.getValue();
+                    break;
+                }
+            }
+        } 
+        
+        if (jwt == null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         try {
             userEmail = jwtService.extractUsername(jwt);
         } catch (Exception e) {
             // Token is expired or malformed — respond with 401 immediately
+            String clearCookie = ResponseCookie.from("accessToken", "")
+                    .maxAge(0) // 0 maxAge deletes the cookie
+                    .path("/")
+                    .httpOnly(true)
+                    .secure(true) // Should match your CookieService settings
+                    .sameSite("Lax") 
+                    .build().toString();
+            response.addHeader(HttpHeaders.SET_COOKIE, clearCookie);
+
+
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
             response.getWriter().write("{\"error\":\"Token expired or invalid. Please log in again.\"}");
@@ -69,6 +94,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             } else {
                 // Token is syntactically valid but failed validation (e.g. wrong signing key after restart)
                 // Return 401 so the frontend interceptor redirects to login
+                String clearCookie = ResponseCookie.from("accessToken", "")
+                        .maxAge(0)
+                        .path("/")
+                        .httpOnly(true)
+                        .secure(true)
+                        .sameSite("Lax")
+                        .build().toString();
+                response.addHeader(HttpHeaders.SET_COOKIE, clearCookie);
+
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.setContentType("application/json");
                 response.getWriter().write("{\"error\":\"Token invalid. Please log in again.\"}");
