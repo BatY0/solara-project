@@ -31,15 +31,20 @@ api.interceptors.response.use(
     return response;
   },
   async (error) => {
-    const originalRequest = error.config as (typeof error.config & { _retry?: boolean }) | undefined;
+    const originalRequest = error.config as (typeof error.config & { _retry?: boolean; _authOptional?: boolean }) | undefined;
     const status = error.response?.status;
     const isAuthFailure = status === 401 || status === 403;
+    const isAuthOptional = Boolean(originalRequest?._authOptional);
     const requestUrl = String(originalRequest?.url ?? '');
     const isAuthRoute =
       requestUrl.includes('/auth/login') ||
       requestUrl.includes('/auth/register') ||
       requestUrl.includes('/auth/refresh') ||
       requestUrl.includes('/auth/logout');
+    if (isAuthFailure && isAuthOptional) {
+      return Promise.reject(error);
+    }
+
     if (isAuthFailure && authRecoveryDisabled && !isAuthRoute) {
       redirectToLogin();
       return Promise.reject(error);
