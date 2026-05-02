@@ -10,6 +10,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
@@ -28,6 +29,8 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
     private final AuthenticationProvider authProvider;
+    private final AuthenticationEntryPoint unauthorizedHandler = (request, response, authException) ->
+            response.sendError(401, "Unauthorized");
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -60,6 +63,7 @@ public class SecurityConfig {
 
                     .anyRequest().authenticated()
             )
+            .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedHandler))
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
@@ -83,8 +87,15 @@ public class SecurityConfig {
         // Essential for JWTs and standard REST actions
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 
-        // Crucial: Allow the Authorization header so the backend can see your JWT
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With"));
+        // Allow headers required by cookie-based auth + CSRF protection
+        configuration.setAllowedHeaders(Arrays.asList(
+                "Authorization",
+                "Content-Type",
+                "Accept",
+                "X-Requested-With",
+                "X-XSRF-TOKEN",
+                "X-CSRF-TOKEN"
+        ));
 
         // Allow the browser to send cookies or auth headers
         configuration.setAllowCredentials(true);

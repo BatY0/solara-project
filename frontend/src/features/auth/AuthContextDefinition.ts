@@ -3,12 +3,11 @@ import type { LoginRequest, RegisterRequest, User } from '../../types/auth';
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   isLoading: boolean;
   login: (data: LoginRequest) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   mockLogin: () => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateLocalUser: (user: User) => void;
 }
 

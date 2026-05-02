@@ -3,7 +3,6 @@ package com.solara.backend.config;
 import java.io.IOException;
 
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.solara.backend.service.JwtService;
+import com.solara.backend.service.CookieService;
 import jakarta.servlet.http.Cookie;
 
 import jakarta.annotation.Nonnull;
@@ -28,6 +28,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final CookieService cookieService;
 
     @Override
     protected void doFilterInternal(
@@ -62,14 +63,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             userEmail = jwtService.extractUsername(jwt);
         } catch (Exception e) {
             // Token is expired or malformed — respond with 401 immediately
-            String clearCookie = ResponseCookie.from("accessToken", "")
-                    .maxAge(0) // 0 maxAge deletes the cookie
-                    .path("/")
-                    .httpOnly(true)
-                    .secure(true) // Should match your CookieService settings
-                    .sameSite("Lax") 
-                    .build().toString();
-            response.addHeader(HttpHeaders.SET_COOKIE, clearCookie);
+            response.addHeader(HttpHeaders.SET_COOKIE, cookieService.clearAccessCookie().toString());
 
 
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -94,14 +88,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             } else {
                 // Token is syntactically valid but failed validation (e.g. wrong signing key after restart)
                 // Return 401 so the frontend interceptor redirects to login
-                String clearCookie = ResponseCookie.from("accessToken", "")
-                        .maxAge(0)
-                        .path("/")
-                        .httpOnly(true)
-                        .secure(true)
-                        .sameSite("Lax")
-                        .build().toString();
-                response.addHeader(HttpHeaders.SET_COOKIE, clearCookie);
+                response.addHeader(HttpHeaders.SET_COOKIE, cookieService.clearAccessCookie().toString());
 
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.setContentType("application/json");

@@ -23,7 +23,7 @@ export interface RegisterRequest {
 export interface AuthResponse {
   message: string;
   email: string;
-  token: string;
+  token?: string;
   emailVerified?: boolean;
 }
 

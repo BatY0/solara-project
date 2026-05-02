@@ -60,7 +60,7 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refresh(@CookieValue(name = "refreshToken", required = false) String refreshToken) {
+    public ResponseEntity<?> refresh(@CookieValue(name = CookieService.REFRESH_COOKIE_V2, required = false) String refreshToken) {
         String[] newTokens = authService.refreshTokens(refreshToken);
 
         ResponseCookie newAccessCookie = cookieService.buildAccessCookie(newTokens[0]);
@@ -73,8 +73,10 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<AuthResponse> logout(@CookieValue(name = "refreshToken", required = false) String refreshToken) {
-        AuthResult result = authService.logout(refreshToken);
+    public ResponseEntity<AuthResponse> logout(@CookieValue(name = CookieService.REFRESH_COOKIE_V2, required = false) String refreshToken) {
+        AuthResult result = refreshToken != null
+                ? authService.logout(refreshToken)
+                : new AuthResult(AuthResponse.builder().message("Logout successful").build(), null, null);
 
         ResponseCookie clearAccessCookie = cookieService.clearAccessCookie();
         ResponseCookie clearRefreshCookie = cookieService.clearRefreshCookie();
