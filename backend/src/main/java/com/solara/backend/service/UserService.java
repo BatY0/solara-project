@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,6 +20,7 @@ import com.solara.backend.dto.response.VerifyResponse;
 import com.solara.backend.entity.Role;
 import com.solara.backend.entity.User;
 import com.solara.backend.entity.VerificationCode;
+import com.solara.backend.exception.AppException;
 import com.solara.backend.repository.UserRepository;
 import com.solara.backend.repository.VerificationCodeRepository;
 
@@ -36,7 +38,16 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     public User getCurrentUserEntity() {
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AppException(HttpStatus.UNAUTHORIZED, "Authentication required");
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (principal == null || "anonymousUser".equals(principal)) {
+            throw new AppException(HttpStatus.UNAUTHORIZED, "Authentication required");
+        }
+
         String currentEmail;
         if (principal instanceof UserDetails) {
             currentEmail = ((UserDetails) principal).getUsername();
@@ -44,7 +55,7 @@ public class UserService {
             currentEmail = principal.toString();
         }
         return userRepository.findByEmail(currentEmail)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new AppException(HttpStatus.UNAUTHORIZED, "User not found"));
     }
 
     public UserDTO getCurrentUser() {

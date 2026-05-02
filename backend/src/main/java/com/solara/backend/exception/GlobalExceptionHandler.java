@@ -18,7 +18,8 @@ public class GlobalExceptionHandler {
                 ex.getMessage()                      // Custom user message
         );
 
-        return new ResponseEntity<>(response, ex.getStatus());
+        return ResponseEntity.status(ex.getStatus())
+                .body(response);
     }
     
     // You can add more exception handlers here later, like:

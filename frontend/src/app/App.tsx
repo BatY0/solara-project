@@ -19,13 +19,13 @@ import { AdminUserDashboard } from './pages/admin/AdminUserDashboard'
 
 // Protected Route Component
 const ProtectedRoute = () => {
-  const { token, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
 
   if (isLoading) {
     return <div>Loading...</div>; // Or a proper spinner
   }
 
-  if (!token) {
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 
@@ -33,19 +33,14 @@ const ProtectedRoute = () => {
 };
 
 const AdminRoute = () => {
-  const { token, user, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
 
   if (isLoading) {
     return <div>Loading...</div>;
   }
 
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
-
-  // Wait for profile hydration after token is set to avoid role-race redirects.
   if (!user) {
-    return <div>Loading...</div>;
+    return <Navigate to="/login" replace />;
   }
 
   const isAdmin = String(user?.role ?? "").toUpperCase().includes("ADMIN");
@@ -58,17 +53,13 @@ const AdminRoute = () => {
 
 // Public-only Route Component (redirect signed-in users)
 const PublicOnlyRoute = () => {
-  const { token, user, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
 
   if (isLoading) {
     return <div>Loading...</div>;
   }
 
-  if (token) {
-    // Token can be available slightly before user profile/role arrives.
-    if (!user) {
-      return <div>Loading...</div>;
-    }
+  if (user) {
     const isAdmin = String(user?.role ?? "").toUpperCase().includes("ADMIN");
     return <Navigate to={isAdmin ? "/admin/users" : "/dashboard"} replace />;
   }

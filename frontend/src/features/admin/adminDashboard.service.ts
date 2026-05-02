@@ -37,6 +37,6 @@ export const adminDashboardService = {
     },
 
     async deleteUser(userId: string): Promise<void> {
-        await api.delete(`/auth/admin/delete-user/${userId}`);
+        await api.delete(`/admin/dashboard/delete-user/${userId}`);
     },
 };

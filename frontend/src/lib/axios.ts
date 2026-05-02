@@ -1,32 +1,75 @@
 import axios from 'axios';
 
+let refreshPromise: Promise<void> | null = null;
+let isRedirectingToLogin = false;
+let authRecoveryDisabled = false;
+
+const redirectToLogin = () => {
+  if (isRedirectingToLogin) return;
+  if (window.location.pathname === '/login') return;
+  isRedirectingToLogin = true;
+  window.location.href = '/login';
+};
+
 const api = axios.create({
   baseURL: '/api/v1',
+  withCredentials: true,
+  xsrfCookieName: 'XSRF-TOKEN',
+  xsrfHeaderName: 'X-XSRF-TOKEN',
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // 401 = token expired or missing — force re-login
-    // 403 = forbidden (permissions issue) — let the caller handle it
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+  (response) => {
+    const requestUrl = String(response.config?.url ?? '');
+    if (requestUrl.includes('/auth/login') || requestUrl.includes('/auth/refresh')) {
+      authRecoveryDisabled = false;
+      isRedirectingToLogin = false;
     }
+    return response;
+  },
+  async (error) => {
+    const originalRequest = error.config as (typeof error.config & { _retry?: boolean }) | undefined;
+    const status = error.response?.status;
+    const isAuthFailure = status === 401 || status === 403;
+    const requestUrl = String(originalRequest?.url ?? '');
+    const isAuthRoute =
+      requestUrl.includes('/auth/login') ||
+      requestUrl.includes('/auth/register') ||
+      requestUrl.includes('/auth/refresh') ||
+      requestUrl.includes('/auth/logout');
+    if (isAuthFailure && authRecoveryDisabled && !isAuthRoute) {
+      redirectToLogin();
+      return Promise.reject(error);
+    }
+
+    if (isAuthFailure && !originalRequest?._retry && !isAuthRoute) {
+      originalRequest._retry = true;
+      try {
+        if (!refreshPromise) {
+          refreshPromise = api.post('/auth/refresh')
+            .then(() => undefined)
+            .finally(() => {
+              refreshPromise = null;
+            });
+        }
+
+        await refreshPromise;
+        return api(originalRequest);
+      } catch {
+        authRecoveryDisabled = true;
+        redirectToLogin();
+        return Promise.reject(error);
+      }
+    }
+
+    if (isAuthFailure && isAuthRoute) {
+      authRecoveryDisabled = true;
+      redirectToLogin();
+    }
+
     return Promise.reject(error);
   }
 );
