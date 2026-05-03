@@ -26,6 +26,7 @@ export interface AuthResponse {
     message: string;
     email: string;
     token: string;
+    refreshToken?: string;
     emailVerified?: boolean;
 }
 

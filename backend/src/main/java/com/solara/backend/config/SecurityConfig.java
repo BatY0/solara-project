@@ -44,10 +44,16 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
             .csrfTokenRequestHandler(requestHandler)
+            .ignoringRequestMatchers(request -> {
+                // Ignore CSRF for mobile/stateless clients using Bearer tokens
+                String authHeader = request.getHeader("Authorization");
+                return authHeader != null && authHeader.startsWith("Bearer ");
+            })
             .ignoringRequestMatchers(
             "/api/v1/auth/login",
             "/api/v1/auth/register",
-            "/api/v1/auth/refresh"
+            "/api/v1/auth/refresh",
+            "/api/v1/auth/verify/**"
             )) // Disable CSRF for auth endpoints, enable for others
             .authorizeHttpRequests(
                 auth -> auth

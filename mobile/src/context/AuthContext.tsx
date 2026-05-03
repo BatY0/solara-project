@@ -31,8 +31,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // 2. Clear token from storage first
         try {
             await SecureStore.deleteItemAsync('token');
+            await SecureStore.deleteItemAsync('refreshToken');
         } catch (error) {
-            console.error('Failed to clear stored token during logout', error);
+            console.error('Failed to clear stored tokens during logout', error);
         }
 
         // 3. Try cleaning up push tokens (may fail if token was invalid)
@@ -113,7 +114,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         const newToken = response.data.token;
+        const newRefreshToken = response.data.refreshToken;
         await SecureStore.setItemAsync('token', newToken);
+        if (newRefreshToken) {
+            await SecureStore.setItemAsync('refreshToken', newRefreshToken);
+        }
         setToken(newToken);
 
         try {

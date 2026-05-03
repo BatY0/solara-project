@@ -12,6 +12,7 @@ import {
     TextInput,
     TouchableOpacity,
     View,
+    DeviceEventEmitter,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -218,6 +219,7 @@ export default function AlertsScreen() {
         try {
             await alertsService.markAllAsRead();
             await setBadgeCount(0);
+            DeviceEventEmitter.emit('alerts:updated', 0);
             await fetchData();
         } catch (error) {
             console.error('Failed to mark all notifications as read:', error);
@@ -232,6 +234,7 @@ export default function AlertsScreen() {
             );
             const unreadCount = await alertsService.getUnreadCount();
             await setBadgeCount(unreadCount);
+            DeviceEventEmitter.emit('alerts:updated', unreadCount);
         } catch (error) {
             console.error('Failed to mark notification as read:', error);
         }

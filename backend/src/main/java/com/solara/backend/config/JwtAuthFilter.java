@@ -45,6 +45,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String jwt = null;
         String userEmail;
 
+        // 1. Try cookie-based auth first (web frontend)
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
                 if ("accessToken".equals(cookie.getName())) {
@@ -52,8 +53,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     break;
                 }
             }
-        } 
-        
+        }
+
+        // 2. Fall back to Authorization Bearer header (mobile clients)
+        if (jwt == null) {
+            final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                jwt = authHeader.substring(7);
+            }
+        }
+
         if (jwt == null) {
             filterChain.doFilter(request, response);
             return;

@@ -77,6 +77,8 @@ public class AuthService {
         AuthResponse responseBody = AuthResponse.builder()
                 .message("User registered successfully")
                 .email(newUser.getEmail())
+                .token(jwtToken) // included for mobile clients; web uses Set-Cookie
+                .refreshToken(plainRefreshToken) // included for mobile clients; web uses Set-Cookie
                 .build();
 
         return new AuthResult(responseBody, jwtToken, plainRefreshToken);
@@ -127,6 +129,8 @@ public class AuthService {
                 .message("Login successful")
                 .email(user.getEmail())
                 .emailVerified(true)
+                .token(accessToken) // included for mobile clients; web uses Set-Cookie
+                .refreshToken(plainRefreshToken) // included for mobile clients; web uses Set-Cookie
                 .build();
 
         return new AuthResult(responseBody, accessToken, plainRefreshToken);

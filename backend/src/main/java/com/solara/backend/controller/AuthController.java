@@ -60,16 +60,35 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refresh(@CookieValue(name = CookieService.REFRESH_COOKIE_V2, required = false) String refreshToken) {
+    public ResponseEntity<AuthResponse> refresh(
+            @CookieValue(name = CookieService.REFRESH_COOKIE_V2, required = false) String cookieRefreshToken,
+            jakarta.servlet.http.HttpServletRequest request
+    ) {
+        String refreshToken = cookieRefreshToken;
+
+        // Fallback to Authorization header for mobile
+        if (refreshToken == null || refreshToken.isBlank()) {
+            String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                refreshToken = authHeader.substring(7);
+            }
+        }
+
         String[] newTokens = authService.refreshTokens(refreshToken);
 
         ResponseCookie newAccessCookie = cookieService.buildAccessCookie(newTokens[0]);
         ResponseCookie newRefreshCookie = cookieService.buildRefreshCookie(newTokens[1]);
 
+        AuthResponse responseBody = AuthResponse.builder()
+                .message("Tokens refreshed")
+                .token(newTokens[0])
+                .refreshToken(newTokens[1])
+                .build();
+
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, newAccessCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, newRefreshCookie.toString())
-                .body("Tokens refreshed");
+                .body(responseBody);
     }
 
     @PostMapping("/logout")

@@ -3,7 +3,7 @@ import { theme } from '../../src/theme/theme';
 import { Bell, BookOpen, Home, MessageCircle, Settings } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
-import { AppState, type AppStateStatus } from 'react-native';
+import { AppState, type AppStateStatus, DeviceEventEmitter } from 'react-native';
 import { alertsService } from '../../src/services/alertsService';
 
 export default function TabsLayout() {
@@ -32,9 +32,18 @@ export default function TabsLayout() {
             appState = nextState;
         });
 
+        const alertSub = DeviceEventEmitter.addListener('alerts:updated', (count?: number) => {
+            if (typeof count === 'number') {
+                setUnreadCount(count);
+            } else {
+                void fetchUnreadCount();
+            }
+        });
+
         return () => {
             clearInterval(interval);
             sub.remove();
+            alertSub.remove();
         };
     }, []);
 
