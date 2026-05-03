@@ -33,7 +33,7 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config as (typeof error.config & { _retry?: boolean; _authOptional?: boolean }) | undefined;
     const status = error.response?.status;
-    const isAuthFailure = status === 401 || status === 403;
+    const isAuthFailure = status === 401;
     const isAuthOptional = Boolean(originalRequest?._authOptional);
     const requestUrl = String(originalRequest?.url ?? '');
     const isAuthRoute =
