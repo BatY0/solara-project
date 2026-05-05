@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, TextInput, Alert, Modal, Switch } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, TextInput, Alert, Modal, Switch, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Slider from '@react-native-community/slider';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Thermometer, Droplet, Wind, CloudRain, Cpu, Link, Unlink, Wifi, Map as MapIcon, Trash2, BrainCircuit, Leaf, Settings, Activity, MessageCircle, Zap, LocateFixed, Download } from 'lucide-react-native';
 import MapView, { Polygon, PROVIDER_GOOGLE, type Region } from 'react-native-maps';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 
@@ -21,6 +22,19 @@ import { parseBackendUtcDate } from '../../src/utils/parseBackendUtcDate';
 const toLocalISO = (date: Date): string => {
     const tzOffset = date.getTimezoneOffset() * 60000;
     return new Date(date.getTime() - tzOffset).toISOString().slice(0, -1);
+};
+
+const toApiDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+const parseApiDate = (value: string): Date => {
+    const [year, month, day] = value.split('-').map(Number);
+    if (!year || !month || !day) return new Date();
+    return new Date(year, month - 1, day);
 };
 
 function phColor(ph: number) {
@@ -75,6 +89,8 @@ export default function FieldDetailsScreen() {
     const [activeScenario, setActiveScenario] = useState<'RANGE' | 'FUTURE' | 'WHAT_IF'>('RANGE');
     const [rangeStart, setRangeStart] = useState('2026-01-01');
     const [rangeEnd, setRangeEnd] = useState('2026-04-01');
+    const [datePickerTarget, setDatePickerTarget] = useState<'start' | 'end'>('start');
+    const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
     const [monthStart, setMonthStart] = useState('6');
     const [monthEnd, setMonthEnd] = useState('9');
     const [overrideTemp, setOverrideTemp] = useState(25);
@@ -83,6 +99,21 @@ export default function FieldDetailsScreen() {
     const [useOverrideHum, setUseOverrideHum] = useState(false);
     const [overrideRain, setOverrideRain] = useState(400);
     const [useOverrideRain, setUseOverrideRain] = useState(false);
+    const [monthPickerTarget, setMonthPickerTarget] = useState<'start' | 'end' | null>(null);
+    const monthOptions = [
+        { value: '1', label: t('fields.ai_months.jan', 'January') },
+        { value: '2', label: t('fields.ai_months.feb', 'February') },
+        { value: '3', label: t('fields.ai_months.mar', 'March') },
+        { value: '4', label: t('fields.ai_months.apr', 'April') },
+        { value: '5', label: t('fields.ai_months.may', 'May') },
+        { value: '6', label: t('fields.ai_months.jun', 'June') },
+        { value: '7', label: t('fields.ai_months.jul', 'July') },
+        { value: '8', label: t('fields.ai_months.aug', 'August') },
+        { value: '9', label: t('fields.ai_months.sep', 'September') },
+        { value: '10', label: t('fields.ai_months.oct', 'October') },
+        { value: '11', label: t('fields.ai_months.nov', 'November') },
+        { value: '12', label: t('fields.ai_months.dec', 'December') },
+    ];
 
     // Properties Edit State
     const [isEditingProps, setIsEditingProps] = useState(false);
@@ -349,6 +380,24 @@ export default function FieldDetailsScreen() {
             Alert.alert(t('common.error', 'Error'), backendMessage || t('fields.analysis_failed', 'Failed to run analysis.'));
         } finally {
             setIsAnalyzing(false);
+        }
+    };
+
+    const handleDateValueChange = (_event: DateTimePickerEvent, selectedDate: Date) => {
+        if (Platform.OS === 'android') {
+            setIsDatePickerVisible(false);
+        }
+        const apiDate = toApiDate(selectedDate);
+        if (datePickerTarget === 'start') {
+            setRangeStart(apiDate);
+            return;
+        }
+        setRangeEnd(apiDate);
+    };
+
+    const handleDateDismiss = () => {
+        if (Platform.OS === 'android') {
+            setIsDatePickerVisible(false);
         }
     };
 
@@ -850,22 +899,80 @@ export default function FieldDetailsScreen() {
                                     <Text style={[styles.tabText, activeScenario === 'WHAT_IF' && styles.tabTextActive]}>{t('fields.ai_tab_whatif', 'What-If')}</Text>
                                 </TouchableOpacity>
                             </View>
+                            <Text style={styles.aiScenarioDescription}>
+                                {activeScenario === 'RANGE' && t('fields.ai_range_info')}
+                                {activeScenario === 'FUTURE' && t('fields.ai_future_info')}
+                                {activeScenario === 'WHAT_IF' && t('fields.ai_whatif_info')}
+                            </Text>
 
                             {activeScenario === 'RANGE' && (
                                 <View style={{ gap: 12 }}>
                                     <Text style={styles.inputLabel}>{t('fields.ai_start_date', 'Start Date (YYYY-MM-DD)')}</Text>
-                                    <TextInput style={styles.input} value={rangeStart} onChangeText={setRangeStart} placeholder="2023-01-01" />
+                                    <TouchableOpacity
+                                        style={styles.datePickerButton}
+                                        onPress={() => {
+                                            setDatePickerTarget('start');
+                                            setIsDatePickerVisible(true);
+                                        }}
+                                    >
+                                        <Text style={styles.datePickerButtonText}>
+                                            {parseApiDate(rangeStart).toLocaleDateString(i18n.language, {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            })}
+                                        </Text>
+                                    </TouchableOpacity>
                                     <Text style={styles.inputLabel}>{t('fields.ai_end_date', 'End Date (YYYY-MM-DD)')}</Text>
-                                    <TextInput style={styles.input} value={rangeEnd} onChangeText={setRangeEnd} placeholder="2023-12-31" />
+                                    <TouchableOpacity
+                                        style={styles.datePickerButton}
+                                        onPress={() => {
+                                            setDatePickerTarget('end');
+                                            setIsDatePickerVisible(true);
+                                        }}
+                                    >
+                                        <Text style={styles.datePickerButtonText}>
+                                            {parseApiDate(rangeEnd).toLocaleDateString(i18n.language, {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            })}
+                                        </Text>
+                                    </TouchableOpacity>
+                                    {isDatePickerVisible && (
+                                        <DateTimePicker
+                                            value={parseApiDate(datePickerTarget === 'start' ? rangeStart : rangeEnd)}
+                                            mode="date"
+                                            display="default"
+                                            onValueChange={handleDateValueChange}
+                                            onDismiss={handleDateDismiss}
+                                            maximumDate={datePickerTarget === 'start' ? parseApiDate(rangeEnd) : undefined}
+                                            minimumDate={datePickerTarget === 'end' ? parseApiDate(rangeStart) : undefined}
+                                        />
+                                    )}
                                 </View>
                             )}
 
                             {(activeScenario === 'FUTURE' || activeScenario === 'WHAT_IF') && (
                                 <View style={{ gap: 12 }}>
                                     <Text style={styles.inputLabel}>{t('fields.ai_season_start', 'Target Season Start (Month 1-12)')}</Text>
-                                    <TextInput style={styles.input} keyboardType="numeric" value={monthStart} onChangeText={setMonthStart} placeholder="6" />
+                                    <TouchableOpacity
+                                        style={styles.dropdownTrigger}
+                                        onPress={() => setMonthPickerTarget('start')}
+                                    >
+                                        <Text style={styles.dropdownTriggerText}>
+                                            {monthOptions.find((m) => m.value === monthStart)?.label ?? monthOptions[0].label}
+                                        </Text>
+                                    </TouchableOpacity>
                                     <Text style={styles.inputLabel}>{t('fields.ai_season_end', 'Target Season End (Month 1-12)')}</Text>
-                                    <TextInput style={styles.input} keyboardType="numeric" value={monthEnd} onChangeText={setMonthEnd} placeholder="9" />
+                                    <TouchableOpacity
+                                        style={styles.dropdownTrigger}
+                                        onPress={() => setMonthPickerTarget('end')}
+                                    >
+                                        <Text style={styles.dropdownTriggerText}>
+                                            {monthOptions.find((m) => m.value === monthEnd)?.label ?? monthOptions[0].label}
+                                        </Text>
+                                    </TouchableOpacity>
                                 </View>
                             )}
 
@@ -938,6 +1045,52 @@ export default function FieldDetailsScreen() {
                                 {isAnalyzing ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveBtnText}>{t('fields.ai_analyze', 'Analyze')}</Text>}
                             </TouchableOpacity>
                         </View>
+                    </View>
+                </View>
+            </Modal>
+
+            <Modal
+                visible={monthPickerTarget !== null}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setMonthPickerTarget(null)}
+            >
+                <View style={styles.monthPickerOverlay}>
+                    <View style={styles.monthPickerCard}>
+                        <Text style={styles.monthPickerTitle}>
+                            {monthPickerTarget === 'start'
+                                ? t('fields.ai_season_start', 'Season Start Month')
+                                : t('fields.ai_season_end', 'Season End Month')}
+                        </Text>
+                        <ScrollView style={styles.monthPickerList}>
+                            {monthOptions.map((month) => {
+                                const isSelected = monthPickerTarget === 'start'
+                                    ? month.value === monthStart
+                                    : month.value === monthEnd;
+
+                                return (
+                                    <TouchableOpacity
+                                        key={`picker-${month.value}`}
+                                        style={[styles.monthPickerItem, isSelected && styles.monthPickerItemActive]}
+                                        onPress={() => {
+                                            if (monthPickerTarget === 'start') {
+                                                setMonthStart(month.value);
+                                            } else {
+                                                setMonthEnd(month.value);
+                                            }
+                                            setMonthPickerTarget(null);
+                                        }}
+                                    >
+                                        <Text style={[styles.monthPickerItemText, isSelected && styles.monthPickerItemTextActive]}>
+                                            {month.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+                        <TouchableOpacity style={styles.monthPickerCloseBtn} onPress={() => setMonthPickerTarget(null)}>
+                            <Text style={styles.monthPickerCloseBtnText}>{t('common.cancel', 'Cancel')}</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
@@ -1126,6 +1279,21 @@ const styles = StyleSheet.create({
     tabBtnActive: { backgroundColor: '#fff', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
     tabText: { fontSize: 13, fontWeight: '600', color: '#6b7280' },
     tabTextActive: { color: '#059669' },
+    aiScenarioDescription: { marginBottom: 12, fontSize: 13, lineHeight: 18, color: '#4b5563' },
+    dropdownTrigger: { height: 44, borderWidth: 1, borderColor: '#d1d5db', borderRadius: 10, paddingHorizontal: 12, justifyContent: 'center', backgroundColor: '#f9fafb' },
+    dropdownTriggerText: { fontSize: 14, color: '#111827' },
+    monthPickerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 20 },
+    monthPickerCard: { backgroundColor: '#fff', borderRadius: 14, padding: 16, maxHeight: '75%' },
+    monthPickerTitle: { fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 10 },
+    monthPickerList: { maxHeight: 360 },
+    monthPickerItem: { paddingHorizontal: 12, paddingVertical: 12, borderRadius: 8, marginBottom: 4 },
+    monthPickerItemActive: { backgroundColor: '#ecfdf5' },
+    monthPickerItemText: { fontSize: 14, color: '#111827' },
+    monthPickerItemTextActive: { color: '#047857', fontWeight: '700' },
+    monthPickerCloseBtn: { marginTop: 10, alignSelf: 'flex-end', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: '#f3f4f6' },
+    monthPickerCloseBtnText: { color: '#374151', fontWeight: '700' },
+    datePickerButton: { height: 44, borderWidth: 1, borderColor: '#d1d5db', borderRadius: 10, paddingHorizontal: 12, justifyContent: 'center', backgroundColor: '#f9fafb' },
+    datePickerButtonText: { fontSize: 14, color: '#111827' },
     inputLabel: { fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 },
     metricFilterBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#e5e7eb', backgroundColor: '#f9fafb' },
     metricFilterText: { fontSize: 12, fontWeight: '600', color: '#6b7280' },
