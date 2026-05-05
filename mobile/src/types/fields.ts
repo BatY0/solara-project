@@ -97,6 +97,13 @@ export interface AnalysisRequest {
 export interface MlCropRecommendation {
     crop: string;
     probability: number;
+    contributions?: MlFeatureContribution[];
+}
+
+export interface MlFeatureContribution {
+    feature: string;
+    score: number;
+    raw_value?: number;
 }
 
 export interface AnalysisResult {

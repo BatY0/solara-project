@@ -614,7 +614,40 @@
       "top_pick": "En İyi Seçim",
       "no_recommendations": "Bu senaryo için güven eşiğini karşılayan ürün bulunamadı. Farklı bir tarih aralığı veya senaryo deneyin.",
       "empty_title": "YZ Ürün Önerileri",
-      "empty_desc": "Bu tarla için henüz analiz yapılmamış. İlk YZ ürün tahmininizi almak için aşağıdaki butona tıklayın."
+      "empty_desc": "Bu tarla için henüz analiz yapılmamış. İlk YZ ürün tahmininizi almak için aşağıdaki butona tıklayın.",
+      "strongest_factors": "En etkili faktörler",
+      "positive_effect": "skoru artırır",
+      "negative_effect": "skoru azaltır",
+      "level_low": "düşük",
+      "level_medium": "orta",
+      "level_high": "yüksek",
+      "level_unknown": "bilinmiyor",
+      "supports_crop": "bu ürün için uygundur",
+      "hurts_crop": "bu ürün için daha az uygundur",
+      "factor_explanation": "{{feature}} seviyesi {{level}} ve bu durum {{effect}}.",
+      "value_unknown": "bilinmiyor",
+      "impact_slight": "uygunluğu az da olsa artırır",
+      "impact_moderate": "uygunluğu orta düzeyde artırır",
+      "impact_strong": "uygunluğu güçlü şekilde artırır",
+      "suitability_slight": "bu ürün için bir miktar uygundur",
+      "suitability_moderate": "bu ürün için iyi düzeyde uygundur",
+      "suitability_strong": "bu ürün için oldukça uygundur",
+      "factor_explanation_detailed": "{{feature}} değeri {{value}}{{unit}} ve bu değer {{suitability}}. Bu faktör {{impact}}.",
+      "units": {
+        "rainfall": " mm",
+        "temperature": "°C",
+        "humidity": "%",
+        "npk": " mg/kg"
+      },
+      "features": {
+        "N": "Azot",
+        "P": "Fosfor",
+        "K": "Potasyum",
+        "temperature": "Sıcaklık",
+        "humidity": "Nem",
+        "ph": "Toprak pH",
+        "rainfall": "Yağış"
+      }
     }
   },
   "crop_guide": {

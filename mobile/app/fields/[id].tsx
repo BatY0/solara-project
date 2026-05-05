@@ -6,7 +6,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Thermometer, Droplet, Wind, CloudRain, Cpu, Link, Unlink, Wifi, Map as MapIcon, Trash2, BrainCircuit, Leaf, Settings, Activity, MessageCircle, Zap, LocateFixed, Download } from 'lucide-react-native';
 import MapView, { Polygon, PROVIDER_GOOGLE, type Region } from 'react-native-maps';
-import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import DateTimePicker, { type DateTimePickerChangeEvent } from '@react-native-community/datetimepicker';
 import { LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 
@@ -127,6 +127,40 @@ export default function FieldDetailsScreen() {
     });
     const [isSavingProps, setIsSavingProps] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+
+    const contributionLabel = (feature: string): string =>
+        t(`fields.ai_features.${feature}`, feature);
+    const contributionUnit = (feature: string): string => {
+        if (feature === 'rainfall') return t('fields.units.rainfall', ' mm');
+        if (feature === 'temperature') return t('fields.units.temperature', '°C');
+        if (feature === 'humidity') return t('fields.units.humidity', '%');
+        if (feature === 'N' || feature === 'P' || feature === 'K') return t('fields.units.npk', ' mg/kg');
+        return '';
+    };
+    const formatContributionValue = (feature: string, value: number | undefined): string => {
+        if (value == null || Number.isNaN(value)) return t('fields.value_unknown', 'unknown');
+        if (feature === 'ph' || feature === 'temperature') return value.toFixed(1);
+        return value.toFixed(0);
+    };
+    const impactLabel = (score: number): string => {
+        if (score >= 3) return t('fields.impact_strong', 'has a strong positive impact');
+        if (score >= 1) return t('fields.impact_moderate', 'has a moderate positive impact');
+        return t('fields.impact_slight', 'slightly improves suitability');
+    };
+    const suitabilityLabel = (score: number): string => {
+        if (score >= 3) return t('fields.suitability_strong', 'is highly suitable for this crop');
+        if (score >= 1) return t('fields.suitability_moderate', 'is well suited for this crop');
+        return t('fields.suitability_slight', 'is somewhat suitable for this crop');
+    };
+    const contributionExplanation = (feature: string, rawValue: number | undefined, score: number): string => {
+        return t('fields.factor_explanation_detailed', {
+            feature: contributionLabel(feature),
+            value: formatContributionValue(feature, rawValue),
+            unit: contributionUnit(feature),
+            suitability: suitabilityLabel(score),
+            impact: impactLabel(score),
+        });
+    };
 
     useEffect(() => {
         if (!id) return;
@@ -383,7 +417,7 @@ export default function FieldDetailsScreen() {
         }
     };
 
-    const handleDateValueChange = (_event: DateTimePickerEvent, selectedDate: Date) => {
+    const handleDateValueChange = (_event: DateTimePickerChangeEvent, selectedDate: Date) => {
         if (Platform.OS === 'android') {
             setIsDatePickerVisible(false);
         }
@@ -871,6 +905,20 @@ export default function FieldDetailsScreen() {
                                         <View style={{ height: 6, backgroundColor: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
                                             <View style={{ height: '100%', backgroundColor: barColor, width: `${Math.min(probability, 100)}%` }} />
                                         </View>
+                                        {rec.contributions && rec.contributions.length > 0 && (
+                                            <View style={styles.contributionPanel}>
+                                                <Text style={styles.contributionHeading}>
+                                                    {t('fields.strongest_factors', 'Strongest factors')}
+                                                </Text>
+                                                {rec.contributions.map((item) => (
+                                                    <View key={`${rec.crop}-${item.feature}`} style={styles.contributionRow}>
+                                                        <Text style={styles.contributionFeature}>
+                                                            {contributionExplanation(item.feature, item.raw_value, item.score)}
+                                                        </Text>
+                                                    </View>
+                                                ))}
+                                            </View>
+                                        )}
                                     </TouchableOpacity>
                                 );
                             })}
@@ -1258,6 +1306,31 @@ const styles = StyleSheet.create({
     saveBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 6, backgroundColor: '#059669', flexDirection: 'row', alignItems: 'center' },
     saveBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
     recBox: { padding: 12, borderRadius: 12, borderWidth: 1 },
+    contributionPanel: {
+        marginTop: 10,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+        backgroundColor: '#ffffff',
+        padding: 10,
+        gap: 6,
+    },
+    contributionHeading: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#4b5563',
+    },
+    contributionRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: 10,
+    },
+    contributionFeature: {
+        flex: 1,
+        fontSize: 12,
+        color: '#374151',
+    },
     askAiButton: {
         backgroundColor: theme.colors.brand[600],
         borderRadius: 10,

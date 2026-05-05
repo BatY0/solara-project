@@ -614,7 +614,40 @@
       "top_pick": "Top Pick",
       "no_recommendations": "No crops met the confidence threshold for this scenario. Try a different date range or scenario.",
       "empty_title": "AI Crop Recommendations",
-      "empty_desc": "No analysis has been run yet for this field. Click the button below to get your first AI crop prediction."
+      "empty_desc": "No analysis has been run yet for this field. Click the button below to get your first AI crop prediction.",
+      "strongest_factors": "Strongest factors",
+      "positive_effect": "raises score",
+      "negative_effect": "lowers score",
+      "level_low": "low",
+      "level_medium": "medium",
+      "level_high": "high",
+      "level_unknown": "unknown",
+      "supports_crop": "fits this crop",
+      "hurts_crop": "is less suitable for this crop",
+      "factor_explanation": "{{feature}} is {{level}}, which {{effect}}.",
+      "value_unknown": "unknown",
+      "impact_slight": "slightly improves suitability",
+      "impact_moderate": "has a moderate positive impact",
+      "impact_strong": "has a strong positive impact",
+      "suitability_slight": "is somewhat suitable for this crop",
+      "suitability_moderate": "is well suited for this crop",
+      "suitability_strong": "is highly suitable for this crop",
+      "factor_explanation_detailed": "{{feature}} was {{value}}{{unit}}, which {{suitability}}. This {{impact}}.",
+      "units": {
+        "rainfall": " mm",
+        "temperature": "°C",
+        "humidity": "%",
+        "npk": " mg/kg"
+      },
+      "features": {
+        "N": "Nitrogen",
+        "P": "Phosphorus",
+        "K": "Potassium",
+        "temperature": "Temperature",
+        "humidity": "Humidity",
+        "ph": "Soil pH",
+        "rainfall": "Rainfall"
+      }
     }
   },
   "crop_guide": {
