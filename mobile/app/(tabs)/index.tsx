@@ -21,6 +21,9 @@ import { fieldsService } from '../../src/services/fieldsService';
 import type { Field } from '../../src/types/fields';
 import AddFieldModal from '../../src/components/AddFieldModal';
 import { getDeviceStatus } from '../../src/utils/deviceStatus';
+import { alertsService } from '../../src/services/alertsService';
+import type { AlertEvent } from '../../src/types/alerts';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function DashboardScreen() {
     const { user, logout } = useAuth();
@@ -32,6 +35,7 @@ export default function DashboardScreen() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isWizardOpen, setIsWizardOpen] = useState(false);
     const [showNormalDashboard, setShowNormalDashboard] = useState(false);
+    const [latestAlert, setLatestAlert] = useState<AlertEvent | null>(null);
 
     const fetchFields = useCallback(async (isRefresh = false) => {
         if (!isRefresh) setIsLoading(true);
@@ -51,7 +55,24 @@ export default function DashboardScreen() {
         fetchFields();
     }, [fetchFields]);
 
+    const fetchLatestAlert = useCallback(async () => {
+        try {
+            const unreadEvents = await alertsService.getUnreadNotifications();
+            if (unreadEvents.length > 0) {
+                setLatestAlert(unreadEvents[0]);
+            } else {
+                setLatestAlert(null);
+            }
+        } catch (error) {
+            console.error('Error fetching unread alerts:', error);
+        }
+    }, []);
 
+    useFocusEffect(
+        useCallback(() => {
+            fetchLatestAlert();
+        }, [fetchLatestAlert])
+    );
 
     const handleLogout = () => {
         Alert.alert(
@@ -77,6 +98,7 @@ export default function DashboardScreen() {
 
     const onRefresh = () => {
         setIsRefreshing(true);
+        fetchLatestAlert();
         fetchFields(true);
     };
 
@@ -142,10 +164,12 @@ export default function DashboardScreen() {
                 refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.brand[500]} />}
             >
                 {/* WELCOME CARD */}
-                <View style={styles.welcomeCard}>
-                    <Text style={styles.welcomeTitle}>{t('dashboard.welcome_back')}</Text>
-                    <Text style={styles.userEmail}>{user?.name ? `${user.name} ${user.surname ?? ''}`.trim() : user?.email}</Text>
-                    <Text style={styles.welcomeSubtitle}>{t('dashboard.everything_good')}</Text>
+                <View style={[styles.welcomeCard, latestAlert && styles.welcomeCardAlert]}>
+                    <Text style={[styles.welcomeTitle, latestAlert && styles.welcomeTextAlert]}>{t('dashboard.welcome_back')}</Text>
+                    <Text style={[styles.userEmail, latestAlert && styles.welcomeTextAlert]}>{user?.name ? `${user.name} ${user.surname ?? ''}`.trim() : user?.email}</Text>
+                    <Text style={[styles.welcomeSubtitle, latestAlert && styles.welcomeSubtitleAlert]}>
+                        {latestAlert ? t('dashboard.alert_active_msg', { field: latestAlert.fieldName, rule: latestAlert.ruleName }) : t('dashboard.everything_good')}
+                    </Text>
                 </View>
 
                 {/* STAT CARDS */}
@@ -296,9 +320,14 @@ const styles = StyleSheet.create({
         marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.2, shadowRadius: 16, elevation: 8,
     },
+    welcomeCardAlert: {
+        backgroundColor: theme.colors.chart.danger,
+    },
     welcomeTitle: { color: 'rgba(255,255,255,0.75)', fontSize: 14, marginBottom: 4 },
     userEmail: { color: '#fff', fontSize: 20, fontWeight: 'bold', marginBottom: 6 },
     welcomeSubtitle: { color: theme.colors.brand[50], fontSize: 13, opacity: 0.85 },
+    welcomeTextAlert: { color: '#fff' },
+    welcomeSubtitleAlert: { color: 'rgba(255,255,255,0.9)', fontWeight: '500' },
     statRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
     statCard: {
         flex: 1, backgroundColor: '#fff', borderRadius: 16, padding: 16,

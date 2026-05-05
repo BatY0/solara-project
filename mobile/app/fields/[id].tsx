@@ -418,13 +418,13 @@ export default function FieldDetailsScreen() {
                 if (useOverrideHum) overrides.humidity = overrideHum;
                 if (useOverrideRain) overrides.rainfall = overrideRain;
 
-                result = await fieldsService.runAnalysis({ 
-                    fieldId: id as string, 
-                    isFuturePrediction: true, 
-                    targetMonthStart: Number(monthStart), 
-                    targetMonthEnd: Number(monthEnd), 
-                    topN: 5, 
-                    overrides: Object.keys(overrides).length > 0 ? overrides : undefined 
+                result = await fieldsService.runAnalysis({
+                    fieldId: id as string,
+                    isFuturePrediction: true,
+                    targetMonthStart: Number(monthStart),
+                    targetMonthEnd: Number(monthEnd),
+                    topN: 5,
+                    overrides: Object.keys(overrides).length > 0 ? overrides : undefined
                 });
             }
             setAnalysis(result);
@@ -730,7 +730,7 @@ export default function FieldDetailsScreen() {
                         <Activity color="#0c4a6e" size={20} />
                         <Text style={styles.cardTitle}>{t('fields.historical_data', 'Historical Data')}</Text>
                     </View>
-                    
+
                     <View style={styles.tabContainer}>
                         <TouchableOpacity style={[styles.tabBtn, timeframe === 'today' && styles.tabBtnActive]} onPress={() => setTimeframe('today')}>
                             <Text style={[styles.tabText, timeframe === 'today' && styles.tabTextActive]}>{t('common.today', 'Today')}</Text>
@@ -769,7 +769,7 @@ export default function FieldDetailsScreen() {
                         const chartLabels = history.map(item => {
                             const dateObj = parseBackendUtcDate(item.period);
                             if (!dateObj) return '--';
-                            return timeframe === 'today' 
+                            return timeframe === 'today'
                                 ? dateObj.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit', hour12: false })
                                 : dateObj.toLocaleDateString(i18n.language, { month: '2-digit', day: '2-digit' });
                         });
@@ -842,8 +842,8 @@ export default function FieldDetailsScreen() {
                                                         const dateStr = !dateObj
                                                             ? '--'
                                                             : timeframe === 'today'
-                                                              ? dateObj.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit', hour12: false })
-                                                              : dateObj.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' });
+                                                                ? dateObj.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit', hour12: false })
+                                                                : dateObj.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' });
 
                                                         return (
                                                             <View key={index} style={[styles.tableRow, index % 2 === 0 ? styles.tableRowEven : styles.tableRowOdd]}>
@@ -1073,7 +1073,7 @@ export default function FieldDetailsScreen() {
                                             thumbTintColor={useOverrideTemp ? "#10b981" : "#d1d5db"}
                                         />
                                     </View>
-                                    
+
                                     <View>
                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <Text style={[styles.inputLabel, { color: useOverrideHum ? '#111827' : '#9ca3af' }]}>{t('fields.ai_override_hum', 'Override Humidity (%):')} {overrideHum.toFixed(0)}</Text>
@@ -1092,7 +1092,7 @@ export default function FieldDetailsScreen() {
                                             thumbTintColor={useOverrideHum ? "#3b82f6" : "#d1d5db"}
                                         />
                                     </View>
-                                    
+
                                     <View>
                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <Text style={[styles.inputLabel, { color: useOverrideRain ? '#111827' : '#9ca3af' }]}>{t('fields.ai_override_rain', 'Override Rain (mm):')} {overrideRain.toFixed(0)}</Text>
@@ -1101,7 +1101,7 @@ export default function FieldDetailsScreen() {
                                         <Slider
                                             style={{ width: '100%', height: 40, opacity: useOverrideRain ? 1 : 0.5 }}
                                             minimumValue={0}
-                                            maximumValue={1000}
+                                            maximumValue={2000}
                                             step={10}
                                             value={overrideRain}
                                             onValueChange={setOverrideRain}
@@ -1199,18 +1199,18 @@ export default function FieldDetailsScreen() {
                                 </View>
                                 <Text style={styles.inputLabel}>{t('add_field.nitrogen')}</Text>
                                 <TextInput style={styles.input} keyboardType="decimal-pad" value={editPropsForm.nitrogen} onChangeText={(v) => setEditPropsForm(p => ({ ...p, nitrogen: v }))} placeholder={t('add_field.auto')} />
-                                
+
                                 <Text style={styles.inputLabel}>{t('add_field.phosphorus')}</Text>
                                 <TextInput style={styles.input} keyboardType="decimal-pad" value={editPropsForm.phosphorus} onChangeText={(v) => setEditPropsForm(p => ({ ...p, phosphorus: v }))} placeholder={t('add_field.auto')} />
-                                
+
                                 <Text style={styles.inputLabel}>{t('add_field.potassium')}</Text>
                                 <TextInput style={styles.input} keyboardType="decimal-pad" value={editPropsForm.potassium} onChangeText={(v) => setEditPropsForm(p => ({ ...p, potassium: v }))} placeholder={t('add_field.auto')} />
-                                
+
                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
                                     <Text style={styles.inputLabel}>{t('add_field.use_default_ph', { value: '6.44' })}</Text>
                                     <Switch value={editPropsForm.useDefaultPh} onValueChange={(v) => setEditPropsForm(p => ({ ...p, useDefaultPh: v }))} trackColor={{ true: '#10b981' }} />
                                 </View>
-                                
+
                                 {!editPropsForm.useDefaultPh && (
                                     <View>
                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>

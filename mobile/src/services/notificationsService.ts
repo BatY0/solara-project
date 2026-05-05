@@ -113,7 +113,7 @@ export async function scheduleAlertNotification(event: AlertEvent): Promise<void
         SOIL_HUMIDITY: 'Soil Moisture',
         SOIL_TEMP: 'Soil Temp',
         AMBIENT_TEMP: 'Ambient Temp',
-        AMBIENT_HUMIDITY: 'Air Humidity',
+        AMBIENT_HUMIDITY: 'Ambient Humidity',
         BATTERY_PERCENTAGE: 'Battery',
     };
 

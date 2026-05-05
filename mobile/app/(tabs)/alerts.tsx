@@ -180,7 +180,7 @@ export default function AlertsScreen() {
     };
 
     const deleteRule = (ruleId: string) => {
-        Alert.alert(t('common.confirm'), t('common.confirm'), [
+        Alert.alert(t('alerts.delete_title'), t('alerts.delete_confirm'), [
             { text: t('common.cancel'), style: 'cancel' },
             {
                 text: t('common.delete'),

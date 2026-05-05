@@ -253,7 +253,7 @@ export function FieldDetailsAnalysisModal({
                                             <OverrideSlider
                                                 label={t('field_details.ai.rain_override')}
                                                 themeColor="teal" accentHex="#319795"
-                                                min={0} max={1000} step={5}
+                                                min={0} max={2000} step={5}
                                                 defaultValue={overrideRain}
                                                 unit="mm" precision={0}
                                                 onValueChangeEnd={setOverrideRain}
