@@ -13,10 +13,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle, ArrowLeft, ArrowRight, AlertCircle, Leaf, Ruler, Mountain, MapPin, X } from 'lucide-react-native';
+import { Picker } from '@react-native-picker/picker';
 import { theme } from '../theme/theme';
 import { fieldsService } from '../services/fieldsService';
 import MapSelector from './MapSelector';
 import Slider from '@react-native-community/slider';
+import { SOIL_TYPES } from '../constants/soilTypes';
 
 interface Props {
     visible: boolean;
@@ -35,16 +37,6 @@ interface FormData {
     ph: number;
     useDefaultPh: boolean;
 }
-
-const SOIL_TYPES = [
-    'alluvial_loam',
-    'clay_loam',
-    'light_sandy_loam',
-    'loam',
-    'rich_loam',
-    'sandy_loam',
-    'well_drained_loam',
-] as const;
 
 const DEFAULT_PH = 6.44;
 
@@ -75,6 +67,7 @@ export default function AddFieldModal({ visible, onClose, onSuccess }: Props) {
     const [formData, setFormData] = useState<FormData>(initialFormData);
     const [phInput, setPhInput] = useState(String(DEFAULT_PH));
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [isSoilPickerOpen, setIsSoilPickerOpen] = useState(false);
 
     const setField = useCallback(<K extends keyof FormData>(key: K, value: FormData[K]) => {
         setFormData(prev => ({ ...prev, [key]: value }));
@@ -124,7 +117,7 @@ export default function AddFieldModal({ visible, onClose, onSuccess }: Props) {
                 name: formData.name,
                 location: getLocationForApi(),
                 areaHa: parseFloat(formData.areaHa) || 0,
-                soilType: formData.soilType || 'loam',
+                soilType: formData.soilType || 'alluvial',
             });
             await fieldsService.updateFieldProperties(created.id, {
                 name: formData.name,
@@ -221,24 +214,14 @@ export default function AddFieldModal({ visible, onClose, onSuccess }: Props) {
                                         <Text style={styles.label}>{t('add_field.soil_type')}</Text>
                                         <Text style={styles.required}>*</Text>
                                     </View>
-                                    <View style={[styles.pickerContainer, errors.soilType ? styles.inputError : null]}>
-                                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-                                            {SOIL_TYPES.map(st => (
-                                                <TouchableOpacity
-                                                    key={st}
-                                                    style={[styles.soilChip, formData.soilType === st && styles.soilChipActive]}
-                                                    onPress={() => {
-                                                        setField('soilType', st);
-                                                        if (errors.soilType) setErrors(p => ({ ...p, soilType: '' }));
-                                                    }}
-                                                >
-                                                    <Text style={[styles.soilChipText, formData.soilType === st && styles.soilChipTextActive]}>
-                                                        {soilTypeKey(st)}
-                                                    </Text>
-                                                </TouchableOpacity>
-                                            ))}
-                                        </ScrollView>
-                                    </View>
+                                    <TouchableOpacity
+                                        style={[styles.input, { justifyContent: 'center' }, errors.soilType ? styles.inputError : null]}
+                                        onPress={() => setIsSoilPickerOpen(true)}
+                                    >
+                                        <Text style={[styles.dropdownTriggerText, !formData.soilType && { color: theme.colors.neutral.subtext }]}>
+                                            {formData.soilType ? soilTypeKey(formData.soilType) : t('add_field.soil_type_ph')}
+                                        </Text>
+                                    </TouchableOpacity>
                                     {errors.soilType ? <Text style={styles.errorText}>⚠ {errors.soilType}</Text> : null}
                                 </View>
                             </View>
@@ -438,6 +421,58 @@ export default function AddFieldModal({ visible, onClose, onSuccess }: Props) {
                     )}
                 </View>
             </SafeAreaView>
+
+            {/* Soil Type Picker Modal */}
+            <Modal
+                visible={isSoilPickerOpen}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setIsSoilPickerOpen(false)}
+            >
+                <View style={styles.monthPickerOverlay}>
+                    <View style={styles.monthPickerCard}>
+                        <Text style={styles.monthPickerTitle}>
+                            {t('add_field.soil_type')}
+                        </Text>
+                        <ScrollView style={styles.monthPickerList}>
+                            <TouchableOpacity
+                                style={[styles.monthPickerItem, !formData.soilType && styles.monthPickerItemActive]}
+                                onPress={() => {
+                                    setField('soilType', '');
+                                    if (errors.soilType) setErrors(p => ({ ...p, soilType: '' }));
+                                    setIsSoilPickerOpen(false);
+                                }}
+                            >
+                                <Text style={[styles.monthPickerItemText, !formData.soilType && styles.monthPickerItemTextActive]}>
+                                    {t('add_field.soil_type_ph')}
+                                </Text>
+                            </TouchableOpacity>
+                            {SOIL_TYPES.map((st) => {
+                                const isSelected = st === formData.soilType;
+
+                                return (
+                                    <TouchableOpacity
+                                        key={`soil-${st}`}
+                                        style={[styles.monthPickerItem, isSelected && styles.monthPickerItemActive]}
+                                        onPress={() => {
+                                            setField('soilType', st);
+                                            if (errors.soilType) setErrors(p => ({ ...p, soilType: '' }));
+                                            setIsSoilPickerOpen(false);
+                                        }}
+                                    >
+                                        <Text style={[styles.monthPickerItemText, isSelected && styles.monthPickerItemTextActive]}>
+                                            {soilTypeKey(st)}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+                        <TouchableOpacity style={styles.monthPickerCloseBtn} onPress={() => setIsSoilPickerOpen(false)}>
+                            <Text style={styles.monthPickerCloseBtnText}>{t('common.cancel', 'Cancel')}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </Modal>
     );
 }
@@ -477,17 +512,6 @@ const styles = StyleSheet.create({
     errorText: { fontSize: 12, color: '#ef4444', marginTop: 2 },
     hintText: { fontSize: 12, color: theme.colors.neutral.subtext, marginBottom: 4 },
     twoCol: { flexDirection: 'row', gap: 10 },
-    pickerContainer: {
-        backgroundColor: '#F9FAFB', borderRadius: 12, borderWidth: 1,
-        borderColor: '#E5E7EB', paddingVertical: 10, paddingHorizontal: 8, minHeight: 46,
-    },
-    soilChip: {
-        paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
-        backgroundColor: '#E5E7EB', borderWidth: 1, borderColor: 'transparent',
-    },
-    soilChipActive: { backgroundColor: theme.colors.brand[50], borderColor: theme.colors.brand[500] },
-    soilChipText: { fontSize: 12, color: '#374151', fontWeight: '500' },
-    soilChipTextActive: { color: theme.colors.brand[500], fontWeight: '700' },
     alertBox: {
         backgroundColor: '#EFF6FF', borderRadius: 12, padding: 12, flexDirection: 'row',
         gap: 10, borderWidth: 1, borderColor: '#BFDBFE', alignItems: 'flex-start',
@@ -561,4 +585,15 @@ const styles = StyleSheet.create({
         shadowColor: theme.colors.brand[900], shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
     },
     nextBtnText: { fontSize: 14, fontWeight: 'bold', color: '#fff' },
+    dropdownTriggerText: { fontSize: 15, color: theme.colors.neutral.dark },
+    monthPickerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 20 },
+    monthPickerCard: { backgroundColor: '#fff', borderRadius: 14, padding: 16, maxHeight: '75%' },
+    monthPickerTitle: { fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 10 },
+    monthPickerList: { maxHeight: 360 },
+    monthPickerItem: { paddingHorizontal: 12, paddingVertical: 12, borderRadius: 8, marginBottom: 4 },
+    monthPickerItemActive: { backgroundColor: '#ecfdf5' },
+    monthPickerItemText: { fontSize: 14, color: '#111827' },
+    monthPickerItemTextActive: { color: '#047857', fontWeight: '700' },
+    monthPickerCloseBtn: { marginTop: 10, alignSelf: 'flex-end', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: '#f3f4f6' },
+    monthPickerCloseBtnText: { color: '#374151', fontWeight: '700' },
 });
