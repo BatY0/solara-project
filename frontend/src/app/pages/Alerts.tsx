@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-    Box, Flex, Text, Button, Badge, IconButton, Input, useDisclosure, chakra, Spinner
+    Box, Flex, Text, Button, Badge, IconButton, Input, useDisclosure, chakra, Spinner, Dialog, Portal, CloseButton
 } from '@chakra-ui/react';
 import { Plus, Trash2, Edit, BellRing, Clock, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -32,6 +32,8 @@ export const Alerts = () => {
 
     // Modal state
     const [editingRule, setEditingRule] = useState<AlertRule | null>(null);
+    const [deleteTargetRule, setDeleteTargetRule] = useState<AlertRule | null>(null);
+    const [isDeletingRule, setIsDeletingRule] = useState(false);
     const [formData, setFormData] = useState<CreateAlertRuleRequest>({
         fieldId: '',
         name: '',
@@ -108,14 +110,27 @@ export const Alerts = () => {
         }
     };
 
-    const handleDeleteRule = async (id: string) => {
-        if (window.confirm("Are you sure you want to delete this rule?")) {
-            try {
-                await alertsService.deleteRule(id);
-                fetchData();
-            } catch (error) {
-                console.error(error);
-            }
+    const handleOpenDeleteModal = (rule: AlertRule) => {
+        setDeleteTargetRule(rule);
+    };
+
+    const handleCloseDeleteModal = () => {
+        if (isDeletingRule) return;
+        setDeleteTargetRule(null);
+    };
+
+    const handleConfirmDeleteRule = async () => {
+        if (!deleteTargetRule) return;
+
+        setIsDeletingRule(true);
+        try {
+            await alertsService.deleteRule(deleteTargetRule.id);
+            setDeleteTargetRule(null);
+            fetchData();
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsDeletingRule(false);
         }
     };
 
@@ -340,7 +355,7 @@ export const Alerts = () => {
                                                         bg="transparent"
                                                         _hover={{ bg: "red.50" }}
                                                         size="sm"
-                                                        onClick={() => handleDeleteRule(rule.id)}
+                                                        onClick={() => handleOpenDeleteModal(rule)}
                                                     >
                                                         <Trash2 size={16} />
                                                     </IconButton>
@@ -414,7 +429,7 @@ export const Alerts = () => {
                                                             bg="transparent"
                                                             _hover={{ bg: "red.50" }}
                                                             size="sm"
-                                                            onClick={() => handleDeleteRule(rule.id)}
+                                                            onClick={() => handleOpenDeleteModal(rule)}
                                                         >
                                                             <Trash2 size={16} />
                                                         </IconButton>
@@ -717,6 +732,48 @@ export const Alerts = () => {
                         </Flex>
                     </Flex>
                 </>
+            )}
+
+            {deleteTargetRule && (
+                <Dialog.Root
+                    role="alertdialog"
+                    open={!!deleteTargetRule}
+                    onOpenChange={(e) => {
+                        if (!e.open) handleCloseDeleteModal();
+                    }}
+                    placement="center"
+                >
+                    <Portal>
+                        <Dialog.Backdrop backdropFilter="auto" backdropBlur="sm" />
+                        <Dialog.Positioner>
+                            <Dialog.Content>
+                                <Dialog.Header>
+                                    <Dialog.Title>{t('alerts.delete_rule_title')}</Dialog.Title>
+                                </Dialog.Header>
+                                <Dialog.Body>
+                                    <Text>
+                                        {t('alerts.delete_rule_confirm_named', {
+                                            name: deleteTargetRule.name
+                                        })}
+                                    </Text>
+                                </Dialog.Body>
+                                <Dialog.Footer>
+                                    <Dialog.ActionTrigger asChild>
+                                        <Button variant="outline" onClick={handleCloseDeleteModal} disabled={isDeletingRule}>
+                                            {t('alerts.cancel')}
+                                        </Button>
+                                    </Dialog.ActionTrigger>
+                                    <Button colorPalette="red" onClick={handleConfirmDeleteRule} loading={isDeletingRule}>
+                                        {t('alerts.delete_rule_title')}
+                                    </Button>
+                                </Dialog.Footer>
+                                <Dialog.CloseTrigger asChild>
+                                    <CloseButton size="sm" />
+                                </Dialog.CloseTrigger>
+                            </Dialog.Content>
+                        </Dialog.Positioner>
+                    </Portal>
+                </Dialog.Root>
             )}
         </DashboardLayout>
     );

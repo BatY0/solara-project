@@ -803,6 +803,7 @@
     "save_rule": "Save Rule",
     "cancel": "Cancel",
     "delete_rule_title": "Delete Rule",
+    "delete_rule_confirm_named": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
     "create_rule_title": "Create Rule",
     "edit_rule_title": "Edit Rule",
     "rule_name": "Rule Name",

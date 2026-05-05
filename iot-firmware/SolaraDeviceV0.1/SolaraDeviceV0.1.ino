@@ -13,9 +13,9 @@
 // ==========================================
 // --- 1. CONFIGURATION & CREDENTIALS ---
 // ==========================================
-const char* ssid         = "Bahase";
-const char* password     = "Cotanak-031.,";
-const char* mqtt_server  = "192.168.1.8"; 
+const char* ssid         = "Batuhan's S22";
+const char* password     = "gzdl9239";
+const char* mqtt_server  = "www.solaraapp.com.tr"; 
 const int   mqtt_port    = 1883;
 const char  apn[]        = "internet"; 
 
@@ -138,9 +138,10 @@ void setup() {
 
   // C. MODEM ACTIVATION SEQUENCE (T then AT)
   // Step 1: Hardware Toggle ("T" Command equivalent)
-  toggleModemPower(); 
+  //toggleModemPower(); 
 
   // Step 2: Software Handshake ("AT" Command equivalent)
+  /*
   Serial.println("[SIM800C] Sending AT via Library...");
   if (modem.restart()) { 
     Serial.println(" > Modem responded to AT. Initializing Software...");
@@ -160,7 +161,7 @@ void setup() {
   }
   
   // Power off to save battery before sleep
-  modem.poweroff();
+  modem.poweroff();*/
   Serial.println("[SIM800C] Modem powered down.");
 
   // D. MQTT INITIALIZATION

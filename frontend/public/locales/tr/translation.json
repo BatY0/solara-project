@@ -803,6 +803,7 @@
     "save_rule": "Kaydet",
     "cancel": "İptal",
     "delete_rule_title": "Kuralı Sil",
+    "delete_rule_confirm_named": "\"{{name}}\" kuralını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
     "create_rule_title": "Kural Oluştur",
     "edit_rule_title": "Kural Düzenle",
     "rule_name": "Kural Adı",
