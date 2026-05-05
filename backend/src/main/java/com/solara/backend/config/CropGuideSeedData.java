@@ -2,6 +2,7 @@ package com.solara.backend.config;
 
 import java.util.List;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ import com.solara.backend.repository.CropGuideTranslationRepository;
 import lombok.RequiredArgsConstructor;
 
 @Component
+@ConditionalOnProperty(name = "app.seed.crop-guides.enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class CropGuideSeedData implements CommandLineRunner {
 
@@ -650,7 +652,7 @@ public class CropGuideSeedData implements CommandLineRunner {
                         45.0, "Low", "Medium",
                         "Loam", 6.0, 6.8,
                         "Medium", "Medium", "High", 40.0, 80.0, 1.5, 8,
-                        "50-80 t/ha", "https://t4.ftcdn.net/jpg/04/73/73/37/360_F_473733756_rS9ps9Ko6RcIj2j7G5FVLei4NdL9717r.jpg"));
+                        "50-80 t/ha", "https://t0.gstatic.com/licensed-image?q=tbn:ANd9GcQSUQ-WfeFvV7yiIOJskuuflyrJTZV_cszyQcSmvdGeKZmc0oDuhFnPHtQzRinipgdI"));
 
         for (GuideSeed seed : seeds) {
             CropGuide guide = upsertBase(

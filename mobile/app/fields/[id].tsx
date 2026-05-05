@@ -4,9 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Slider from '@react-native-community/slider';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Thermometer, Droplet, Wind, CloudRain, Cpu, Link, Unlink, Wifi, Map as MapIcon, Trash2, BrainCircuit, Leaf, Settings, Activity, MessageCircle, Zap, LocateFixed, Download } from 'lucide-react-native';
+import { ArrowLeft, Thermometer, Droplet, Wind, CloudRain, Cpu, Link, Unlink, Wifi, Map as MapIcon, Trash2, BrainCircuit, Leaf, Settings, Activity, MessageCircle, Zap, LocateFixed, Download, Mountain } from 'lucide-react-native';
+import { Picker } from '@react-native-picker/picker';
 import MapView, { Polygon, PROVIDER_GOOGLE, type Region } from 'react-native-maps';
-import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import DateTimePicker, { type DateTimePickerChangeEvent } from '@react-native-community/datetimepicker';
 import { LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 
@@ -18,6 +19,7 @@ import MapSelector from '../../src/components/MapSelector';
 import axios from 'axios';
 import { normalizeCropName } from '../../src/utils/normalizeCropName';
 import { parseBackendUtcDate } from '../../src/utils/parseBackendUtcDate';
+import { SOIL_TYPES, normalizeFieldSoilType } from '../../src/constants/soilTypes';
 
 const toLocalISO = (date: Date): string => {
     const tzOffset = date.getTimezoneOffset() * 60000;
@@ -118,6 +120,7 @@ export default function FieldDetailsScreen() {
     // Properties Edit State
     const [isEditingProps, setIsEditingProps] = useState(false);
     const [editPropsForm, setEditPropsForm] = useState({
+        soilType: 'alluvial' as string,
         nitrogen: '',
         phosphorus: '',
         potassium: '',
@@ -127,6 +130,41 @@ export default function FieldDetailsScreen() {
     });
     const [isSavingProps, setIsSavingProps] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [isSoilPickerOpen, setIsSoilPickerOpen] = useState(false);
+
+    const contributionLabel = (feature: string): string =>
+        t(`fields.ai_features.${feature}`, feature);
+    const contributionUnit = (feature: string): string => {
+        if (feature === 'rainfall') return t('fields.units.rainfall', ' mm');
+        if (feature === 'temperature') return t('fields.units.temperature', '°C');
+        if (feature === 'humidity') return t('fields.units.humidity', '%');
+        if (feature === 'N' || feature === 'P' || feature === 'K') return t('fields.units.npk', ' mg/kg');
+        return '';
+    };
+    const formatContributionValue = (feature: string, value: number | undefined): string => {
+        if (value == null || Number.isNaN(value)) return t('fields.value_unknown', 'unknown');
+        if (feature === 'ph' || feature === 'temperature') return value.toFixed(1);
+        return value.toFixed(0);
+    };
+    const impactLabel = (score: number): string => {
+        if (score >= 3) return t('fields.impact_strong', 'has a strong positive impact');
+        if (score >= 1) return t('fields.impact_moderate', 'has a moderate positive impact');
+        return t('fields.impact_slight', 'slightly improves suitability');
+    };
+    const suitabilityLabel = (score: number): string => {
+        if (score >= 3) return t('fields.suitability_strong', 'is highly suitable for this crop');
+        if (score >= 1) return t('fields.suitability_moderate', 'is well suited for this crop');
+        return t('fields.suitability_slight', 'is somewhat suitable for this crop');
+    };
+    const contributionExplanation = (feature: string, rawValue: number | undefined, score: number): string => {
+        return t('fields.factor_explanation_detailed', {
+            feature: contributionLabel(feature),
+            value: formatContributionValue(feature, rawValue),
+            unit: contributionUnit(feature),
+            suitability: suitabilityLabel(score),
+            impact: impactLabel(score),
+        });
+    };
 
     useEffect(() => {
         if (!id) return;
@@ -316,6 +354,14 @@ export default function FieldDetailsScreen() {
         if (!id || !field) return;
         setIsSavingProps(true);
         try {
+            const soilType = normalizeFieldSoilType(editPropsForm.soilType);
+            const updatedField = await fieldsService.updateField(id, {
+                name: field.name,
+                location: field.location,
+                areaHa: field.areaHa,
+                soilType,
+            });
+            setField(updatedField);
             const updatedProps = await fieldsService.updateFieldProperties(id, {
                 name: field.name,
                 nitrogen: editPropsForm.nitrogen ? parseFloat(editPropsForm.nitrogen) : 52.6,
@@ -335,8 +381,10 @@ export default function FieldDetailsScreen() {
     };
 
     const openEditPropsModal = () => {
+        if (!field) return;
         const initialPh = properties?.ph || 6.44;
         setEditPropsForm({
+            soilType: normalizeFieldSoilType(field.soilType),
             nitrogen: properties?.nitrogen?.toString() || '',
             phosphorus: properties?.phosphorus?.toString() || '',
             potassium: properties?.potassium?.toString() || '',
@@ -346,6 +394,14 @@ export default function FieldDetailsScreen() {
         });
         setIsEditingProps(true);
     };
+
+    const soilTypeDisplayLabel = (key: string) => {
+        const soilKey = `add_field.${key}`;
+        const translated = t(soilKey);
+        return translated === soilKey ? key : translated;
+    };
+
+    const editModalSoilLabel = (s: string) => t(`add_field.${s}`);
 
     const handleRunAnalysis = async () => {
         if (!id) return;
@@ -383,7 +439,7 @@ export default function FieldDetailsScreen() {
         }
     };
 
-    const handleDateValueChange = (_event: DateTimePickerEvent, selectedDate: Date) => {
+    const handleDateValueChange = (_event: DateTimePickerChangeEvent, selectedDate: Date) => {
         if (Platform.OS === 'android') {
             setIsDatePickerVisible(false);
         }
@@ -631,6 +687,13 @@ export default function FieldDetailsScreen() {
                                 <Settings color="#6b7280" size={20} />
                             </TouchableOpacity>
                         </View>
+                        <View style={styles.soilSummaryRow}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                <Mountain color="#d97706" size={16} />
+                                <Text style={styles.dataLabel}>{t('add_field.soil_type')}</Text>
+                            </View>
+                            <Text style={styles.soilSummaryValue}>{soilTypeDisplayLabel(field.soilType)}</Text>
+                        </View>
                         <View style={styles.grid}>
                             <Box label={t('add_field.nitrogen')} value={properties.nitrogen != null ? Number(properties.nitrogen.toFixed(2)) : undefined} unit="mg/kg" icon={<Activity color="#10b981" size={24} />} />
                             <Box label={t('add_field.phosphorus')} value={properties.phosphorus != null ? Number(properties.phosphorus.toFixed(2)) : undefined} unit="mg/kg" icon={<Activity color="#3b82f6" size={24} />} />
@@ -871,6 +934,20 @@ export default function FieldDetailsScreen() {
                                         <View style={{ height: 6, backgroundColor: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
                                             <View style={{ height: '100%', backgroundColor: barColor, width: `${Math.min(probability, 100)}%` }} />
                                         </View>
+                                        {rec.contributions && rec.contributions.length > 0 && (
+                                            <View style={styles.contributionPanel}>
+                                                <Text style={styles.contributionHeading}>
+                                                    {t('fields.strongest_factors', 'Strongest factors')}
+                                                </Text>
+                                                {rec.contributions.map((item) => (
+                                                    <View key={`${rec.crop}-${item.feature}`} style={styles.contributionRow}>
+                                                        <Text style={styles.contributionFeature}>
+                                                            {contributionExplanation(item.feature, item.raw_value, item.score)}
+                                                        </Text>
+                                                    </View>
+                                                ))}
+                                            </View>
+                                        )}
                                     </TouchableOpacity>
                                 );
                             })}
@@ -1106,6 +1183,20 @@ export default function FieldDetailsScreen() {
                         <ScrollView style={{ maxHeight: 500 }} keyboardShouldPersistTaps="handled">
                             <Text style={[styles.subtext, { marginBottom: 16 }]}>{t('add_field.lab_alert', 'Leave fields empty to use automatic values.')}</Text>
                             <View style={{ gap: 12 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                                    <Mountain color="#d97706" size={16} />
+                                    <Text style={styles.inputLabel}>{t('add_field.soil_type')}</Text>
+                                </View>
+                                <View style={styles.soilPickerContainer}>
+                                    <TouchableOpacity
+                                        style={styles.dropdownTrigger}
+                                        onPress={() => setIsSoilPickerOpen(true)}
+                                    >
+                                        <Text style={styles.dropdownTriggerText}>
+                                            {editModalSoilLabel(editPropsForm.soilType)}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
                                 <Text style={styles.inputLabel}>{t('add_field.nitrogen')}</Text>
                                 <TextInput style={styles.input} keyboardType="decimal-pad" value={editPropsForm.nitrogen} onChangeText={(v) => setEditPropsForm(p => ({ ...p, nitrogen: v }))} placeholder={t('add_field.auto')} />
                                 
@@ -1172,6 +1263,45 @@ export default function FieldDetailsScreen() {
                     </View>
                 </View>
             </Modal>
+
+            {/* Soil Type Picker Modal */}
+            <Modal
+                visible={isSoilPickerOpen}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setIsSoilPickerOpen(false)}
+            >
+                <View style={styles.monthPickerOverlay}>
+                    <View style={styles.monthPickerCard}>
+                        <Text style={styles.monthPickerTitle}>
+                            {t('add_field.soil_type')}
+                        </Text>
+                        <ScrollView style={styles.monthPickerList}>
+                            {SOIL_TYPES.map((st) => {
+                                const isSelected = st === editPropsForm.soilType;
+
+                                return (
+                                    <TouchableOpacity
+                                        key={`soil-${st}`}
+                                        style={[styles.monthPickerItem, isSelected && styles.monthPickerItemActive]}
+                                        onPress={() => {
+                                            setEditPropsForm((p) => ({ ...p, soilType: st }));
+                                            setIsSoilPickerOpen(false);
+                                        }}
+                                    >
+                                        <Text style={[styles.monthPickerItemText, isSelected && styles.monthPickerItemTextActive]}>
+                                            {editModalSoilLabel(st)}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+                        <TouchableOpacity style={styles.monthPickerCloseBtn} onPress={() => setIsSoilPickerOpen(false)}>
+                            <Text style={styles.monthPickerCloseBtnText}>{t('common.cancel', 'Cancel')}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -1207,6 +1337,24 @@ const styles = StyleSheet.create({
     subtext: { fontSize: 14, color: theme.colors.neutral.subtext, marginBottom: 10 },
     emptyText: { paddingVertical: 20, textAlign: 'center', color: '#9ca3af', fontSize: 13 },
     grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+    soilSummaryRow: {
+        marginBottom: 14,
+        paddingBottom: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f3f4f6',
+        gap: 6,
+    },
+    soilSummaryValue: { fontSize: 16, fontWeight: '700', color: '#111827', marginTop: 2 },
+    soilPickerContainer: {
+        backgroundColor: '#F9FAFB',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        minHeight: 46,
+        marginBottom: 4,
+        overflow: 'hidden',
+    },
+    soilPicker: { height: 50, width: '100%' },
     dataBox: { flex: 1, minWidth: '45%', backgroundColor: '#f9fafb', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#e5e7eb' },
     dataLabel: { fontSize: 12, fontWeight: '600', color: '#6b7280' },
     dataValue: { fontSize: 22, fontWeight: 'bold', color: '#111827' },
@@ -1258,6 +1406,31 @@ const styles = StyleSheet.create({
     saveBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 6, backgroundColor: '#059669', flexDirection: 'row', alignItems: 'center' },
     saveBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
     recBox: { padding: 12, borderRadius: 12, borderWidth: 1 },
+    contributionPanel: {
+        marginTop: 10,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+        backgroundColor: '#ffffff',
+        padding: 10,
+        gap: 6,
+    },
+    contributionHeading: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#4b5563',
+    },
+    contributionRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: 10,
+    },
+    contributionFeature: {
+        flex: 1,
+        fontSize: 12,
+        color: '#374151',
+    },
     askAiButton: {
         backgroundColor: theme.colors.brand[600],
         borderRadius: 10,

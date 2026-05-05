@@ -383,6 +383,38 @@ export const FieldDetails = () => {
     const weatherSourceLabel = (s: string) => s === 'IOT' ? t('field_details.ai.source_iot') : s === 'WEATHER_LOG' ? t('field_details.ai.source_weather_log') : t('field_details.ai.source_climatology');
     const confidenceLabel = (c: 'green' | 'orange' | 'gray') => c === 'green' ? t('field_details.ai.confidence_high') : c === 'orange' ? t('field_details.ai.confidence_moderate') : t('field_details.ai.confidence_low');
     const cropLabel = (crop: string) => t(`crop_names.${normalizeCropName(crop)}`, { defaultValue: crop });
+    const contributionLabel = (feature: string) => t(`field_details.ai.features.${feature}`, { defaultValue: feature });
+    const contributionUnit = (feature: string) => {
+        if (feature === 'rainfall') return t('field_details.ai.units.rainfall');
+        if (feature === 'temperature') return t('field_details.ai.units.temperature');
+        if (feature === 'humidity') return t('field_details.ai.units.humidity');
+        if (feature === 'N' || feature === 'P' || feature === 'K') return t('field_details.ai.units.npk');
+        return '';
+    };
+    const formatContributionValue = (feature: string, value: number | undefined) => {
+        if (value == null || Number.isNaN(value)) return t('field_details.ai.value_unknown');
+        if (feature === 'ph' || feature === 'temperature') return value.toFixed(1);
+        return value.toFixed(0);
+    };
+    const impactLabel = (score: number) => {
+        if (score >= 3) return t('field_details.ai.impact_strong');
+        if (score >= 1) return t('field_details.ai.impact_moderate');
+        return t('field_details.ai.impact_slight');
+    };
+    const suitabilityLabel = (score: number) => {
+        if (score >= 3) return t('field_details.ai.suitability_strong');
+        if (score >= 1) return t('field_details.ai.suitability_moderate');
+        return t('field_details.ai.suitability_slight');
+    };
+    const contributionExplanation = (feature: string, rawValue: number | undefined, score: number) => {
+        return t('field_details.ai.factor_explanation_detailed', {
+            feature: contributionLabel(feature),
+            value: formatContributionValue(feature, rawValue),
+            unit: contributionUnit(feature),
+            suitability: suitabilityLabel(score),
+            impact: impactLabel(score),
+        });
+    };
 
     const deviceStatus = field ? getDeviceStatus(field, t) : null;
     const status: 'online' | 'paired' | 'inactive' | 'offline' =
@@ -861,6 +893,8 @@ export const FieldDetails = () => {
                     cropLabel={cropLabel}
                     scenarioBadgeColor={scenarioBadgeColor}
                     formatTimestamp={(timestamp) => parseBackendDate(timestamp).toLocaleString()}
+                    strongestFactorsLabel={t('field_details.ai.strongest_factors')}
+                    contributionExplanation={contributionExplanation}
                     onOpenAnalysis={() => setIsAnalysisModalOpen(true)}
                     onNavigateGuide={(crop) => navigate(`/guide/${toCropSlug(crop)}`)}
                 />

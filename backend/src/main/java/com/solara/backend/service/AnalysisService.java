@@ -34,6 +34,7 @@ public class AnalysisService {
 
     private static final Logger log = LoggerFactory.getLogger(AnalysisService.class);
     private static final double CONFIDENCE_THRESHOLD = 5.0;
+    private static final boolean INCLUDE_EXPLANATIONS = true;
 
     private final SensorLogsRepository sensorLogsRepository;
     private final WeatherLogRepository weatherLogRepository;
@@ -351,6 +352,7 @@ public class AnalysisService {
                 .humidity(humidity)
                 .rainfall(rainfall)
                 .topN(topN > 0 ? topN : 5)
+                .includeExplanation(INCLUDE_EXPLANATIONS)
                 .build();
     }
 

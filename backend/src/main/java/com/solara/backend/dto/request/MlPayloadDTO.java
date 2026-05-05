@@ -25,4 +25,7 @@ public class MlPayloadDTO {
 
     @JsonProperty("top_n")
     private int topN;
+
+    @JsonProperty("include_explanation")
+    private boolean includeExplanation;
 }

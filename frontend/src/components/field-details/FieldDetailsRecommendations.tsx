@@ -23,6 +23,8 @@ interface FieldDetailsRecommendationsProps {
     cropLabel: (crop: string) => string;
     scenarioBadgeColor: (scenario: string) => string;
     formatTimestamp: (timestamp: string) => string;
+    strongestFactorsLabel: string;
+    contributionExplanation: (feature: string, rawValue: number | undefined, score: number) => string;
     onOpenAnalysis: () => void;
     onNavigateGuide: (crop: string) => void;
 }
@@ -42,6 +44,8 @@ export function FieldDetailsRecommendations({
     cropLabel,
     scenarioBadgeColor,
     formatTimestamp,
+    strongestFactorsLabel,
+    contributionExplanation,
     onOpenAnalysis,
     onNavigateGuide,
 }: FieldDetailsRecommendationsProps) {
@@ -99,6 +103,18 @@ export function FieldDetailsRecommendations({
                                 <Box bg="gray.200" borderRadius="full" h="6px" overflow="hidden">
                                     <Box h="100%" borderRadius="full" bg={barColor} style={{ width: `${Math.min(rec.probability, 100).toFixed(1)}%`, transition: 'width 0.6s ease' }} />
                                 </Box>
+                                {rec.contributions && rec.contributions.length > 0 && (
+                                    <Box mt={3} p={3} borderRadius="md" bg="white" border="1px solid" borderColor="gray.200">
+                                        <Text fontSize="xs" color="gray.600" fontWeight="semibold" mb={1}>{strongestFactorsLabel}</Text>
+                                        <Flex gap={2} direction="column">
+                                            {rec.contributions.map((item) => (
+                                                <Text key={`${rec.crop}-${item.feature}`} fontSize="xs" color="gray.700" lineHeight="1.35">
+                                                    {contributionExplanation(item.feature, item.raw_value, item.score)}
+                                                </Text>
+                                            ))}
+                                        </Flex>
+                                    </Box>
+                                )}
                             </Box>
                         );
                     })}

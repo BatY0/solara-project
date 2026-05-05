@@ -20,11 +20,22 @@ class CropRecommendationRequest(BaseModel):
     ph: float = Field(..., description="Soil pH value")
     rainfall: float = Field(..., description="Rainfall in mm")
     top_n: Optional[int] = Field(5, ge=1, description="Number of top crops to return")
+    include_explanation: Optional[bool] = Field(
+        False,
+        description="Whether to include top feature contribution explanations",
+    )
+
+
+class CropContribution(BaseModel):
+    feature: str
+    score: float
+    raw_value: Optional[float] = None
 
 
 class CropRecommendation(BaseModel):
     crop: str
     probability: float
+    contributions: Optional[list[CropContribution]] = None
 
 
 class CropRecommendationResponse(BaseModel):
@@ -41,19 +52,26 @@ def _model_to_dict(model: BaseModel) -> dict:
 def recommend_crops(request: CropRecommendationRequest) -> CropRecommendationResponse:
     payload = _model_to_dict(request)
     top_n = payload.pop("top_n", None)
+    include_explanation = payload.pop("include_explanation", False)
     if top_n is None:
         top_n = 5
 
     try:
-        results = model_store.recommend(payload, top_n)
+        if include_explanation:
+            results = model_store.recommend_with_explanations(payload, top_n)
+        else:
+            results = model_store.recommend(payload, top_n)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
-    recommendations = [
-        CropRecommendation(crop=crop, probability=probability)
-        for crop, probability in results
-    ]
+    if include_explanation:
+        recommendations = [CropRecommendation(**result) for result in results]
+    else:
+        recommendations = [
+            CropRecommendation(crop=crop, probability=probability)
+            for crop, probability in results
+        ]
 
     return CropRecommendationResponse(recommendations=recommendations)

@@ -4,9 +4,11 @@ let refreshPromise: Promise<void> | null = null;
 let isRedirectingToLogin = false;
 let authRecoveryDisabled = false;
 
+const PUBLIC_AUTH_ROUTES = new Set(['/', '/login', '/register', '/verify-email']);
+
 const redirectToLogin = () => {
   if (isRedirectingToLogin) return;
-  if (window.location.pathname === '/login') return;
+  if (PUBLIC_AUTH_ROUTES.has(window.location.pathname)) return;
   isRedirectingToLogin = true;
   window.location.href = '/login';
 };
@@ -41,11 +43,15 @@ api.interceptors.response.use(
       requestUrl.includes('/auth/register') ||
       requestUrl.includes('/auth/refresh') ||
       requestUrl.includes('/auth/logout');
+    const isBootstrapMeRoute = requestUrl.includes('/users/me');
     if (isAuthFailure && isAuthOptional) {
       return Promise.reject(error);
     }
 
     if (isAuthFailure && authRecoveryDisabled && !isAuthRoute) {
+      if (isBootstrapMeRoute) {
+        return Promise.reject(error);
+      }
       redirectToLogin();
       return Promise.reject(error);
     }
@@ -65,6 +71,9 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch {
         authRecoveryDisabled = true;
+        if (isBootstrapMeRoute) {
+          return Promise.reject(error);
+        }
         redirectToLogin();
         return Promise.reject(error);
       }

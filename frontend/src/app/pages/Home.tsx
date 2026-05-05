@@ -61,9 +61,6 @@ export const Home = () => {
               <Link asChild variant="plain" fontWeight="medium" color="neutral.text" _hover={{ color: "brand.500" }}>
                 <a href="#how-it-works">{t('navbar.method')}</a>
               </Link>
-              <Link asChild variant="plain" fontWeight="medium" color="neutral.text" _hover={{ color: "brand.500" }}>
-                <a href="#project-scope">{t('navbar.scope')}</a>
-              </Link>
             </HStack>
 
             {/* Buttons */}
@@ -464,51 +461,6 @@ export const Home = () => {
               </Box>
             </Box>
           </SimpleGrid>
-        </Container>
-      </Box>
-
-      {/* PROJECT INFO / RESEARCH AREA */}
-      <Box id="project-scope" py={20}>
-        <Container maxW="container.lg" px={{ base: 4, md: 8 }}>
-          <Box
-            bg="brand.500"
-            borderRadius="3xl"
-            p={{ base: 8, md: 12 }}
-            textAlign="center"
-            position="relative"
-            overflow="hidden"
-            shadow="2xl"
-            shadowColor="green.900/30"
-          >
-            {/* Decorative Circles */}
-            <Box position="absolute" top={0} left={0} ml={-10} mt={-10} w={40} h={40} bg="white" opacity={0.1} borderRadius="full" />
-            <Box position="absolute" bottom={0} right={0} mr={-10} mb={-10} w={40} h={40} bg="accent.500" opacity={0.2} borderRadius="full" />
-
-            <Heading size={{ base: "3xl", md: "5xl" }} fontWeight="bold" color="white" mb={6}>
-              {t('research.title')}
-            </Heading>
-            <Text color="brand.100" fontSize="lg" mb={10} maxW="2xl" mx="auto">
-              {t('research.desc')}
-            </Text>
-
-            <Flex justify="center">
-              <Button
-                asChild
-                bg="white"
-                color="brand.500"
-                px={8}
-                py={6}
-                borderRadius="xl"
-                fontWeight="bold"
-                _hover={{ bg: "brand.50" }}
-                shadow="lg"
-              >
-                <a href="#">
-                  {t('research.cta')}
-                </a>
-              </Button>
-            </Flex>
-          </Box>
         </Container>
       </Box>
 

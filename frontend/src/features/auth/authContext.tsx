@@ -9,7 +9,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const fetchCurrentUser = useCallback(async () => {
-    const response = await api.get<User>('/users/me', { _authOptional: true } as any);
+    const response = await api.get<User>('/users/me');
     setUser(response.data);
     if (response.data?.preferredLanguage) {
       localStorage.setItem('i18nextLng', response.data.preferredLanguage);
