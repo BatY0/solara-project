@@ -49,7 +49,7 @@ public class AlertEvaluationService {
 
                 if (isBreaching) {
                     if (openEventOpt.isEmpty()) {
-                        // First time breach - open a new event (in-app notification started, email delayed)
+                        // First time breach - start tracking
                         AlertEvent event = AlertEvent.builder()
                                 .ruleId(rule.getId())
                                 .fieldId(logEntry.getFieldId())
@@ -58,15 +58,25 @@ public class AlertEvaluationService {
                                 .threshold(rule.getThreshold())
                                 .lastValue(value)
                                 .triggeredAt(LocalDateTime.now())
-                                .read(false) // Unread in-app
+                                .read(rule.getDurationMinutes() > 0) // Unread in-app only if duration is 0
                                 .build();
                         
                         alertEventRepository.save(event);
-                        String fieldName = fieldRepository.findById(logEntry.getFieldId())
-                                .map(field -> field.getName())
-                                .orElse("Field");
-                        pushNotificationService.sendAlertTriggeredPush(rule.getUserId(), fieldName, event);
-                        log.info("[Alerts] Rule breached, event started: rule={}, field={}", rule.getId(), rule.getFieldId());
+                        
+                        if (rule.getDurationMinutes() <= 0) {
+                            String fieldName = fieldRepository.findById(logEntry.getFieldId())
+                                    .map(field -> field.getName())
+                                    .orElse("Field");
+                            pushNotificationService.sendAlertTriggeredPush(rule.getUserId(), fieldName, event);
+                            if (rule.isNotifyEmail()) {
+                                sendAlertEmail(rule, event, value);
+                            }
+                            event.setNotifiedAt(LocalDateTime.now());
+                            alertEventRepository.save(event);
+                            log.info("[Alerts] Rule breached instantly, event started: rule={}, field={}", rule.getId(), rule.getFieldId());
+                        } else {
+                            log.info("[Alerts] Rule breached, tracking started (duration {} min): rule={}, field={}", rule.getDurationMinutes(), rule.getId(), rule.getFieldId());
+                        }
                     } else {
                         // Ongoing breach
                         AlertEvent event = openEventOpt.get();
@@ -75,19 +85,19 @@ public class AlertEvaluationService {
                         long minsSinceBreach = ChronoUnit.MINUTES.between(event.getTriggeredAt(), LocalDateTime.now());
                         
                         if (minsSinceBreach >= rule.getDurationMinutes() && event.getNotifiedAt() == null) {
-                            // Duration elapsed -> fire email notification
+                            // Duration elapsed -> fire notifications
+                            String fieldName = fieldRepository.findById(logEntry.getFieldId())
+                                    .map(field -> field.getName())
+                                    .orElse("Field");
+                            pushNotificationService.sendAlertTriggeredPush(rule.getUserId(), fieldName, event);
+                            
                             if (rule.isNotifyEmail()) {
                                 sendAlertEmail(rule, event, value);
                             }
                             event.setNotifiedAt(LocalDateTime.now());
+                            event.setRead(false); // Make it unread in-app now
                             log.info("[Alerts] Rule breached duration elapsed, notification fired: rule={}, field={}", rule.getId(), rule.getFieldId());
                         }
-                        
-                        // We also set read to false again if the breach is still ongoing and a new reading hits
-                        // But normally a notification once sent should stay however the user left it.
-                        // We'll leave `read` alone here so if they dismiss it while ongoing, it stays dismissed.
-                        // Or we could pop it up again by setting read=false if they dismissed it before duration elapsed?
-                        // Let's keep it simple: `read` was set to false at triggeredAt.
                         
                         alertEventRepository.save(event);
                     }
