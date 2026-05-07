@@ -22,7 +22,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             webSocketFactory: () => {
                 const baseURL = import.meta.env.VITE_API_URL 
                     ? import.meta.env.VITE_API_URL.replace('/api/v1', '') 
-                    : 'http://localhost:8080';
+                    : '';
                 return new SockJS(`${baseURL}/ws`);
             },
             reconnectDelay: 5000,
