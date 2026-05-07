@@ -1,7 +1,7 @@
 # Solara Project ☀️
 
 > **Our senior design project for university.**
-> > 🌐 **Live Website:** [solarapp.com.tr](https://solarapp.com.tr)
+> > 🌐 **Live Website:** [solaraapp.com.tr](https://solaraapp.com.tr)
 
 Solara is a comprehensive system featuring an IoT hardware component, machine learning analytics, a web frontend, a mobile application, and an interactive chatbot. This repository contains the complete source code, deployment configurations, and presentation materials for our senior design project.
 
