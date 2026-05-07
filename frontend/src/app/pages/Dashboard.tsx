@@ -27,10 +27,11 @@ export const Dashboard = () => {
 
   const fetchDashboardData = useCallback(async () => {
     try {
-      const [fieldsData, alertsData] = await Promise.all([
-        fieldsService.getUserFields(),
-        alertsService.getUnreadNotifications()
-      ])
+        const [fieldsData] = await Promise.all([
+          fieldsService.getUserFields(),
+          // alertsService.getUnreadNotifications() // testing websocket
+        ])
+        const alertsData: AlertEvent[] = [];
       
       // Sort: paired (online-capable) fields first
       const sorted = [...fieldsData].sort((a, b) => {

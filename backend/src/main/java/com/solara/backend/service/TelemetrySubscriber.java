@@ -38,6 +38,7 @@ public class TelemetrySubscriber {
     private final EspDeviceRepository espDeviceRepository;
     private final ObjectMapper objectMapper;
     private final AlertEvaluationService alertEvaluationService;
+    private final org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
 
     /**
      * The @ServiceActivator annotation wires this method to the mqttInputChannel bean.
@@ -117,6 +118,7 @@ public class TelemetrySubscriber {
                     .locationLongitude(locationLongitude)
                     .locationAccuracy(locationAccuracy)
                     .errors(errorsStr)
+                    .timestamp(LocalDateTime.now(ZoneOffset.UTC))
                     .build();
 
             sensorLogsRepository.save(logEntry);
@@ -128,6 +130,10 @@ public class TelemetrySubscriber {
             EspDevice espDevice = field.getEspDevice();
             espDevice.setLastSeenAt(LocalDateTime.now(ZoneOffset.UTC));
             espDeviceRepository.save(espDevice);
+            
+            // Broadcast live telemetry via WebSocket STOMP to connected clients
+            com.solara.backend.dto.response.SensorResponse responseDto = new com.solara.backend.dto.response.SensorResponse(logEntry);
+            messagingTemplate.convertAndSend("/topic/field." + fieldId.toString() + ".telemetry", responseDto);
             
             log.info("Saved telemetry from device='{}' for field='{}'", deviceId, fieldId);
 

@@ -4,6 +4,8 @@ import { Menu, Bell } from "lucide-react"
 import { Sidebar } from "./Sidebar"
 import { useNavigate } from "react-router-dom"
 import { alertsService } from "../../features/alerts/alerts.service"
+import { useAuth } from "../../features/auth/useAuth"
+import { useNotificationsSocket } from "../../hooks/useNotificationsSocket"
 
 interface DashboardLayoutProps {
     children: React.ReactNode
@@ -17,6 +19,9 @@ export const DashboardLayout = ({ children, title, subtitle, actions }: Dashboar
     const [unreadCount, setUnreadCount] = useState(0)
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
+    const { user } = useAuth()
+    const { latestAlert } = useNotificationsSocket(user?.id)
+
     useEffect(() => {
         const fetchCount = async () => {
             try {
@@ -27,17 +32,22 @@ export const DashboardLayout = ({ children, title, subtitle, actions }: Dashboar
             }
         }
         
-        fetchCount(); // initial fetch
-        const interval = setInterval(fetchCount, 60000); // Poll every 60s
+        // fetchCount(); // initial fetch removed for testing WebSocket only
         
         const handleRefresh = () => fetchCount();
         window.addEventListener('notificationsRead', handleRefresh);
         
         return () => {
-            clearInterval(interval);
             window.removeEventListener('notificationsRead', handleRefresh);
         }
     }, []);
+
+    // Increment badge when a new alert comes in via WebSocket
+    useEffect(() => {
+        if (latestAlert && !latestAlert.read) {
+            setUnreadCount(prev => prev + 1);
+        }
+    }, [latestAlert]);
 
     return (
         <Flex h="100vh" bg="neutral.canvas" fontFamily="body" color="neutral.text" overflow="hidden">

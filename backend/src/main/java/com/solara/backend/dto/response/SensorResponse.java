@@ -25,9 +25,14 @@ public class SensorResponse {
     private Double locationLongitude;
     private Double locationAccuracy;
     private String errors;
+    @com.fasterxml.jackson.annotation.JsonProperty("recordedAt")
+    @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
+    private java.time.LocalDateTime recordedAt;
 
     public SensorResponse(SensorLogs sensorLogs) {
         this.fieldId = sensorLogs.getFieldId();
+        this.recordedAt = sensorLogs.getTimestamp() != null ? sensorLogs.getTimestamp()
+                : java.time.LocalDateTime.now(java.time.ZoneOffset.UTC);
         this.ambientTemp = sensorLogs.getAmbientTemp();
         this.ambientHumidity = sensorLogs.getAmbientHumidity();
         this.soilTemp = sensorLogs.getSoilTemp();

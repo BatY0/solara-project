@@ -98,10 +98,7 @@ export default function AlertsScreen() {
     useFocusEffect(
         useCallback(() => {
             void fetchData(true);
-            const interval = setInterval(() => {
-                void fetchData(true);
-            }, 60000);
-            return () => clearInterval(interval);
+            return () => {};
         }, [fetchData])
     );
 

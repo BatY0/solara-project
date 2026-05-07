@@ -44,7 +44,8 @@ public class SensorLogsService {
     @Builder
     @NoArgsConstructor
     public static class AggregateLog {
-        private OffsetDateTime period;
+        @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+        private java.time.OffsetDateTime period;
         private Double avgAmbientTemp;
         private Double avgSoilTemp;
         private Double avgAmbientHumidity;

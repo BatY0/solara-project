@@ -70,7 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     await logout();
                     return;
                 }
-                console.error('Failed to fetch user profile, falling back to token sub', err);
+                console.warn('Network error or other issue fetching profile, NOT logging out');
                 setUser({ email: payload.sub });
             }
         } catch (error) {

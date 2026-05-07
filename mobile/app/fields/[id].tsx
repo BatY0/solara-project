@@ -20,6 +20,7 @@ import axios from 'axios';
 import { normalizeCropName } from '../../src/utils/normalizeCropName';
 import { parseBackendUtcDate } from '../../src/utils/parseBackendUtcDate';
 import { SOIL_TYPES, normalizeFieldSoilType } from '../../src/constants/soilTypes';
+import { useFieldTelemetrySocket } from '../../src/hooks/useFieldTelemetrySocket';
 
 const toLocalISO = (date: Date): string => {
     const tzOffset = date.getTimezoneOffset() * 60000;
@@ -58,6 +59,14 @@ export default function FieldDetailsScreen() {
     const [weather, setWeather] = useState<WeatherData | null>(null);
     const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+
+    const { liveReading, isConnected } = useFieldTelemetrySocket(id || '');
+
+    useEffect(() => {
+        if (liveReading) {
+            setTelemetry(liveReading);
+        }
+    }, [liveReading]);
 
     // Historical Telemetry State
     const [history, setHistory] = useState<HistoricalSensorData[]>([]);
@@ -190,8 +199,8 @@ export default function FieldDetailsScreen() {
         };
         fetchData();
         // Poll every 30s
-        const intervalId = setInterval(fetchData, 30000);
-        return () => clearInterval(intervalId);
+        fetchData();
+        return () => {};
     }, [id]);
 
     // Fetch historical data whenever timeframe changes
@@ -706,8 +715,16 @@ export default function FieldDetailsScreen() {
                 {/* TELEMETRY SECTION */}
                 <View style={[styles.card, { marginTop: 16 }]}>
                     <View style={styles.cardHeader}>
-                        <Wifi color="#059669" size={20} />
-                        <Text style={styles.cardTitle}>{t('fields.telemetry')}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <Wifi color="#059669" size={20} />
+                            <Text style={styles.cardTitle}>{t('fields.telemetry')}</Text>
+                        </View>
+                        {isConnected && (
+                            <View style={{ backgroundColor: '#ecfdf5', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#10b981' }} />
+                                <Text style={{ color: '#047857', fontSize: 10, fontWeight: 'bold' }}>Live</Text>
+                            </View>
+                        )}
                     </View>
 
                     {!telemetry ? (
