@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Sprout, MapPin, Zap, Plus, LogOut, ChevronRight, Wifi, WifiOff, Bell } from 'lucide-react-native';
+import { Sprout, MapPin, Zap, Plus, LogOut, ChevronRight, Wifi, WifiOff } from 'lucide-react-native';
 
 import { useAuth } from '../../src/context/AuthContext';
 import { theme } from '../../src/theme/theme';
@@ -177,9 +177,6 @@ export default function DashboardScreen() {
                     <Text style={styles.brandText}>Solara</Text>
                 </View>
                 <View style={styles.headerActions}>
-                    <TouchableOpacity style={styles.headerIcon} onPress={() => router.push({ pathname: '/(tabs)/alerts', params: { tab: 'history' } })}>
-                        <Bell color={theme.colors.neutral.subtext} size={20} />
-                    </TouchableOpacity>
                     <TouchableOpacity style={styles.headerIcon} onPress={handleLogout}>
                         <LogOut color={theme.colors.chart.danger} size={20} />
                     </TouchableOpacity>

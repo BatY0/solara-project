@@ -20,7 +20,6 @@ export default function TabsLayout() {
             }
         };
         void fetchUnreadCount();
-        void fetchUnreadCount();
 
         let appState: AppStateStatus = AppState.currentState;
         const sub = AppState.addEventListener('change', (nextState) => {

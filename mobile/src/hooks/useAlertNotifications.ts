@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { AppState, type AppStateStatus, DeviceEventEmitter } from 'react-native';
 import { alertsService } from '../services/alertsService';
-import { setBadgeCount } from '../services/notificationsService';
+import { setBadgeCount, scheduleAlertNotification } from '../services/notificationsService';
 
 import { useWebSocket } from '../context/WebSocketContext';
 import { useAuth } from '../context/AuthContext';
@@ -24,9 +24,15 @@ export function useAlertNotifications(enabled: boolean): void {
 
             for (const event of newlySeen) {
                 notifiedEventIdsRef.current.add(event.id);
+                // Schedule local notification for new alerts
+                void scheduleAlertNotification(event);
             }
 
+            // Update OS-level app icon badge
             await setBadgeCount(unreadEvents.length);
+            
+            // Update in-app UI badge (the "bell" icon in TabsLayout)
+            DeviceEventEmitter.emit('alerts:updated', unreadEvents.length);
         } catch (error) {
             console.error('Unread notifications polling failed:', error);
         }
