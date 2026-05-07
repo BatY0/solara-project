@@ -32,6 +32,7 @@ public class AlertEvaluationService {
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final PushNotificationService pushNotificationService;
+    private final org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
 
     @Transactional
     public void evaluate(SensorLogs logEntry) {
@@ -62,17 +63,25 @@ public class AlertEvaluationService {
                                 .build();
                         
                         alertEventRepository.save(event);
+                        String fieldName = fieldRepository.findById(logEntry.getFieldId())
+                                .map(field -> field.getName())
+                                .orElse("Field");
+                        com.solara.backend.dto.response.AlertEventDTO createdDto =
+                                new com.solara.backend.dto.response.AlertEventDTO(event, fieldName);
+                        messagingTemplate.convertAndSend("/topic/user." + rule.getUserId().toString() + ".alerts", createdDto);
                         
                         if (rule.getDurationMinutes() <= 0) {
-                            String fieldName = fieldRepository.findById(logEntry.getFieldId())
-                                    .map(field -> field.getName())
-                                    .orElse("Field");
                             pushNotificationService.sendAlertTriggeredPush(rule.getUserId(), fieldName, event);
                             if (rule.isNotifyEmail()) {
                                 sendAlertEmail(rule, event, value);
                             }
                             event.setNotifiedAt(LocalDateTime.now());
                             alertEventRepository.save(event);
+                            
+                            // Broadcast the new alert via WebSocket
+                            com.solara.backend.dto.response.AlertEventDTO dto = new com.solara.backend.dto.response.AlertEventDTO(event, fieldName);
+                            messagingTemplate.convertAndSend("/topic/user." + rule.getUserId().toString() + ".alerts", dto);
+
                             log.info("[Alerts] Rule breached instantly, event started: rule={}, field={}", rule.getId(), rule.getFieldId());
                         } else {
                             log.info("[Alerts] Rule breached, tracking started (duration {} min): rule={}, field={}", rule.getDurationMinutes(), rule.getId(), rule.getFieldId());
@@ -96,6 +105,11 @@ public class AlertEvaluationService {
                             }
                             event.setNotifiedAt(LocalDateTime.now());
                             event.setRead(false); // Make it unread in-app now
+                            
+                            // Broadcast the new alert via WebSocket
+                            com.solara.backend.dto.response.AlertEventDTO dto = new com.solara.backend.dto.response.AlertEventDTO(event, fieldName);
+                            messagingTemplate.convertAndSend("/topic/user." + rule.getUserId().toString() + ".alerts", dto);
+
                             log.info("[Alerts] Rule breached duration elapsed, notification fired: rule={}, field={}", rule.getId(), rule.getFieldId());
                         }
                         
@@ -108,6 +122,12 @@ public class AlertEvaluationService {
                         event.setResolvedAt(LocalDateTime.now());
                         event.setLastValue(value);
                         alertEventRepository.save(event);
+                        String fieldName = fieldRepository.findById(logEntry.getFieldId())
+                                .map(field -> field.getName())
+                                .orElse("Field");
+                        com.solara.backend.dto.response.AlertEventDTO resolvedDto =
+                                new com.solara.backend.dto.response.AlertEventDTO(event, fieldName);
+                        messagingTemplate.convertAndSend("/topic/user." + rule.getUserId().toString() + ".alerts", resolvedDto);
                         log.info("[Alerts] Rule resolved: rule={}, field={}", rule.getId(), rule.getFieldId());
                     }
                 }

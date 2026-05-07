@@ -9,11 +9,12 @@ import {
     RefreshControl,
     Alert,
     Linking,
+    DeviceEventEmitter,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Sprout, MapPin, Zap, Plus, LogOut, ChevronRight, Wifi, WifiOff, Bell } from 'lucide-react-native';
+import { Sprout, MapPin, Zap, Plus, LogOut, ChevronRight, Wifi, WifiOff } from 'lucide-react-native';
 
 import { useAuth } from '../../src/context/AuthContext';
 import { theme } from '../../src/theme/theme';
@@ -24,6 +25,8 @@ import { getDeviceStatus } from '../../src/utils/deviceStatus';
 import { alertsService } from '../../src/services/alertsService';
 import type { AlertEvent } from '../../src/types/alerts';
 import { useFocusEffect } from '@react-navigation/native';
+
+const isActionableAlert = (event: AlertEvent) => event.active && !!event.notifiedAt;
 
 export default function DashboardScreen() {
     const { user, logout } = useAuth();
@@ -57,9 +60,12 @@ export default function DashboardScreen() {
 
     const fetchLatestAlert = useCallback(async () => {
         try {
-            const unreadEvents = await alertsService.getUnreadNotifications();
-            if (unreadEvents.length > 0) {
-                setLatestAlert(unreadEvents[0]);
+            const events = await alertsService.getEventHistory();
+            const activeEvents = events
+                .filter(isActionableAlert)
+                .sort((a, b) => new Date(b.triggeredAt).getTime() - new Date(a.triggeredAt).getTime());
+            if (activeEvents.length > 0) {
+                setLatestAlert(activeEvents[0]);
             } else {
                 setLatestAlert(null);
             }
@@ -73,6 +79,27 @@ export default function DashboardScreen() {
             fetchLatestAlert();
         }, [fetchLatestAlert])
     );
+
+    useEffect(() => {
+        const realtimeSub = DeviceEventEmitter.addListener('alerts:realtime', (event?: AlertEvent) => {
+            if (!event) return;
+
+            if (isActionableAlert(event)) {
+                setLatestAlert(prev => {
+                    if (!prev) return event;
+                    const prevTime = new Date(prev.triggeredAt).getTime();
+                    const nextTime = new Date(event.triggeredAt).getTime();
+                    return nextTime >= prevTime ? event : prev;
+                });
+                return;
+            }
+
+            // Active event resolved: refetch to find the next newest active breach.
+            void fetchLatestAlert();
+        });
+
+        return () => realtimeSub.remove();
+    }, [fetchLatestAlert]);
 
     const handleLogout = () => {
         Alert.alert(
@@ -150,9 +177,6 @@ export default function DashboardScreen() {
                     <Text style={styles.brandText}>Solara</Text>
                 </View>
                 <View style={styles.headerActions}>
-                    <TouchableOpacity style={styles.headerIcon} onPress={() => router.push({ pathname: '/(tabs)/alerts', params: { tab: 'history' } })}>
-                        <Bell color={theme.colors.neutral.subtext} size={20} />
-                    </TouchableOpacity>
                     <TouchableOpacity style={styles.headerIcon} onPress={handleLogout}>
                         <LogOut color={theme.colors.chart.danger} size={20} />
                     </TouchableOpacity>

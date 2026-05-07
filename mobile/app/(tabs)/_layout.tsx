@@ -20,9 +20,6 @@ export default function TabsLayout() {
             }
         };
         void fetchUnreadCount();
-        const interval = setInterval(() => {
-            void fetchUnreadCount();
-        }, 60000);
 
         let appState: AppStateStatus = AppState.currentState;
         const sub = AppState.addEventListener('change', (nextState) => {
@@ -41,7 +38,6 @@ export default function TabsLayout() {
         });
 
         return () => {
-            clearInterval(interval);
             sub.remove();
             alertSub.remove();
         };

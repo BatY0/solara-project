@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
+import { WebSocketProvider } from '../src/context/WebSocketContext';
 import * as SplashScreen from 'expo-splash-screen';
 import {
     useFonts,
@@ -87,7 +88,9 @@ function RootLayoutNav() {
 export default function RootLayout() {
     return (
         <AuthProvider>
-            <RootLayoutNav />
+            <WebSocketProvider>
+                <RootLayoutNav />
+            </WebSocketProvider>
         </AuthProvider>
     );
 }

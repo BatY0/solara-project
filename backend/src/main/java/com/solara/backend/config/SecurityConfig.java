@@ -64,7 +64,9 @@ public class SecurityConfig {
                         "/api/v1/auth/**",
                         "/api/v1/crop-guides/get-all-guides",
                         "/api/v1/crop-guides/get-guide/**",
-                        "/api/v1/crop-guides/names-and-ids"
+                        "/api/v1/crop-guides/names-and-ids",
+                        "/ws/**",
+                        "/ws-native/**"
                     ).permitAll()
 
                     .anyRequest().authenticated()
@@ -110,6 +112,20 @@ public class SecurityConfig {
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
+
+        CorsConfiguration wsConfiguration = new CorsConfiguration();
+        wsConfiguration.setAllowedOriginPatterns(List.of("*"));
+        wsConfiguration.setAllowedMethods(Arrays.asList("GET", "POST", "OPTIONS"));
+        wsConfiguration.setAllowedHeaders(Arrays.asList("*"));
+        source.registerCorsConfiguration("/ws/**", wsConfiguration);
+        
+        CorsConfiguration wsNativeConfig = new CorsConfiguration();
+        wsNativeConfig.setAllowedOriginPatterns(List.of("*"));
+        wsNativeConfig.setAllowedMethods(Arrays.asList("GET", "POST", "OPTIONS"));
+        wsNativeConfig.setAllowedHeaders(Arrays.asList("*"));
+        wsNativeConfig.setAllowCredentials(false); // Mobile doesn't need this
+        source.registerCorsConfiguration("/ws-native/**", wsNativeConfig);
+
         return source;
     }
 }

@@ -13,6 +13,7 @@ import {
     AreaChart as RechartsAreaChart, Legend
 } from "recharts"
 import { DashboardLayout } from "../../components/layout/DashboardLayout"
+import { useFieldTelemetrySocket } from "../../hooks/useFieldTelemetrySocket"
 import { fieldsService } from "../../features/fields/fields.service"
 import type { UpdateFieldRequest } from "../../features/fields/fields.service"
 import { normalizeCropName, toCropSlug } from "../../features/crop-guides/normalizeCropName"
@@ -120,6 +121,55 @@ export const FieldDetails = () => {
     const [weather, setWeather] = useState<WeatherData | null>(null)
     const [history, setHistory] = useState<HistoricalSensorData[]>([])
     const [timeframe, setTimeframe] = useState<'today' | 7 | 14 | 30>(7)
+
+    const { liveReading, isConnected } = useFieldTelemetrySocket(id || '')
+
+    useEffect(() => {
+        if (liveReading) {
+            setTelemetry(liveReading)
+            setField(prev => prev ? { ...prev, deviceLastSeenAt: liveReading.recordedAt } : prev)
+            
+            setHistory(prev => {
+                const recordedAt = liveReading.recordedAt || new Date().toISOString();
+                
+                if (timeframe === 'today') {
+                    const newEntry: HistoricalSensorData = {
+                        period: recordedAt,
+                        avgAmbientTemp: liveReading.ambientTemp || 0,
+                        avgSoilTemp: liveReading.soilTemp || 0,
+                        avgAmbientHumidity: liveReading.ambientHumidity || 0,
+                        avgSoilHumidity: liveReading.soilHumidity || 0,
+                    };
+                    const newHistory = [...prev, newEntry];
+                    return newHistory.length > 50 ? newHistory.slice(newHistory.length - 50) : newHistory;
+                } else {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    const lastEntry = prev.length > 0 ? prev[prev.length - 1] : null;
+                    
+                    if (lastEntry && lastEntry.period.startsWith(todayStr)) {
+                        const updated = [...prev];
+                        updated[updated.length - 1] = {
+                            ...lastEntry,
+                            avgAmbientTemp: liveReading.ambientTemp || lastEntry.avgAmbientTemp,
+                            avgSoilTemp: liveReading.soilTemp || lastEntry.avgSoilTemp,
+                            avgAmbientHumidity: liveReading.ambientHumidity || lastEntry.avgAmbientHumidity,
+                            avgSoilHumidity: liveReading.soilHumidity || lastEntry.avgSoilHumidity,
+                        };
+                        return updated;
+                    } else {
+                        const newEntry: HistoricalSensorData = {
+                            period: recordedAt,
+                            avgAmbientTemp: liveReading.ambientTemp || 0,
+                            avgSoilTemp: liveReading.soilTemp || 0,
+                            avgAmbientHumidity: liveReading.ambientHumidity || 0,
+                            avgSoilHumidity: liveReading.soilHumidity || 0,
+                        };
+                        return [...prev, newEntry];
+                    }
+                }
+            });
+        }
+    }, [liveReading, timeframe])
 
     /* ── Graph Toggles ── */
     const [visibleMetrics, setVisibleMetrics] = useState({
@@ -795,6 +845,12 @@ export const FieldDetails = () => {
                 <Box mb={6}>
                     <Flex align="center" gap={3} mb={4}>
                         <Text fontSize="lg" fontWeight="bold" color="gray.800">{t('field_details.live_telemetry')}</Text>
+                        {isConnected && (
+                            <Flex px={2} py={0.5} borderRadius="md" bg="green.50" color="green.700" align="center" gap={1.5} fontSize="xs" fontWeight="bold">
+                                <Circle size={1.5} bg="green.500" animation="pulse 2s infinite" />
+                                Live
+                            </Flex>
+                        )}
                         {deviceStatus?.timeAgo && (
                             <Text fontSize="sm" color="gray.500" fontWeight="medium">
                                 ({t('field_details.updated', { timeAgo: deviceStatus?.timeAgo })})
@@ -865,10 +921,10 @@ export const FieldDetails = () => {
                                     }}
                                 />
                                 <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '12px' }} />
-                                {visibleMetrics.soilHumidity && <Area yAxisId="moisture" connectNulls type="monotone" dataKey="avgSoilHumidity" name={t('field_details.moisture_pct')} stroke="#3182CE" strokeWidth={2.5} fill="url(#gradMoisture)" dot={false} activeDot={{ r: 5 }} />}
-                                {visibleMetrics.ambientHumidity && <Area yAxisId="moisture" connectNulls type="monotone" dataKey="avgAmbientHumidity" name={t('field_details.ambient_humidity')} stroke="#805AD5" strokeWidth={2.5} fill="url(#gradAmbHum)" dot={false} activeDot={{ r: 5 }} />}
-                                {visibleMetrics.soilTemp && <Area yAxisId="temp" connectNulls type="monotone" dataKey="avgSoilTemp" name={t('field_details.temp_c')} stroke="#DD6B20" strokeWidth={2.5} fill="url(#gradTemp)" dot={false} activeDot={{ r: 5 }} />}
-                                {visibleMetrics.ambientTemp && <Area yAxisId="temp" connectNulls type="monotone" dataKey="avgAmbientTemp" name={t('field_details.ambient_temp')} stroke="#38A169" strokeWidth={2.5} fill="url(#gradAmbTemp)" dot={false} activeDot={{ r: 5 }} />}
+                                {visibleMetrics.soilHumidity && <Area yAxisId="moisture" connectNulls type="monotone" dataKey="avgSoilHumidity" name={t('field_details.moisture_pct')} stroke="#3182CE" strokeWidth={2.5} fill="url(#gradMoisture)" dot={chartData.length === 1 ? { r: 4, strokeWidth: 2 } : false} activeDot={{ r: 5 }} />}
+                                {visibleMetrics.ambientHumidity && <Area yAxisId="moisture" connectNulls type="monotone" dataKey="avgAmbientHumidity" name={t('field_details.ambient_humidity')} stroke="#805AD5" strokeWidth={2.5} fill="url(#gradAmbHum)" dot={chartData.length === 1 ? { r: 4, strokeWidth: 2 } : false} activeDot={{ r: 5 }} />}
+                                {visibleMetrics.soilTemp && <Area yAxisId="temp" connectNulls type="monotone" dataKey="avgSoilTemp" name={t('field_details.temp_c')} stroke="#DD6B20" strokeWidth={2.5} fill="url(#gradTemp)" dot={chartData.length === 1 ? { r: 4, strokeWidth: 2 } : false} activeDot={{ r: 5 }} />}
+                                {visibleMetrics.ambientTemp && <Area yAxisId="temp" connectNulls type="monotone" dataKey="avgAmbientTemp" name={t('field_details.ambient_temp')} stroke="#38A169" strokeWidth={2.5} fill="url(#gradAmbTemp)" dot={chartData.length === 1 ? { r: 4, strokeWidth: 2 } : false} activeDot={{ r: 5 }} />}
                             </RechartsAreaChart>
                         </ResponsiveContainer>
                     ) : (

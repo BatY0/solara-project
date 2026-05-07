@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { AuthProvider } from '../features/auth/authContext'
+import { WebSocketProvider } from '../context/WebSocketContext'
 import { useAuth } from '../features/auth/useAuth'
 import { Home } from './pages/Home'
 import { Login } from './pages/Login'
@@ -69,39 +70,41 @@ const PublicOnlyRoute = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />} />
+      <AuthProvider>
+        <WebSocketProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Home />} />
 
-          {/* Public-only auth pages */}
-          <Route element={<PublicOnlyRoute />}>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/verify-email" element={<VerifyEmail />} />
-          </Route>
+              {/* Public-only auth pages */}
+              <Route element={<PublicOnlyRoute />}>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/verify-email" element={<VerifyEmail />} />
+              </Route>
 
-          {/* Protected Routes */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/fields" element={<AllFields />} />
-            <Route path="/fields/:id" element={<FieldDetails />} />
-            <Route path="/guide" element={<CropGuideList />} />
-            <Route path="/guide/:slug" element={<CropGuideDetails />} />
-            <Route path="/alerts" element={<Alerts />} />
-            <Route path="/settings" element={<Settings />} />
+              {/* Protected Routes */}
+              <Route element={<ProtectedRoute />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/fields" element={<AllFields />} />
+                <Route path="/fields/:id" element={<FieldDetails />} />
+                <Route path="/guide" element={<CropGuideList />} />
+                <Route path="/guide/:slug" element={<CropGuideDetails />} />
+                <Route path="/alerts" element={<Alerts />} />
+                <Route path="/settings" element={<Settings />} />
 
-            <Route element={<AdminRoute />}>
-              <Route path="/admin/users" element={<AdminUserDashboard />} />
-              <Route path="/admin/crop-guides" element={<CropGuideAdminList />} />
-              <Route path="/admin/devices" element={<EspDeviceAdminList />} />
-              <Route path="/admin/crop-guides/new" element={<CropGuideAdminEditor />} />
-              <Route path="/admin/crop-guides/:id/edit" element={<CropGuideAdminEditor />} />
-            </Route>
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+                <Route element={<AdminRoute />}>
+                  <Route path="/admin/users" element={<AdminUserDashboard />} />
+                  <Route path="/admin/crop-guides" element={<CropGuideAdminList />} />
+                  <Route path="/admin/devices" element={<EspDeviceAdminList />} />
+                  <Route path="/admin/crop-guides/new" element={<CropGuideAdminEditor />} />
+                  <Route path="/admin/crop-guides/:id/edit" element={<CropGuideAdminEditor />} />
+                </Route>
+              </Route>
+            </Routes>
+          </BrowserRouter>
+        </WebSocketProvider>
+      </AuthProvider>
   )
 }
 

@@ -58,7 +58,6 @@ public class SensorLogs {
     @Column(name = "errors")
     private String errors;
 
-    @CreationTimestamp
     @Column(name = "timestamp", nullable = false)
     private LocalDateTime timestamp;
 }
