@@ -12,26 +12,34 @@ import { AddNewFieldCard } from "../../components/dashboard/AddNewFieldCard"
 import { AddFieldWizard } from "./AddFieldWizard"
 import { fieldsService } from "../../features/fields/fields.service"
 import { alertsService } from "../../features/alerts/alerts.service"
+import { useAuth } from "../../features/auth/useAuth"
+import { useNotificationsSocket } from "../../hooks/useNotificationsSocket"
 import type { Field } from "../../features/fields/types"
 import type { AlertEvent } from "../../features/alerts/types"
 import { getDeviceStatus } from "../../utils/deviceStatus"
 
+const isActionableAlert = (event: AlertEvent) => event.active && !!event.notifiedAt;
+
 export const Dashboard = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { user } = useAuth()
 
   const [fields, setFields] = useState<Field[]>([])
-  const [unreadAlerts, setUnreadAlerts] = useState<AlertEvent[]>([])
+  const [activeAlerts, setActiveAlerts] = useState<AlertEvent[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isWizardOpen, setIsWizardOpen] = useState(false)
+  const { latestAlert: realtimeAlert } = useNotificationsSocket(user?.id)
 
   const fetchDashboardData = useCallback(async () => {
     try {
-        const [fieldsData] = await Promise.all([
+        const [fieldsData, eventsData] = await Promise.all([
           fieldsService.getUserFields(),
-          // alertsService.getUnreadNotifications() // testing websocket
+          alertsService.getEventHistory(),
         ])
-        const alertsData: AlertEvent[] = [];
+        const alertsData = eventsData
+          .filter(isActionableAlert)
+          .sort((a, b) => new Date(b.triggeredAt).getTime() - new Date(a.triggeredAt).getTime());
       
       // Sort: paired (online-capable) fields first
       const sorted = [...fieldsData].sort((a, b) => {
@@ -41,7 +49,7 @@ export const Dashboard = () => {
         return bStatus - aStatus
       })
       setFields(sorted)
-      setUnreadAlerts(alertsData)
+      setActiveAlerts(alertsData)
     } catch (error) {
       console.error("Error fetching dashboard data:", error)
     } finally {
@@ -52,6 +60,20 @@ export const Dashboard = () => {
   useEffect(() => {
     fetchDashboardData()
   }, [fetchDashboardData])
+
+  useEffect(() => {
+    if (!realtimeAlert) return;
+
+    setActiveAlerts(prev => {
+      if (isActionableAlert(realtimeAlert)) {
+        const withoutCurrent = prev.filter(alert => alert.id !== realtimeAlert.id);
+        return [realtimeAlert, ...withoutCurrent].sort(
+          (a, b) => new Date(b.triggeredAt).getTime() - new Date(a.triggeredAt).getTime()
+        );
+      }
+      return prev.filter(alert => alert.id !== realtimeAlert.id);
+    });
+  }, [realtimeAlert]);
 
   const handleAddNewField = () => setIsWizardOpen(true)
 
@@ -77,11 +99,11 @@ export const Dashboard = () => {
   const onlineFieldsCount = fields.filter(f => getDeviceStatus(f, t).status === 'online').length;
   
   // Decide what to show in AlertCard
-  const hasAlerts = unreadAlerts.length > 0;
-  const latestAlert = hasAlerts ? unreadAlerts[0] : null;
+  const hasAlerts = activeAlerts.length > 0;
+  const latestAlert = hasAlerts ? activeAlerts[0] : null;
 
   const alertTitle = hasAlerts 
-    ? t(unreadAlerts.length > 1 ? 'alerts.dashboard_active_title_plural' : 'alerts.dashboard_active_title', { count: unreadAlerts.length })
+    ? t(activeAlerts.length > 1 ? 'alerts.dashboard_active_title_plural' : 'alerts.dashboard_active_title', { count: activeAlerts.length })
     : t('alerts.dashboard_normal_title');
 
   let alertMessage = t('alerts.dashboard_normal_msg');
@@ -102,7 +124,6 @@ export const Dashboard = () => {
       try {
         await alertsService.markAsRead(latestAlert.id);
         window.dispatchEvent(new Event('notificationsRead'));
-        fetchDashboardData();
       } catch (error) {
         console.error("Failed to dismiss alert", error);
       }

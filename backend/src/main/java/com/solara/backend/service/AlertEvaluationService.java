@@ -63,11 +63,14 @@ public class AlertEvaluationService {
                                 .build();
                         
                         alertEventRepository.save(event);
+                        String fieldName = fieldRepository.findById(logEntry.getFieldId())
+                                .map(field -> field.getName())
+                                .orElse("Field");
+                        com.solara.backend.dto.response.AlertEventDTO createdDto =
+                                new com.solara.backend.dto.response.AlertEventDTO(event, fieldName);
+                        messagingTemplate.convertAndSend("/topic/user." + rule.getUserId().toString() + ".alerts", createdDto);
                         
                         if (rule.getDurationMinutes() <= 0) {
-                            String fieldName = fieldRepository.findById(logEntry.getFieldId())
-                                    .map(field -> field.getName())
-                                    .orElse("Field");
                             pushNotificationService.sendAlertTriggeredPush(rule.getUserId(), fieldName, event);
                             if (rule.isNotifyEmail()) {
                                 sendAlertEmail(rule, event, value);
@@ -119,6 +122,12 @@ public class AlertEvaluationService {
                         event.setResolvedAt(LocalDateTime.now());
                         event.setLastValue(value);
                         alertEventRepository.save(event);
+                        String fieldName = fieldRepository.findById(logEntry.getFieldId())
+                                .map(field -> field.getName())
+                                .orElse("Field");
+                        com.solara.backend.dto.response.AlertEventDTO resolvedDto =
+                                new com.solara.backend.dto.response.AlertEventDTO(event, fieldName);
+                        messagingTemplate.convertAndSend("/topic/user." + rule.getUserId().toString() + ".alerts", resolvedDto);
                         log.info("[Alerts] Rule resolved: rule={}, field={}", rule.getId(), rule.getFieldId());
                     }
                 }

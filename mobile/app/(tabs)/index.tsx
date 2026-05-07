@@ -9,6 +9,7 @@ import {
     RefreshControl,
     Alert,
     Linking,
+    DeviceEventEmitter,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -24,6 +25,8 @@ import { getDeviceStatus } from '../../src/utils/deviceStatus';
 import { alertsService } from '../../src/services/alertsService';
 import type { AlertEvent } from '../../src/types/alerts';
 import { useFocusEffect } from '@react-navigation/native';
+
+const isActionableAlert = (event: AlertEvent) => event.active && !!event.notifiedAt;
 
 export default function DashboardScreen() {
     const { user, logout } = useAuth();
@@ -57,9 +60,12 @@ export default function DashboardScreen() {
 
     const fetchLatestAlert = useCallback(async () => {
         try {
-            const unreadEvents = await alertsService.getUnreadNotifications();
-            if (unreadEvents.length > 0) {
-                setLatestAlert(unreadEvents[0]);
+            const events = await alertsService.getEventHistory();
+            const activeEvents = events
+                .filter(isActionableAlert)
+                .sort((a, b) => new Date(b.triggeredAt).getTime() - new Date(a.triggeredAt).getTime());
+            if (activeEvents.length > 0) {
+                setLatestAlert(activeEvents[0]);
             } else {
                 setLatestAlert(null);
             }
@@ -73,6 +79,27 @@ export default function DashboardScreen() {
             fetchLatestAlert();
         }, [fetchLatestAlert])
     );
+
+    useEffect(() => {
+        const realtimeSub = DeviceEventEmitter.addListener('alerts:realtime', (event?: AlertEvent) => {
+            if (!event) return;
+
+            if (isActionableAlert(event)) {
+                setLatestAlert(prev => {
+                    if (!prev) return event;
+                    const prevTime = new Date(prev.triggeredAt).getTime();
+                    const nextTime = new Date(event.triggeredAt).getTime();
+                    return nextTime >= prevTime ? event : prev;
+                });
+                return;
+            }
+
+            // Active event resolved: refetch to find the next newest active breach.
+            void fetchLatestAlert();
+        });
+
+        return () => realtimeSub.remove();
+    }, [fetchLatestAlert]);
 
     const handleLogout = () => {
         Alert.alert(

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { AppState, type AppStateStatus } from 'react-native';
+import { AppState, type AppStateStatus, DeviceEventEmitter } from 'react-native';
 import { alertsService } from '../services/alertsService';
 import { setBadgeCount } from '../services/notificationsService';
 
@@ -58,6 +58,7 @@ export function useAlertNotifications(enabled: boolean): void {
             if (bodyStr) {
                 try {
                     const event = JSON.parse(bodyStr) as AlertEvent;
+                    DeviceEventEmitter.emit('alerts:realtime', event);
                     if (!event.read) {
                         // Increment badge count directly if a new unread alert arrives
                         pollUnreadNotifications(); // Easiest way to fetch true count and sync badge
